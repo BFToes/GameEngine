@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30711.63
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameEngine", "GameEngine\GameEngine.csproj", "{0B851D19-A0F6-48AD-B561-6878462E924E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0B851D19-A0F6-48AD-B561-6878462E924E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B851D19-A0F6-48AD-B561-6878462E924E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B851D19-A0F6-48AD-B561-6878462E924E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B851D19-A0F6-48AD-B561-6878462E924E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C88A34F6-6A43-4F82-871C-1A1F3D915230}
+	EndGlobalSection
+EndGlobal
