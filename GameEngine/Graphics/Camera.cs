@@ -6,45 +6,62 @@ using System.Text;
 
 namespace Graphics
 {
-    interface ICamera : ITransform
+    interface ICamera
     {
         public float Zoom { get; set; }
         public Matrix4 ProjMat { get; }
-        public float AspectRatio { get; set; }
+        public void Resize(Vector2 ScreenSize);
     }
 
     class Camera : ICamera
     {
-        public Matrix4 Matrix { get; private set; }
-        public Matrix4 ProjMat { get; }
+        private float nearZ;
+        private float farZ;
+        private float fov;
+        public ITransform Transform;
+        public Matrix4 ProjMat { get; private set; }
         public float Zoom 
         { 
             get => throw new NotImplementedException(); 
             set => throw new NotImplementedException(); 
         }
-        public float AspectRatio 
-        { 
-            get => throw new NotImplementedException(); 
-            set => throw new NotImplementedException(); 
-        }
-
         /// <summary>
-        /// 
+        /// initiates with perspective projection matrix 
         /// </summary>
-        /// <param name="FOV">the angle of visibility in degrees</param>
+        /// <param name="FOV">the angle of visibility in degrees must be greater than 0 and less than 180</param>
         /// <param name="ScreenSize"></param>
-        /// <param name="DepthNear"> must be greater than 0</param>
-        /// <param name="DepthFar"></param>
-        public Camera(float FOV, Vector2 ScreenSize, float DepthNear, float DepthFar)
+        /// <param name="DepthNear">must be greater than 0</param>
+        /// <param name="DepthFar">larger values will render more objects</param>
+        public Camera(float FOV, float Width, float Height, float DepthNear, float DepthFar)
         {
-            FOV = FOV / 180 * MathF.PI;
-            ScreenSize.Normalize();
-            float AspectRatio = ScreenSize.Y / ScreenSize.X;
-            ProjMat = Matrix4.CreatePerspectiveFieldOfView(FOV, AspectRatio, DepthNear, DepthFar);
+            nearZ = DepthNear; farZ = DepthFar;
+            fov = FOV / 180 * MathF.PI;
+            ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, Width / Height, DepthNear, DepthFar);
         }
-        public Camera(Vector2 ScreenSize, float DepthNear, float DepthFar)
+        /// <summary>
+        /// initiates with orthographic projection matrix 
+        /// </summary>
+        /// <param name="ScreenSize"></param>
+        /// <param name="DepthNear">must be greater than or equal to 0</param>
+        /// <param name="DepthFar">larger values will render more objects</param>
+        public Camera(float Width, float Height, float DepthNear, float DepthFar)
         {
-            ProjMat = Matrix4.CreateOrthographic(ScreenSize.X, ScreenSize.Y, DepthNear, DepthFar);
+            nearZ = DepthNear; farZ = DepthFar;
+            ProjMat = Matrix4.CreateOrthographic(Width, Height, nearZ, farZ);          
+
+        }
+        public void Resize(Vector2 ScreenSize)
+        {
+
+            if (fov != 0)
+            {
+                ScreenSize.Normalize();
+                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, ScreenSize.X / ScreenSize.Y, nearZ, farZ);
+            }
+            else
+            {
+                ProjMat = Matrix4.CreateOrthographic(ScreenSize.X, ScreenSize.Y, nearZ, farZ);
+            }
         }
     }
 }

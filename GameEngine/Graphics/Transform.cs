@@ -71,18 +71,14 @@ namespace Graphics
 
                 
                 rotation = new Vector3(value.X % 2 * MathF.PI, value.Y % 2 * MathF.PI, value.Z % 2 * MathF.PI);
-                /*
                 rotmat = Matrix3.CreateFromQuaternion(Quaternion.FromEulerAngles(rotation));
                 Matrix4 Tmat = Matrix;
                 Tmat.M11 = scale.X * rotmat.M11; Tmat.M21 = scale.X * rotmat.M21; Tmat.M31 = scale.X * rotmat.M31;
                 Tmat.M12 = scale.Y * rotmat.M12; Tmat.M22 = scale.Y * rotmat.M22; Tmat.M32 = scale.Y * rotmat.M32;
                 Tmat.M13 = scale.Z * rotmat.M13; Tmat.M23 = scale.Z * rotmat.M23; Tmat.M33 = scale.Z * rotmat.M33;
                 Matrix = Tmat;
-                */
-                Matrix4 Tr = Matrix4.CreateTranslation(position);
-                Matrix4 Sc = Matrix4.CreateScale(scale);
-                Matrix4 Rt = Matrix4.CreateFromQuaternion(Quaternion.FromEulerAngles(rotation));
-                Matrix = Rt * Sc;
+
+                //Set(rotation, scale, position);
             }
             get => rotation;
 
@@ -92,17 +88,12 @@ namespace Graphics
             set
             {
                 scale = value;
-                /*
                 Matrix4 Tmat = Matrix;
                 Tmat.M11 = scale.X * rotmat.M11; Tmat.M21 = scale.X * rotmat.M21; Tmat.M31 = scale.X * rotmat.M31;
                 Tmat.M12 = scale.Y * rotmat.M12; Tmat.M22 = scale.Y * rotmat.M22; Tmat.M32 = scale.Y * rotmat.M32;
                 Tmat.M13 = scale.Z * rotmat.M13; Tmat.M23 = scale.Z * rotmat.M23; Tmat.M33 = scale.Z * rotmat.M33;
                 Matrix = Tmat;
-                */
-                Matrix4 Tr = Matrix4.CreateTranslation(position);
-                Matrix4 Sc = Matrix4.CreateScale(scale);
-                Matrix4 Rt = Matrix4.CreateFromQuaternion(Quaternion.FromEulerAngles(rotation));
-                Matrix = Rt * Sc;
+                //Set(rotation, scale, position); ;
             }
             get => scale;
         }
@@ -111,21 +102,24 @@ namespace Graphics
             set
             {
                 position = value;
-                /*
                 Matrix4 Tmat = Matrix;
-                Tmat.M14 = Position.X;
-                Tmat.M24 = Position.Y;
-                Tmat.M34 = Position.Z;
+                Tmat.M41 = Position.X;
+                Tmat.M42 = Position.Y;
+                Tmat.M43 = Position.Z;
                 Matrix = Tmat;
-                */
-                Matrix4 Tr = Matrix4.CreateTranslation(position);
-                Matrix4 Sc = Matrix4.CreateScale(scale);
-                Matrix4 Rt = Matrix4.CreateFromQuaternion(Quaternion.FromEulerAngles(rotation));
-                Matrix = Rt * Sc;
+                //Set(rotation, scale, position);
             }
             get => position;
         }
 
         public Transform3D() => Matrix = Matrix4.Identity;
+        public Transform3D(Vector3 Rot, Vector3 Sca, Vector3 Pos) => this.Set(Rot, Sca, Pos);
+        private void Set(Vector3 Rot, Vector3 Sca, Vector3 Pos)
+        {
+            Matrix4 Tr = Matrix4.CreateTranslation(Pos);
+            Matrix4 Sc = Matrix4.CreateScale(Sca);
+            Matrix4 Rt = Matrix4.CreateFromQuaternion(Quaternion.FromEulerAngles(Rot));
+            Matrix = (Rt * Sc * Tr);
+        }
     }
 }

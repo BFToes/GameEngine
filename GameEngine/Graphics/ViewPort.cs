@@ -11,23 +11,24 @@ using OpenTK.Windowing.Common;
 
 namespace Graphics
 {
-
-    public interface IViewPort
-    {
-        public Rectangle Rect { get; }
-    }
+    /* Notes:
+     * - Z index sorting obselete unless object transparent
+     * - Depth Texture currently doesnt work as t breaks the depth testing. dont know why really.
+     * - Can't find nice numbers for orthographics camera matrix
+     * - 
+     * 
+     */
     class ViewPort
     {
         public readonly string ColorTexture;
-        public readonly string DepthTexture;
+        //public readonly string DepthTexture;
 
         public Color4 RefreshCol = Color.Green;
         public ICamera Camera;
         public ShaderProgram Material;
 
         private int Tex; // color texture
-        private int Dep; // depth texture
-        private int LFTex; // Last frame's color texture
+        //private int Dep; // depth texture
 
         private int FBO; // frame buffer object
         private int RBO; // depth buffer object
@@ -39,36 +40,35 @@ namespace Graphics
 
         public ViewPort(string VertexShader, string FragmentShader, int PositionX, int PositionY, int Width, int Height)
         {
-            
+            Camera = new Camera(50, Width, Height, 1, 100);
             Rect = new Rectangle(PositionX, PositionY, Width, Height); // calls resize
-            Camera = new Camera(50, new Vector2(2, 2), 1, 10);
-
 
             // set up frame buffer object
-            FBO = GL.GenFramebuffer();
+            FBO = GL.GenFramebuffer(); 
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
 
-            string ColTexPath, DepTexPath;
             // Generate and set new textures
-            Tex = NewTextureAttachment(out ColTexPath); SetTextureAttachment(Tex, PixelFormat.Rgb, Width, Height); // set up color texture
-            Dep = NewTextureAttachment(out DepTexPath); SetTextureAttachment(Dep, PixelFormat.DepthComponent, Width, Height); // set up depth texture
-            //LFTex = NewTextureAttachment(out ColorTexture); SetTextureAttachment(LFTex, PixelFormat.DepthComponent, Width, Height);
+            Tex = NewTextureAttachment(out ColorTexture); SetTextureAttachment(Tex, PixelFormat.Rgb, Width, Height); // set up color texture
+            //Dep = NewTextureAttachment(out DepthTexture); SetTextureAttachment(Dep, PixelFormat.DepthComponent, Width, Height); // set up depth texture
             
+            // assign textures to shader program
             Material = new ShaderProgram(VertexShader, FragmentShader);
-            Material.Uniforms["ColorTex"] = () => ColTexPath;
-            Material.Uniforms["DepthTex"] = () => DepTexPath;
-
+            Material.Uniforms["ColorTex"] = () => ColorTexture;
+            //Material.Uniforms["DepthTex"] = () => DepthTexture;
 
             // set up render buffer object
             RBO = GL.GenRenderbuffer(); SetRenderBuffer(RBO, RenderbufferStorage.DepthComponent, Width, Height);
-            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.Depth, RenderbufferTarget.Renderbuffer, RBO);
+            GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, RBO);
 
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.Depth, TextureTarget.Texture2D, Dep, 0);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, Tex, 0);
             
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, Tex, 0);
+            // trying to save depth component to a texture broke the rendering?
+            //GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, TextureTarget.Texture2D, Dep, 0);
+
             FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
             if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
 
+            // deselect openGL objects
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
             GL.BindTexture(TextureTarget.Texture2D, 0);
@@ -82,7 +82,9 @@ namespace Graphics
                 // updates respective buffer sizes and textures to new dimensions of Rect
                 SetRenderBuffer(RBO, RenderbufferStorage.DepthComponent, rect.Width, rect.Height);
                 SetTextureAttachment(Tex, PixelFormat.Rgb, rect.Width, rect.Height);
-                SetTextureAttachment(Dep, PixelFormat.DepthComponent, rect.Width, rect.Height);
+                //SetTextureAttachment(Dep, PixelFormat.DepthComponent, rect.Width, rect.Height);
+
+                Camera.Resize(new Vector2(rect.Width, rect.Height));
             }
             get => rect;
         }
@@ -94,11 +96,11 @@ namespace Graphics
         {
             // use this viewport
             GL.Viewport(this.Rect);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FBO);
 
             // clear this viewport frame buffer
             GL.ClearColor(RefreshCol);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             // render each child in this viewport
             foreach (IRenderObject RO in ObjectPool) RO.OnRender(); // render in Z index order, must init render list to iterate through
@@ -115,6 +117,26 @@ namespace Graphics
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
             GL.BlitFramebuffer(0, 0, Rect.Width, Rect.Height, 0, 0, Rect.Width, Rect.Height, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
             */
+        }
+
+        public Bitmap GetTexture()
+        {
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
+            Bitmap bmp = new Bitmap(rect.Width, rect.Height);
+
+            System.Drawing.Imaging.BitmapData data = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
+            ErrorCode ec = GL.GetError();
+            GL.Flush();
+            GL.ReadBuffer(ReadBufferMode.Back);
+            GL.ReadPixels(0, 0, rect.Width, rect.Height, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
+            ec = GL.GetError();
+            
+            bmp.UnlockBits(data);
+            bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+
+            return bmp;
         }
 
         #region RenderObject Management
@@ -142,6 +164,8 @@ namespace Graphics
         /// <param name="_">unused value</param>
         void Sort(int _) => ObjectPool = ObjectPool.OrderBy(Object => Object.Z_index).ToList();
         #endregion
+
+        #region RenderObject buffers/Texture initiation
         /// <summary>
         /// creates new viewport texture
         /// </summary>
@@ -189,7 +213,7 @@ namespace Graphics
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, RBO);
             GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, Storage, Width, Height);
         }
-
+        #endregion
 
     }
 }

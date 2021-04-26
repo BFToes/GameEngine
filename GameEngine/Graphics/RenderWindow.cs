@@ -23,11 +23,6 @@ namespace Graphics
             Process = (delta) => { Time += delta; };
             VSync = VSyncMode.On;
 
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Less);
-            //GL.Enable(EnableCap.CullFace);
-            //GL.CullFace(CullFaceMode.Back);
-
             #region vertex buffer/array object setup
             // setup array
             VAO = GL.GenVertexArray();
@@ -48,6 +43,10 @@ namespace Graphics
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * new Vertex2D().SizeInBytes, new float[16] { -1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1 }, BufferUsageHint.StaticDraw);
             #endregion
+
+            GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
+
         }
 
         protected override void OnResize(ResizeEventArgs e)
@@ -69,12 +68,14 @@ namespace Graphics
             // use default
             GL.Viewport(0, 0, Size.X, Size.Y);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-
+            
             // draw viewport frame on screen
             ViewPort.Material.Use();
             GL.BindVertexArray(VAO);
             GL.PolygonMode(MaterialFace.Front, PolygonMode.Fill);
             GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+
+            
 
             SwapBuffers(); // swap out old buffer with new buffer
         }

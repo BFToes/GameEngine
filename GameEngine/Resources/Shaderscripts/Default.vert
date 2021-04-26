@@ -12,7 +12,7 @@ out vec3 FragNormal;
 
 void main(void)
 {
-	gl_Position = vec4(Position, 1) * PrjMatrix * ObjMatrix;
+	gl_Position = PrjMatrix * ObjMatrix * vec4(Position, 1);
 	FragUV = UV;
 	FragNormal = Normal;
 }
