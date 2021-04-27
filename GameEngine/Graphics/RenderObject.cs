@@ -6,7 +6,14 @@ using System.Reflection;
 
 namespace Graphics
 {
-
+    /* Thing To do 
+     * 
+     * Sort out transparancy
+     * Set up Vertex index object
+     * 
+     * 
+     * 
+     */
 
     interface IRenderObject
     {
@@ -30,12 +37,13 @@ namespace Graphics
         // used in Render() to determine how this object renders
         protected PrimitiveType RenderingType = PrimitiveType.Triangles;
         protected PolygonMode PolygonMode = PolygonMode.Fill;
-        protected MaterialFace MaterialFace = MaterialFace.FrontAndBack;
 
         private bool visible = true;
         private int z_index = 1;
         private Vertex[] vertexarray;
 
+        //public RenderObject(ViewPort ViewPort, Vertex[] Vertices, int[] VertexIndex, string VertexShader, string FragmentShader) { }
+        //public RenderObject(ViewPort ViewPort, Vertex[] Vertices, int[] VertexIndex, string VertexShader, string GeometryShader, string FragmentShader) { }
         public RenderObject(ViewPort ViewPort, Vertex[] Vertices, string VertexShader, string FragmentShader)
         {
             Set_Z_Index = value => z_index = value;
@@ -181,7 +189,7 @@ namespace Graphics
         {
             Material.Use(); // tell openGL to use this objects program
             GL.BindVertexArray(VertexArrayHandle); // use current vertex array
-            GL.PolygonMode(MaterialFace, PolygonMode); // use this programs rendering modes
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode); // use this programs rendering modes
             GL.DrawArrays(RenderingType, 0, VertexArray.Length); // draw these vertices in triangles, 0 to the number of vertices
         }
         #endregion

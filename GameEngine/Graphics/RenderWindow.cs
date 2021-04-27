@@ -19,7 +19,10 @@ namespace Graphics
 
         public RenderWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
-            ViewPort = new ViewPort($"Resources/shaderscripts/PostProcess.vert", $"Resources/shaderscripts/PostProcess.frag", 0, 0, Size.X, Size.Y);
+            ViewPort = new ViewPort(
+                $"Resources/shaderscripts/PostProcess/PostProcess.vert", 
+                $"Resources/shaderscripts/PostProcess/PostProcess.frag", 
+                0, 0, Size.X, Size.Y);
             Process = (delta) => { Time += delta; };
             VSync = VSyncMode.On;
 
@@ -56,7 +59,7 @@ namespace Graphics
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            GL.ClearColor(Color.BlueViolet);
+            GL.ClearColor(Color.DarkRed);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
             //Title = $"{1 / e.Time}";
@@ -68,11 +71,11 @@ namespace Graphics
             // use default
             GL.Viewport(0, 0, Size.X, Size.Y);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            
+
             // draw viewport frame on screen
             ViewPort.Material.Use();
             GL.BindVertexArray(VAO);
-            GL.PolygonMode(MaterialFace.Front, PolygonMode.Fill);
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
 
             

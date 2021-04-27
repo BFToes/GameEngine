@@ -18,18 +18,18 @@ namespace Graphics
         private float nearZ;
         private float farZ;
         private float fov;
-        public ITransform Transform;
         public Matrix4 ProjMat { get; private set; }
         public float Zoom 
         { 
             get => throw new NotImplementedException(); 
-            set => throw new NotImplementedException(); 
+            set => throw new NotImplementedException();
         }
         /// <summary>
         /// initiates with perspective projection matrix 
         /// </summary>
         /// <param name="FOV">the angle of visibility in degrees must be greater than 0 and less than 180</param>
-        /// <param name="ScreenSize"></param>
+        /// <param name="Width"></param>
+        /// <param name="Height"></param>
         /// <param name="DepthNear">must be greater than 0</param>
         /// <param name="DepthFar">larger values will render more objects</param>
         public Camera(float FOV, float Width, float Height, float DepthNear, float DepthFar)
@@ -41,7 +41,8 @@ namespace Graphics
         /// <summary>
         /// initiates with orthographic projection matrix 
         /// </summary>
-        /// <param name="ScreenSize"></param>
+        /// <param name="Width"></param>
+        /// <param name="Height"></param>
         /// <param name="DepthNear">must be greater than or equal to 0</param>
         /// <param name="DepthFar">larger values will render more objects</param>
         public Camera(float Width, float Height, float DepthNear, float DepthFar)

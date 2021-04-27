@@ -36,10 +36,16 @@
     <None Update="Resources\Shaderscripts\Bilinear Warp\BilinearW.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\PostProcess.frag">
+    <None Update="Resources\Shaderscripts\Simple.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\PostProcess.vert">
+    <None Update="Resources\Shaderscripts\Simple.vert">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\PostProcess\PostProcess.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\PostProcess\PostProcess.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Default.vert">

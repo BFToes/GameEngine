@@ -8,22 +8,6 @@ using System.Collections;
 namespace Graphics.Shaders
 {
 
-    /* StyleCop Rules:
-     * 
-     * Constant Fields
-     * Constructors, Deconstructors
-     * Delegates, Events, Enums, Properties, Indexers
-     * Methods,  structs, classes
-     * 
-     * public, internal, protected internal, protected, private
-     * static, non static
-     * readonly, non-readonly
-     * 
-     */
-
-
-
-
     sealed public class ShaderProgram
     {
         public Dictionary<string, Func<dynamic>> Uniforms;
@@ -196,7 +180,7 @@ namespace Graphics.Shaders
                         UpdateUniforms += () =>
                         {
                             Matrix4 param = (Matrix4)Uniforms[Name]();
-                            GL.UniformMatrix4(LocalIndex, true, ref param);
+                            GL.UniformMatrix4(LocalIndex, false, ref param);
                         };
                         break;
 

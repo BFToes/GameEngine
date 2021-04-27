@@ -40,8 +40,11 @@ namespace Graphics
 
         public ViewPort(string VertexShader, string FragmentShader, int PositionX, int PositionY, int Width, int Height)
         {
-            Camera = new Camera(50, Width, Height, 1, 100);
-            Rect = new Rectangle(PositionX, PositionY, Width, Height); // calls resize
+            Camera = new Camera(50, Width, Height, 2, 100);
+            rect = new Rectangle(PositionX, PositionY, Width, Height); // calls resize
+            SetRenderBuffer(RBO, RenderbufferStorage.DepthComponent, rect.Width, rect.Height);
+            SetTextureAttachment(Tex, PixelFormat.Rgb, rect.Width, rect.Height);
+            //SetTextureAttachment(Dep, PixelFormat.DepthComponent, rect.Width, rect.Height);
 
             // set up frame buffer object
             FBO = GL.GenFramebuffer(); 
@@ -105,18 +108,6 @@ namespace Graphics
             // render each child in this viewport
             foreach (IRenderObject RO in ObjectPool) RO.OnRender(); // render in Z index order, must init render list to iterate through
 
-
-
-            /*
-            // copies this frame to last frame texture -> only needed if sampling texture within itself
-            //GL.BindTexture(TextureTarget.Texture2D, LFTex);
-            //GL.CopyTexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgb, 0, 0, Rect.Width, Rect.Height, 0);
-            */
-            /*
-            // Copies Depth buffer to default frame buffer -> I dont know if its needed
-            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
-            GL.BlitFramebuffer(0, 0, Rect.Width, Rect.Height, 0, 0, Rect.Width, Rect.Height, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
-            */
         }
 
         public Bitmap GetTexture()
