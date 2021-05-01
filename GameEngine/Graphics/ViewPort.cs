@@ -24,7 +24,7 @@ namespace Graphics
         //public readonly string DepthTexture;
 
         public Color4 RefreshCol = Color.Green;
-        public ICamera Camera;
+        public Camera Camera;
         public ShaderProgram Material;
 
         private int Tex; // color texture
@@ -40,7 +40,7 @@ namespace Graphics
 
         public ViewPort(string VertexShader, string FragmentShader, int PositionX, int PositionY, int Width, int Height)
         {
-            Camera = new Camera(50, Width, Height, 2, 100);
+            Camera = new Camera(50, Width, Height, 2, 512);
             rect = new Rectangle(PositionX, PositionY, Width, Height); // calls resize
             SetRenderBuffer(RBO, RenderbufferStorage.DepthComponent, rect.Width, rect.Height);
             SetTextureAttachment(Tex, PixelFormat.Rgb, rect.Width, rect.Height);

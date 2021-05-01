@@ -17,15 +17,17 @@ namespace Graphics
         
         public static int Texture(string path)
         {
-            if (TextureDict.ContainsKey(path)) return TextureDict[path];
+            if (TextureDict.ContainsKey(path)) 
+                return TextureDict[path];
             else 
-            {
-                int NewTexture = Init_Texture(path, true, true);
-                TextureDict[path] = NewTexture;
-                
-                return NewTexture;
-            }
+                return Load_Texture(path, TextureMinFilter.Nearest, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 1);
         }
+        /// <summary>
+        /// used for adding texture from outside which hasnt been loaded by texture manager
+        /// </summary>
+        /// <param name="path">the string path name to identify the viewport from else where in the program</param>
+        /// <param name="ID">the textures int ID</param>
+        /// <returns></returns>
         public static int Add(string path, int ID) => TextureDict[path] = ID;
         public static void Remove(string path)
         {
@@ -36,39 +38,38 @@ namespace Graphics
                 TextureDict.Remove(path);
             }           
         }
-        
+
         /// <summary>
-        /// opens image file and creates texture.
+        /// opens image file and creates texture from contents
         /// </summary>
-        /// <param name="name">The path of the texture file.</param>
+        /// <param name="path">The path of the texture file.</param>
         /// <returns>The texture handle ID for OpenGL.</returns>
-        private static int Init_Texture(string path, bool PixelPerfect, bool ClampToEdge)
+        public static int Load_Texture(string path, TextureMinFilter MinifyFilter, TextureMagFilter MagnifyFilter, TextureWrapMode WrapMode, int Mipmap)
         {
             int width, height, Handle;
-            float[] data = Load_Texture(out width, out height, path);
+            float[] data = ReadTextureFile(out width, out height, path);
             GL.CreateTextures(TextureTarget.Texture2D, 1, out Handle);
-            // level of mipmap, format, width, height
-            GL.TextureStorage2D(Handle, 1, SizedInternalFormat.Rgba32f, width, height);
 
+            // level of mipmap, format, width, height
+            GL.TextureStorage2D(Handle, Mipmap, SizedInternalFormat.Rgba32f, width, height);
+            
             // bind texture to slot
             GL.BindTexture(TextureTarget.Texture2D, Handle);
             // level of detail maybe???, offset x, offset y, width, height, format, type, serialized data
             GL.TextureSubImage2D(Handle, 0, 0, 0, width, height, PixelFormat.Rgba, PixelType.Float, data);
 
-            // fixes texture at edges
-            if (ClampToEdge)
-            {
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
-            }
+            // generate mipmaps
+            if (Mipmap > 1) GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
-            // makes pixel perfect
-            if (PixelPerfect)
-            {
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
-                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            }
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)MinifyFilter); // minify filter mode
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)MagnifyFilter); // magnify filter mode
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)WrapMode);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)WrapMode);
 
+
+            if (TextureDict.ContainsKey(path)) GL.DeleteTexture(TextureDict[path]); // if texture path already exists overwrite it
+            TextureDict[path] = Handle;
+            
             return Handle;
         }
 
@@ -79,7 +80,7 @@ namespace Graphics
         /// <param name="height">The height of the image.</param>
         /// <param name="path">The path to the image.</param>
         /// <returns>The serialised data read from the file in rgba format.</returns>
-        private static float[] Load_Texture(out int width, out int height, string path)
+        private static float[] ReadTextureFile(out int width, out int height, string path)
         {
             Bitmap BMP = (Bitmap)Image.FromFile(path);
 

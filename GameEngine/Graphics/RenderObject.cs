@@ -57,7 +57,7 @@ namespace Graphics
 
             // initiate the shader program with the file paths to the shaders
             Material = new ShaderProgram(VertexShader, FragmentShader);
-            Material.Uniforms["ObjMatrix"] = () => Transform.Matrix;
+            Material.Uniforms["ObjMatrix"] = () => Transform.Matrix * ViewPort.Camera.Matrix;
             Material.Uniforms["PrjMatrix"] = () => ViewPort.Camera.ProjMat;
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
@@ -75,7 +75,7 @@ namespace Graphics
 
             // initiate the shader program with the file paths to the shaders
             Material = new ShaderProgram(VertexShader, GeometryShader, FragmentShader);
-            Material.Uniforms["ObjMatrix"] = () => Transform.Matrix;
+            Material.Uniforms["ObjMatrix"] = () => Transform.Matrix * ViewPort.Camera.Matrix;
             Material.Uniforms["PrjMatrix"] = () => ViewPort.Camera.ProjMat;
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);

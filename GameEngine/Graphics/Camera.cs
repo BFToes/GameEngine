@@ -6,24 +6,13 @@ using System.Text;
 
 namespace Graphics
 {
-    interface ICamera
-    {
-        public float Zoom { get; set; }
-        public Matrix4 ProjMat { get; }
-        public void Resize(Vector2 ScreenSize);
-    }
-
-    class Camera : ICamera
+    class Camera : TransformInvert
     {
         private float nearZ;
         private float farZ;
-        private float fov;
+        public float fov { get; private set; }
         public Matrix4 ProjMat { get; private set; }
-        public float Zoom 
-        { 
-            get => throw new NotImplementedException(); 
-            set => throw new NotImplementedException();
-        }
+
         /// <summary>
         /// initiates with perspective projection matrix 
         /// </summary>
@@ -48,8 +37,7 @@ namespace Graphics
         public Camera(float Width, float Height, float DepthNear, float DepthFar)
         {
             nearZ = DepthNear; farZ = DepthFar;
-            ProjMat = Matrix4.CreateOrthographic(Width, Height, nearZ, farZ);          
-
+            ProjMat = Matrix4.CreateOrthographic(Width, Height, nearZ, farZ);
         }
         public void Resize(Vector2 ScreenSize)
         {
@@ -64,5 +52,6 @@ namespace Graphics
                 ProjMat = Matrix4.CreateOrthographic(ScreenSize.X, ScreenSize.Y, nearZ, farZ);
             }
         }
+        //public void LookAt(Vector3 Position) { }
     }
 }

@@ -54,6 +54,12 @@
     <None Update="Resources\Shaderscripts\Default.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\Textures\Grid.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Textures\Image1.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\Textures\Missing.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

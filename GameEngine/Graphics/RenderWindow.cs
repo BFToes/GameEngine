@@ -2,9 +2,6 @@
 using OpenTK.Windowing.Desktop;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
-using OpenTK.Mathematics;
-using System.Collections.Generic;
-using System.Collections;
 using System.Drawing;
 namespace Graphics
 {
