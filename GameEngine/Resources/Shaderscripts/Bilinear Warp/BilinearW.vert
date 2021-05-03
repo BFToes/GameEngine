@@ -1,7 +1,7 @@
 ﻿#version 450 core
 
-uniform mat4 ObjMatrix;
-uniform mat4 PrjMatrix;
+uniform mat4 Transform;
+uniform mat4 Projection;
 uniform float Time;
 
 layout(location = 0) in vec3 Position;
@@ -14,7 +14,7 @@ out vec2 Vuv;
 
 void main(void)
 {
-	Vposition = vec4(vec3(ObjMatrix * vec4(Position.x, Position.y, Position.z, 1)), 1);
+	Vposition = Projection * Transform * vec4(Position.x, Position.y, Position.z, 1);
 	Vnormal = Normal;
 	Vuv = UV;
 }

@@ -11,7 +11,6 @@ namespace Graphics
         /// This is used to identify the correct texture unit to load into.
         /// </summary>
         public static int TexturesLoaded = 0;
-        public static int VPTextures = 0;
 
         private static Dictionary<string, int> TextureDict = new Dictionary<string, int>();
         
@@ -20,23 +19,7 @@ namespace Graphics
             if (TextureDict.ContainsKey(path)) 
                 return TextureDict[path];
             else 
-                return Load_Texture(path, TextureMinFilter.Nearest, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 1);
-        }
-        /// <summary>
-        /// used for adding texture from outside which hasnt been loaded by texture manager
-        /// </summary>
-        /// <param name="path">the string path name to identify the viewport from else where in the program</param>
-        /// <param name="ID">the textures int ID</param>
-        /// <returns></returns>
-        public static int Add(string path, int ID) => TextureDict[path] = ID;
-        public static void Remove(string path)
-        {
-            if (path != null)
-            {
-                if (path.Contains("//ViewportTexture//")) VPTextures--;
-                GL.DeleteTexture(TextureDict[path]);
-                TextureDict.Remove(path);
-            }           
+                return Add_Texture(path, TextureMinFilter.Nearest, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 1);
         }
 
         /// <summary>
@@ -44,7 +27,7 @@ namespace Graphics
         /// </summary>
         /// <param name="path">The path of the texture file.</param>
         /// <returns>The texture handle ID for OpenGL.</returns>
-        public static int Load_Texture(string path, TextureMinFilter MinifyFilter, TextureMagFilter MagnifyFilter, TextureWrapMode WrapMode, int Mipmap)
+        public static int Add_Texture(string path, TextureMinFilter MinifyFilter, TextureMagFilter MagnifyFilter, TextureWrapMode WrapMode, int Mipmap)
         {
             int width, height, Handle;
             float[] data = ReadTextureFile(out width, out height, path);
@@ -65,7 +48,6 @@ namespace Graphics
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)MagnifyFilter); // magnify filter mode
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)WrapMode);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)WrapMode);
-
 
             if (TextureDict.ContainsKey(path)) GL.DeleteTexture(TextureDict[path]); // if texture path already exists overwrite it
             TextureDict[path] = Handle;

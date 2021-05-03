@@ -6,22 +6,7 @@ using System.Reflection;
 
 namespace Graphics
 {
-    /* Thing To do 
-     * 
-     * Sort out transparancy
-     * Set up Vertex index object
-     * 
-     * 
-     * 
-     */
 
-    interface IRenderObject
-    {
-        public event Action<int> Set_Z_Index;
-        public int Z_index{ get; set; }
-        public bool Visible { get; set; }
-        public void OnRender();
-    }
 
     /// <summary>
     /// An Object that renders onto the screen.
@@ -39,44 +24,40 @@ namespace Graphics
         protected PolygonMode PolygonMode = PolygonMode.Fill;
 
         private bool visible = true;
-        private int z_index = 1;
+        
         private Vertex[] vertexarray;
 
-        //public RenderObject(ViewPort ViewPort, Vertex[] Vertices, int[] VertexIndex, string VertexShader, string FragmentShader) { }
-        //public RenderObject(ViewPort ViewPort, Vertex[] Vertices, int[] VertexIndex, string VertexShader, string GeometryShader, string FragmentShader) { }
-        public RenderObject(ViewPort ViewPort, Vertex[] Vertices, string VertexShader, string FragmentShader)
+        public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string FragmentShader)
         {
-            Set_Z_Index = value => z_index = value;
             Set_Visible = (value) =>
             {
                 visible = value;
-                if (visible) ViewPort.Add(this);
-                else ViewPort.Remove(this);
+                if (visible) Canvas.Add(this);
+                else Canvas.Remove(this);
             };
             Visible = true;
 
             // initiate the shader program with the file paths to the shaders
             Material = new ShaderProgram(VertexShader, FragmentShader);
-            Material.Uniforms["ObjMatrix"] = () => Transform.Matrix * ViewPort.Camera.Matrix;
-            Material.Uniforms["PrjMatrix"] = () => ViewPort.Camera.ProjMat;
+            Material.Uniforms["Transform"] = () => Transform.Matrix * Canvas.Camera.Matrix;
+            Material.Uniforms["Projection"] = () => Canvas.Camera.ProjMat;
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
         }
-        public RenderObject(ViewPort ViewPort, Vertex[] Vertices, string VertexShader, string GeometryShader, string FragmentShader)
+        public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string GeometryShader, string FragmentShader)
         {
-            Set_Z_Index = value => z_index = value;
             Set_Visible = (value) =>
             {
                 visible = value;
-                if (visible) ViewPort.Add(this);
-                else ViewPort.Remove(this);
+                if (visible) Canvas.Add(this);
+                else Canvas.Remove(this);
             };
             Visible = true;
 
             // initiate the shader program with the file paths to the shaders
             Material = new ShaderProgram(VertexShader, GeometryShader, FragmentShader);
-            Material.Uniforms["ObjMatrix"] = () => Transform.Matrix * ViewPort.Camera.Matrix;
-            Material.Uniforms["PrjMatrix"] = () => ViewPort.Camera.ProjMat;
+            Material.Uniforms["Transform"] = () => Transform.Matrix * Canvas.Camera.Matrix;
+            Material.Uniforms["Projection"] = () => Canvas.Camera.ProjMat;
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
         }
@@ -86,10 +67,6 @@ namespace Graphics
         /// Called When Visiblty is changed
         /// </summary>
         public event Action<bool> Set_Visible;
-        /// <summary>
-        /// called when this objects z index is changed
-        /// </summary>
-        public event Action<int> Set_Z_Index;
 
         /// <summary>
         /// adds and removes this object from the render list
@@ -99,14 +76,7 @@ namespace Graphics
             get => visible;
             set => Set_Visible(value);
         }
-        /// <summary>
-        /// determines which render object appears on top. 
-        /// </summary>
-        public int Z_index
-        {
-            get => z_index;
-            set => Set_Z_Index(value);
-        }
+
         /// <summary>
         /// individual vertices belonging to this render object.
         /// Its best to set vertice in one go as it reduces the number of times it must be bound and new data passed in
@@ -180,8 +150,7 @@ namespace Graphics
             GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, new Vertex().SizeInBytes); // assigns vertice data
             VertexArray = Vertices; // sets array attribute to use buffers after buffer has been set
         }
-
-
+        
         /// <summary>
         /// Show this object on the screen.
         /// </summary>
@@ -191,6 +160,12 @@ namespace Graphics
             GL.BindVertexArray(VertexArrayHandle); // use current vertex array
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode); // use this programs rendering modes
             GL.DrawArrays(RenderingType, 0, VertexArray.Length); // draw these vertices in triangles, 0 to the number of vertices
+        }
+        public void LightRender()
+        {
+            GL.BindVertexArray(VertexArrayHandle); // use current vertex array
+            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode); // use this programs rendering modes
+            GL.DrawArrays(RenderingType, 0, VertexArray.Length);
         }
         #endregion
     }

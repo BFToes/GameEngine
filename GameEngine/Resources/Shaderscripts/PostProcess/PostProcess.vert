@@ -1,9 +1,8 @@
 ﻿#version 450 core
 
-uniform float Time;
-
 in vec2 Position;
 in vec2 UV;
+
 out vec2 FragUV;
 
 void main(void)

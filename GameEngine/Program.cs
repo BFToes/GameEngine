@@ -25,11 +25,17 @@ namespace GameEngine
          * - ???
          * 
          * Lighting:
-         * - set up camera like delegate
+         * - set up camera like light thing
          * - setup invisible occluder objects and render from light source
          * - pre or post processing???
          * 
+         * 
+         * Noise
+         * Triangles
+         * 
+         * 
          */
+
         static void Main(string[] args)
         {
             GameWindowSettings GWS = GameWindowSettings.Default;
@@ -37,16 +43,18 @@ namespace GameEngine
             NWS.Size = new Vector2i(800);
             using (RenderWindow RW = new RenderWindow(GWS, NWS))
             {
-                RW.ViewPort.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
-                //BilWarp RO1 = new BilWarp(RW, RW.ViewPort);
-                Floor F = new Floor(RW, RW.ViewPort);
-                Test RO1 = new Test(RW, RW.ViewPort);
-                //var RO2 = DelaunayPlain.FromRand(RW.ViewPort, 20000);
+                RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
+                var C = new Camera(50, 128, 128, 2, 128);
+                C.Position = new Vector3(-3, -4, 0);
+                Floor Floor = new Floor(RW.Scene);
+                Test RO1 = new Test(RW, RW.Scene);
+                //var T = DelaunayPlain.FromRand(RW.ViewPort, 20000);
+                var L = new Light(RW.Scene);
 
 
-                Action<MouseMoveEventArgs> MoveCamera = (e) => RW.ViewPort.Camera.Position += 10 * new Vector3(RW.ViewPort.Camera.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
-                Action<MouseMoveEventArgs> RotaCamera = (e) => RW.ViewPort.Camera.Rotation += new Vector3(e.DeltaY / RW.Size.Y, e.DeltaX / RW.Size.X, 0);
-                RW.MouseWheel += (e) => RW.ViewPort.Camera.Position += new Vector3(RW.ViewPort.Camera.Matrix * - new Vector4(0, 0, e.OffsetY, 1));
+                Action<MouseMoveEventArgs> MoveCamera = (e) => RW.Scene.Camera.Position += 10 * new Vector3(RW.Scene.Camera.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
+                Action<MouseMoveEventArgs> RotaCamera = (e) => RW.Scene.Camera.Rotation += new Vector3(e.DeltaY / RW.Size.Y, e.DeltaX / RW.Size.X, 0);
+                RW.MouseWheel += (e) => RW.Scene.Camera.Position += new Vector3(RW.Scene.Camera.Matrix * - new Vector4(0, 0, e.OffsetY, 1));
                 RW.MouseDown += (e) =>
                 {
                     switch (e.Button) 
@@ -71,24 +79,7 @@ namespace GameEngine
                             break;
                     }
                 };
-                RW.KeyDown += (e) =>
-                {
-                    switch (e.Key)
-                    {
-                        case Keys.W:
-                            RW.ViewPort.Camera.Rotation = new Vector3(0, 0, 0);
-                            break;
-                        case Keys.A:
-                            RW.ViewPort.Camera.Rotation = new Vector3(0, -0.5f * MathF.PI, 0);
-                            break;
-                        case Keys.S:
-                            RW.ViewPort.Camera.Rotation = new Vector3(0, MathF.PI, 0);
-                            break;
-                        case Keys.D:
-                            RW.ViewPort.Camera.Rotation = new Vector3(0, 0.5f * MathF.PI, 0);
-                            break;
-                    }
-                };
+
                 RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.7f, RW.Time * 0.3f, 0);
                 //RW.Process += (delta) => RW.ViewPort.Camera.Rotation = new Vector3(0, RW.Time * 0.3f, 0);
                 //RW.Process += (delta) => ((Transform3D)RO1.Transform).Scale = new Vector3(1, (MathF.Cos(RW.Time * 1.2f) + 1) / 2, 1);
@@ -100,7 +91,7 @@ namespace GameEngine
     }
     class Floor : RenderObject<Vertex3D>
     {
-        public Floor(RenderWindow RW, ViewPort RL) : base(RL, new Vertex3D[]
+        public Floor(Scene RL) : base(RL, new Vertex3D[]
         {
             new Vertex3D(-1, 0,-1, 1, 0, 1, 0, 1), new Vertex3D( 1, 0, 1, 1, 0, 1, 1, 0), new Vertex3D( 1, 0,-1, 1, 0, 1, 1, 1), // top
             new Vertex3D( 1, 0, 1, 1, 0, 1, 1, 0), new Vertex3D(-1, 0,-1, 1, 0, 1, 0, 1), new Vertex3D(-1, 0, 1, 1, 0, 1, 0, 0),
@@ -112,15 +103,15 @@ namespace GameEngine
             RenderingType = PrimitiveType.Triangles;
             Transform = new Transform();
             Transform.Position = new Vector3(0, -3, 0);
-            Transform.Scale = new Vector3(512, 0, 512);
-            TextureManager.Load_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
+            Transform.Scale = new Vector3(256, 0, 256);
+            TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.Uniforms["Texture"] = () => "Resources/Textures/Grid.png";
 
         }
     }
     class Test : RenderObject<Vertex3D>
     {
-        public Test(RenderWindow RW, ViewPort RL) : base(RL, new Vertex3D[]
+        public Test(RenderWindow RW, Scene RL) : base(RL, new Vertex3D[]
         {
             new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 1), new Vertex3D(-1,-1, 1, 1, 0, 0, 0, 0), new Vertex3D( 1,-1, 1, 1, 0, 0, 1, 0), // front
             new Vertex3D(-1,-1, 1, 1, 0, 0, 0, 0), new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 1), new Vertex3D(-1, 1, 1, 1, 0, 0, 0, 1),
@@ -152,7 +143,7 @@ namespace GameEngine
     }
     class BilWarp : RenderObject<Vertex3D>
     {
-        public BilWarp(RenderWindow RW, ViewPort RL) : base(RL, new Vertex3D[]
+        public BilWarp(RenderWindow RW, Scene RL) : base(RL, new Vertex3D[]
             {
                 /*
                 new Vertex3D(-1, 1, 1, 0, 0, 0, 0, 1),
@@ -198,14 +189,14 @@ namespace GameEngine
             Transform = new Transform();
             
             Material.Uniforms["Texture"] = () => "Resources/Textures/Test.png";
-            Material.Uniforms["VP"] = () => new Vector4i(RW.ViewPort.Rect.X, RW.ViewPort.Rect.Y, RW.ViewPort.Rect.Width, RW.ViewPort.Rect.Height);
+            Material.Uniforms["VP"] = () => new Vector4i(0, 0, RW.Scene.Size.X, RW.Scene.Size.Y);
 
         }
     }
     class DelaunayPlain : RenderObject<SimpleVertex>
     {
 
-        public static DelaunayPlain FromRand(ViewPort VP, int n)
+        public static DelaunayPlain FromRand(Scene VP, int n)
         {
             
             var R = new Random(0);
@@ -215,7 +206,7 @@ namespace GameEngine
             
             return new DelaunayPlain(VP, V);
         }
-        public DelaunayPlain(ViewPort VP, SimpleVertex[] V) : base(VP, V,
+        public DelaunayPlain(Scene VP, SimpleVertex[] V) : base(VP, V,
             $"Resources/shaderscripts/Simple.vert",
             $"Resources/shaderscripts/Simple.frag")
         {

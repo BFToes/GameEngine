@@ -1,14 +1,21 @@
 ﻿#version 450 core
 
 
-in vec2 FragUV;
-in vec3 FragNormal;
+layout(location = 0) in vec2 FragUV;
+layout(location = 1) in vec3 FragPos;
+layout(location = 2) in vec3 FragNormal;
 
-out vec4 Colour;
+layout(location = 0) out vec3 gPosition;
+layout(location = 1) out vec3 gNormal;
+layout(location = 2) out vec4 gAlbedoSpec;
 
-uniform sampler2D Texture;
+uniform sampler2D DiffuseTexture;
+uniform sampler2D SpecularTexture;
+
 void main(void)
 {
-    float Depth = (2.0 * 0.1 * 100) / (100 + 0.1 - (gl_FragCoord.z * 2.0 - 1.0) * (100 - 0.1));
-	Colour = texture(Texture, FragUV); //vec4(vec3(Depth), 1); //
+	gPosition = FragPos;
+	gNormal = normalize(FragNormal);
+	gAlbedoSpec.rgb = texture(DiffuseTexture, FragUV).rgb;
+	gAlbedoSpec.a = texture(SpecularTexture, FragUV).a;
 }

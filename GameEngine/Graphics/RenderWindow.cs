@@ -7,7 +7,7 @@ namespace Graphics
 {
     class RenderWindow : GameWindow
     {
-        public ViewPort ViewPort;
+        public Scene Scene;
         public Action<float> Process;
         public float Time;
 
@@ -16,10 +16,10 @@ namespace Graphics
 
         public RenderWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
-            ViewPort = new ViewPort(
-                $"Resources/shaderscripts/PostProcess/PostProcess.vert", 
+            Scene = new Scene(
+                $"Resources/shaderscripts/PostProcess/PostProcess.vert",
                 $"Resources/shaderscripts/PostProcess/PostProcess.frag", 
-                0, 0, Size.X, Size.Y);
+                Size.X, Size.Y);
             Process = (delta) => { Time += delta; };
             VSync = VSyncMode.On;
 
@@ -44,38 +44,44 @@ namespace Graphics
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * new Vertex2D().SizeInBytes, new float[16] { -1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1 }, BufferUsageHint.StaticDraw);
             #endregion
 
+            #region OpenGL Functions to Enable
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
+            GL.Enable(EnableCap.Blend);
+            #endregion
 
         }
 
         protected override void OnResize(ResizeEventArgs e)
         {
             Size = e.Size;
-            ViewPort.Rect = new Rectangle(0, 0, e.Size.X, e.Size.Y);
+            Scene.Size = e.Size;
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
+            
             GL.ClearColor(Color.DarkRed);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
-            //Title = $"{1 / e.Time}";
+            //Title = $"{MathF.Round(1 / (float)e.Time)}";
 
             Process((float)e.Time);
 
-            ViewPort.OnRender(); // render in Z index order
+            Scene.OnRender();
 
             // use default
+            GL.CullFace(CullFaceMode.Back);
+            GL.DepthFunc(DepthFunction.Less);
+            GL.BlendFunc(BlendingFactor.Src1Alpha, BlendingFactor.OneMinusSrcAlpha);
+
             GL.Viewport(0, 0, Size.X, Size.Y);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
 
             // draw viewport frame on screen
-            ViewPort.Material.Use();
+            Scene.Material.Use();
             GL.BindVertexArray(VAO);
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
             GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
-
-            
 
             SwapBuffers(); // swap out old buffer with new buffer
         }

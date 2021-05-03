@@ -1,7 +1,5 @@
 ﻿#version 450 core
 
-uniform mat4 ObjMatrix;
-
 in vec2 Position;
 
 void main(void)

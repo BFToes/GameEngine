@@ -39,17 +39,17 @@ namespace Graphics
             nearZ = DepthNear; farZ = DepthFar;
             ProjMat = Matrix4.CreateOrthographic(Width, Height, nearZ, farZ);
         }
-        public void Resize(Vector2 ScreenSize)
+        public void Resize(Vector2i Size)
         {
 
             if (fov != 0)
             {
-                ScreenSize.Normalize();
-                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, ScreenSize.X / ScreenSize.Y, nearZ, farZ);
+                Vector2 NormSize = ((Vector2)Size).Normalized();
+                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, NormSize.X / NormSize.Y, nearZ, farZ);
             }
             else
             {
-                ProjMat = Matrix4.CreateOrthographic(ScreenSize.X, ScreenSize.Y, nearZ, farZ);
+                ProjMat = Matrix4.CreateOrthographic(Size.X, Size.Y, nearZ, farZ);
             }
         }
         //public void LookAt(Vector3 Position) { }
