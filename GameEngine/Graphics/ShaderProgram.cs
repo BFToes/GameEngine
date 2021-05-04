@@ -46,8 +46,8 @@ namespace Graphics.Shaders
         /// </summary>
         public void Use()
         {
-            TextureManager.TexturesLoaded = 0; // each time a shader program is used the texture units are forgotten ie allows overwriting of textures
             GL.UseProgram(Handle); // tell openGL to use this object
+            TextureManager.TexturesLoaded = 0; // each time a shader program is used the texture units are forgotten ie allows overwriting of textures
             UpdateUniforms(); // update the uniforms in the shaders
         }
         /// <summary>
@@ -99,7 +99,6 @@ namespace Graphics.Shaders
         #endregion
 
         #region Program Compilation
-
         private void CompileProgram(string fragmentpath)
         {
             Handle = GL.CreateProgram();
@@ -224,6 +223,9 @@ namespace Graphics.Shaders
 
             return NewShader;
         }
+        /// <summary>
+        /// loops through uniforms and adds function to assign uniform into Update uniforms event
+        /// </summary>
         private void GetUniforms()
         {
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var NumOfUniforms);

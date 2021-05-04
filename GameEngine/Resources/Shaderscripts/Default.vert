@@ -1,6 +1,7 @@
 ﻿#version 450 core
 
-uniform mat4 Transform;
+uniform mat4 View;
+uniform mat4 Model;
 uniform mat4 Projection;
 
 layout(location = 0) in vec3 Position;
@@ -13,7 +14,8 @@ layout(location = 2) out vec3 FragNormal;
 
 void main(void)
 {
-	gl_Position = Projection * Transform * vec4(Position, 1);
+	gl_Position = Projection * View * Model * vec4(Position, 1);
 	FragUV = UV;
-	FragNormal = Normal;
+	FragPos = (Model * vec4(Position, 1)).rgb;
+	FragNormal = (Model * vec4(Normal, 1)).rgb;
 }

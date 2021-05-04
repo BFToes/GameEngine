@@ -47,7 +47,7 @@ namespace Graphics
             #region OpenGL Functions to Enable
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
-            GL.Enable(EnableCap.Blend);
+            //GL.Enable(EnableCap.Blend);
             #endregion
 
         }
@@ -67,7 +67,7 @@ namespace Graphics
 
             Process((float)e.Time);
 
-            Scene.OnRender();
+            Scene.Render();
 
             // use default
             GL.CullFace(CullFaceMode.Back);

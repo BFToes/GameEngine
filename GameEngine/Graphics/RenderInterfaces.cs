@@ -8,7 +8,7 @@ namespace Graphics
     {
         public event Action<bool> Set_Visible;
         public bool Visible { get; set; }
-        public void OnRender();
+        public void Render();
     }
     interface IRenderObject : IRenderable
     {

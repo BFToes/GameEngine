@@ -39,7 +39,8 @@ namespace Graphics
 
             // initiate the shader program with the file paths to the shaders
             Material = new ShaderProgram(VertexShader, FragmentShader);
-            Material.Uniforms["Transform"] = () => Transform.Matrix * Canvas.Camera.Matrix;
+            Material.Uniforms["Model"] = () => Transform.Matrix;
+            Material.Uniforms["View"] = () =>  Canvas.Camera.Matrix;
             Material.Uniforms["Projection"] = () => Canvas.Camera.ProjMat;
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
@@ -56,7 +57,8 @@ namespace Graphics
 
             // initiate the shader program with the file paths to the shaders
             Material = new ShaderProgram(VertexShader, GeometryShader, FragmentShader);
-            Material.Uniforms["Transform"] = () => Transform.Matrix * Canvas.Camera.Matrix;
+            Material.Uniforms["Model"] = () => Transform.Matrix;
+            Material.Uniforms["View"] = () => Canvas.Camera.Matrix;
             Material.Uniforms["Projection"] = () => Canvas.Camera.ProjMat;
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
@@ -154,7 +156,7 @@ namespace Graphics
         /// <summary>
         /// Show this object on the screen.
         /// </summary>
-        public void OnRender()
+        public void Render()
         {
             Material.Use(); // tell openGL to use this objects program
             GL.BindVertexArray(VertexArrayHandle); // use current vertex array

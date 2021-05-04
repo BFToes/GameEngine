@@ -105,7 +105,8 @@ namespace GameEngine
             Transform.Position = new Vector3(0, -3, 0);
             Transform.Scale = new Vector3(256, 0, 256);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
-            Material.Uniforms["Texture"] = () => "Resources/Textures/Grid.png";
+            Material.Uniforms["DiffuseTexture"] = () => "Resources/Textures/Grid.png";
+            Material.Uniforms["SpecularTexture"] = () => "Resources/Textures/SpecMap.png";
 
         }
     }
@@ -138,7 +139,8 @@ namespace GameEngine
             Transform = new Transform();
             Transform.Position = new Vector3(0, 0, 0);
             
-            Material.Uniforms["Texture"] = () => "Resources/Textures/Test.png";
+            Material.Uniforms["DiffuseTexture"] = () => "Resources/Textures/Test.png";
+            Material.Uniforms["SpecularTexture"] = () => "Resources/Textures/SpecMap.png";
         }
     }
     class BilWarp : RenderObject<Vertex3D>
@@ -188,7 +190,7 @@ namespace GameEngine
             RenderingType = PrimitiveType.LinesAdjacency;
             Transform = new Transform();
             
-            Material.Uniforms["Texture"] = () => "Resources/Textures/Test.png";
+            Material.Uniforms["DiffuseTexture"] = () => "Resources/Textures/Test.png";
             Material.Uniforms["VP"] = () => new Vector4i(0, 0, RW.Scene.Size.X, RW.Scene.Size.Y);
 
         }

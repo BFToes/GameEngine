@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Graphics
 {
-    class FrameBufferObject
+    abstract class FrameBufferObject
     {
         public Color4 RefreshCol = Color.Black;
         public CullFaceMode CullFace = CullFaceMode.Back;
@@ -39,6 +39,7 @@ namespace Graphics
             int RBO = GL.GenRenderbuffer();
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, RBO);
             GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, Storage, Width, Height);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
             GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, Attachment, RenderbufferTarget.Renderbuffer, RBO);
 
             Resize += (Size) => SetRenderBuffer(RBO, Storage, Size.X, Size.Y);
@@ -51,7 +52,7 @@ namespace Graphics
         /// <param name="Storage">the storage type of this buffer</param>
         /// <param name="Width">the width of the image</param>
         /// <param name="Height">the height of the image</param>
-        private void SetRenderBuffer(int RBO, RenderbufferStorage Storage, int Width, int Height)
+        protected void SetRenderBuffer(int RBO, RenderbufferStorage Storage, int Width, int Height)
         {
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, RBO);
             GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, Storage, Width, Height);
@@ -64,13 +65,14 @@ namespace Graphics
         /// <returns></returns>
         protected int NewTextureAttachment(PixelInternalFormat PixelInternalFormat, PixelFormat PixelFormat, PixelType PixelType, FramebufferAttachment Attachment, int Width, int Height)
         {
-
+            
             int Tex = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, Tex);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMinFilter.Nearest);
             GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, Attachment, TextureTarget.Texture2D, Tex, 0);
 
             Resize += (Size) => SetTextureAttachment(Tex, PixelInternalFormat, PixelFormat, PixelType, Attachment, Size.X, Size.Y);
@@ -83,11 +85,23 @@ namespace Graphics
         /// <param name="PixelFormat">the format of the each pixel eg rgb or DepthComponent</param>
         /// <param name="Width">the width of the image.</param>
         /// <param name="Height">the height of the image.</param>
-        private void SetTextureAttachment(int Texture, PixelInternalFormat PixelInternalFormat, PixelFormat PixelFormat, PixelType PixelType, FramebufferAttachment Attachment, int Width, int Height)
+        protected void SetTextureAttachment(int Texture, PixelInternalFormat PixelInternalFormat, PixelFormat PixelFormat, PixelType PixelType, FramebufferAttachment Attachment, int Width, int Height)
         {
             GL.BindTexture(TextureTarget.Texture2D, Texture);
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
+    
+        public void RenderTo()
+        {
+            GL.CullFace(CullFace);
+            GL.DepthFunc(DepthFunc);
+            // geometry shader pass
+            GL.Viewport(0, 0, Size.X, Size.Y);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FBO);
+            GL.ClearColor(RefreshCol);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        }
+    
     }
 }

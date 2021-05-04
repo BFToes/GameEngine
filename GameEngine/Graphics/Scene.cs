@@ -25,30 +25,30 @@ namespace Graphics
 
     class Scene : FrameBufferObject
     {
-
         public Camera Camera;
         public ShaderProgram Material;
 
-        private int ColourTexture; // colour texture
-        private int NormalTexture; // normal texture
-        private int PositionTexture; // position texture
-        private int DepthBuffer; // depth buffer
+        public readonly int ColourTexture; // colour texture
+        public readonly int NormalTexture; // normal texture
+        public readonly int PositionTexture; // position texture
+        public readonly int DepthBuffer; // depth buffer
+
 
         public List<IRenderLight> Lights = new List<IRenderLight>();
         public List<IRenderObject> Objects = new List<IRenderObject>();
 
         public Scene(string VertexShader, string FragmentShader, int Width, int Height) : base(Width, Height)
         {
+            
             Camera = new Camera(50, Width, Height, 2, 512);
             Resize += (Size) => Camera.Resize(Size);
 
-            // g-buffer textures
+            // geometry-buffer textures
             PositionTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment0, Width, Height);
             NormalTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment1, Width, Height);
             ColourTexture = NewTextureAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba, PixelType.UnsignedByte, FramebufferAttachment.ColorAttachment2, Width, Height);
             // draws to multiple textures at once
             GL.DrawBuffers(3, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 });
-            
             DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent24, FramebufferAttachment.DepthAttachment, Width, Height);
 
             FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
@@ -59,35 +59,17 @@ namespace Graphics
             Material.Uniforms["PositionTexture"] = () => PositionTexture;
             Material.Uniforms["NormalTexture"] = () => NormalTexture;
             Material.Uniforms["ColourTexture"] = () => ColourTexture;
-
+            Material.Uniforms["ViewPos"] = () => Camera.Position;
         }
 
         /// <summary>
         /// renders objects inside this viewport and updates the viewport textures
         /// </summary>
-        public void OnRender()
+        public void Render()
         {
-
-            GL.CullFace(CullFace);
-            GL.DepthFunc(DepthFunc);
-
-            // use this viewport
-            GL.Viewport(0, 0, Size.X, Size.Y);
-            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FBO);
-
-            GL.ClearColor(RefreshCol);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, PositionTexture);
-            GL.ActiveTexture(TextureUnit.Texture1);
-            GL.BindTexture(TextureTarget.Texture2D, NormalTexture);
-            GL.ActiveTexture(TextureUnit.Texture2);
-            GL.BindTexture(TextureTarget.Texture2D, ColourTexture);
-
-            // render each child in this viewport
-            foreach (IRenderable RO in Objects) RO.OnRender(); // render in Z index order, must init render list to iterate through
-
+            // geometry shader pass
+            this.RenderTo();
+            foreach (IRenderObject RO in Objects) RO.Render();
         }
         public Bitmap GetTexture()
         {
@@ -119,7 +101,15 @@ namespace Graphics
         public void Remove(IRenderLight item) => Lights.Remove(item);
 
         #endregion
+        private class GeometryFrameBuffer : FrameBufferObject
+        {
 
+            
+            public GeometryFrameBuffer(int Width, int Height) : base(Width, Height)
+            {
+
+            }
+        }
     }
 
     

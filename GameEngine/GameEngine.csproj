@@ -32,12 +32,6 @@
     <None Update="Resources\Shaderscripts\Bilinear Warp\BilinearW.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Light\Light.frag">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\Shaderscripts\Light\Light.vert">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Resources\Shaderscripts\Simple.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -62,16 +56,18 @@
     <None Update="Resources\Textures\Image1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\Textures\Missing - Copy.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\Textures\Missing.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Textures\SpecMap.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Textures\Test.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Resources\Shaderscripts\Basic Lighting\" />
   </ItemGroup>
 
 </Project>
