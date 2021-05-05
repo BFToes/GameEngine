@@ -13,16 +13,8 @@ namespace Graphics
 {
     /* Notes:
      * - Z index sorting obselete unless object transparent
-     * 
+     * - Currently not complete
      */
-
-    enum RenderPriority
-    {
-        Lighting,
-        Objects,
-        TransparentObjects
-    }
-
     class Scene : FrameBufferObject
     {
         public Camera Camera;
@@ -71,24 +63,6 @@ namespace Graphics
             this.RenderTo();
             foreach (IRenderObject RO in Objects) RO.Render();
         }
-        public Bitmap GetTexture()
-        {
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
-            Bitmap bmp = new Bitmap(size.X, size.Y);
-
-            System.Drawing.Imaging.BitmapData data = bmp.LockBits(new Rectangle(0, 0, size.X, size.Y), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            
-            GL.Flush();
-            GL.ReadBuffer(ReadBufferMode.Back);
-            GL.ReadPixels(0, 0, size.X, size.Y, PixelFormat.Bgr, PixelType.UnsignedByte, data.Scan0);
-
-            bmp.UnlockBits(data);
-            bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-
-            return bmp;
-        }
-
         #region RenderObject Management
         /// <summary>
         /// adds object to render list.
@@ -101,15 +75,6 @@ namespace Graphics
         public void Remove(IRenderLight item) => Lights.Remove(item);
 
         #endregion
-        private class GeometryFrameBuffer : FrameBufferObject
-        {
-
-            
-            public GeometryFrameBuffer(int Width, int Height) : base(Width, Height)
-            {
-
-            }
-        }
     }
 
     

@@ -10,7 +10,7 @@ namespace Graphics
     class Light : FrameBufferObject, IRenderLight
     {
         Camera LightPerspective;
-        public RenderPriority RenderType { get => RenderPriority.Lighting; }
+
         public bool Visible { get; set; }
         private bool visible;
 

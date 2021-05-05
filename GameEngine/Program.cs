@@ -44,6 +44,7 @@ namespace GameEngine
             using (RenderWindow RW = new RenderWindow(GWS, NWS))
             {
                 RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
+                RW.Scene.Camera.Position = new Vector3(0, 0, 3);
                 var C = new Camera(50, 128, 128, 2, 128);
                 C.Position = new Vector3(-3, -4, 0);
                 Floor Floor = new Floor(RW.Scene);
@@ -80,7 +81,7 @@ namespace GameEngine
                     }
                 };
 
-                RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.7f, RW.Time * 0.3f, 0);
+                RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
                 //RW.Process += (delta) => RW.ViewPort.Camera.Rotation = new Vector3(0, RW.Time * 0.3f, 0);
                 //RW.Process += (delta) => ((Transform3D)RO1.Transform).Scale = new Vector3(1, (MathF.Cos(RW.Time * 1.2f) + 1) / 2, 1);
                 //RW.Process += (delta) => ((Transform3D)RO1.Transform).Position = new Vector3(0, 0, MathF.Sin(RW.Time * 0.5f) - 4);
@@ -93,8 +94,8 @@ namespace GameEngine
     {
         public Floor(Scene RL) : base(RL, new Vertex3D[]
         {
-            new Vertex3D(-1, 0,-1, 1, 0, 1, 0, 1), new Vertex3D( 1, 0, 1, 1, 0, 1, 1, 0), new Vertex3D( 1, 0,-1, 1, 0, 1, 1, 1), // top
-            new Vertex3D( 1, 0, 1, 1, 0, 1, 1, 0), new Vertex3D(-1, 0,-1, 1, 0, 1, 0, 1), new Vertex3D(-1, 0, 1, 1, 0, 1, 0, 0),
+            new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D( 1, 0,-1, 0, 1, 0, 1, 1), // top
+            new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D(-1, 0, 1, 0, 1, 0, 0, 0),
 
         },
             $"Resources/shaderscripts/Default.vert",
@@ -102,8 +103,8 @@ namespace GameEngine
         {
             RenderingType = PrimitiveType.Triangles;
             Transform = new Transform();
+            Transform.Scale = new Vector3(256, 1, 256);
             Transform.Position = new Vector3(0, -3, 0);
-            Transform.Scale = new Vector3(256, 0, 256);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.Uniforms["DiffuseTexture"] = () => "Resources/Textures/Grid.png";
             Material.Uniforms["SpecularTexture"] = () => "Resources/Textures/SpecMap.png";
@@ -114,23 +115,23 @@ namespace GameEngine
     {
         public Test(RenderWindow RW, Scene RL) : base(RL, new Vertex3D[]
         {
-            new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 1), new Vertex3D(-1,-1, 1, 1, 0, 0, 0, 0), new Vertex3D( 1,-1, 1, 1, 0, 0, 1, 0), // front
-            new Vertex3D(-1,-1, 1, 1, 0, 0, 0, 0), new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 1), new Vertex3D(-1, 1, 1, 1, 0, 0, 0, 1),
+            new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1,-1, 1, 0, 0, 1, 1, 0), // front
+            new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1, 1, 1, 0, 0, 1, 0, 1),
 
-            new Vertex3D(-1,-1,-1, 0, 0, 0, 0, 0), new Vertex3D( 1, 1,-1, 0, 0, 0, 1, 1), new Vertex3D( 1,-1,-1, 0, 0, 0, 1, 0), // back
-            new Vertex3D( 1, 1,-1, 0, 0, 0, 1, 1), new Vertex3D(-1,-1,-1, 0, 0, 0, 0, 0), new Vertex3D(-1, 1,-1, 0, 0, 0, 0, 1),
+            new Vertex3D(-1,-1,-1, 0, 0,-1, 0, 0), new Vertex3D( 1, 1,-1, 0, 0,-1, 1, 1), new Vertex3D( 1,-1,-1, 0, 0,-1, 1, 0), // back
+            new Vertex3D( 1, 1,-1, 0, 0,-1, 1, 1), new Vertex3D(-1,-1,-1, 0, 0,-1, 0, 0), new Vertex3D(-1, 1,-1, 0, 0,-1, 0, 1),
 
-            new Vertex3D(-1,-1,-1, 0, 1, 0, 0, 1), new Vertex3D(-1, 1, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 1,-1, 0, 1, 0, 1, 1), // left
-            new Vertex3D(-1, 1, 1, 0, 1, 0, 1, 0), new Vertex3D(-1,-1,-1, 0, 1, 0, 0, 1), new Vertex3D(-1,-1, 1, 0, 1, 0, 0, 0),
+            new Vertex3D(-1,-1,-1,-1, 0, 0, 0, 1), new Vertex3D(-1, 1, 1,-1, 0, 0, 1, 0), new Vertex3D(-1, 1,-1,-1, 0, 0, 1, 1), // left
+            new Vertex3D(-1, 1, 1,-1, 0, 0, 1, 0), new Vertex3D(-1,-1,-1,-1, 0, 0, 0, 1), new Vertex3D(-1,-1, 1,-1, 0, 0, 0, 0),
 
-            new Vertex3D( 1, 1, 1, 1, 1, 0, 1, 0), new Vertex3D( 1,-1,-1, 1, 1, 0, 0, 1), new Vertex3D( 1, 1,-1, 1, 1, 0, 1, 1), // right
-            new Vertex3D( 1,-1,-1, 1, 1, 0, 0, 1), new Vertex3D( 1, 1, 1, 1, 1, 0, 1, 0), new Vertex3D( 1,-1, 1, 1, 1, 0, 0, 0),
+            new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 0), new Vertex3D( 1,-1,-1, 1, 0, 0, 0, 1), new Vertex3D( 1, 1,-1, 1, 0, 0, 1, 1), // right
+            new Vertex3D( 1,-1,-1, 1, 0, 0, 0, 1), new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 0), new Vertex3D( 1,-1, 1, 1, 0, 0, 0, 0),
 
-            new Vertex3D(-1, 1,-1, 1, 0, 1, 0, 1), new Vertex3D( 1, 1, 1, 1, 0, 1, 1, 0), new Vertex3D( 1, 1,-1, 1, 0, 1, 1, 1), // top
-            new Vertex3D( 1, 1, 1, 1, 0, 1, 1, 0), new Vertex3D(-1, 1,-1, 1, 0, 1, 0, 1), new Vertex3D(-1, 1, 1, 1, 0, 1, 0, 0),
+            new Vertex3D(-1, 1,-1, 0, 1, 0, 0, 1), new Vertex3D( 1, 1, 1, 0, 1, 0, 1, 0), new Vertex3D( 1, 1,-1, 0, 1, 0, 1, 1), // top
+            new Vertex3D( 1, 1, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 1,-1, 0, 0, 0, 0, 1), new Vertex3D(-1, 1, 1, 0, 1, 0, 0, 0),
 
-            new Vertex3D( 1,-1, 1, 0, 0, 1, 1, 0), new Vertex3D(-1,-1,-1, 0, 0, 1, 0, 1), new Vertex3D( 1,-1,-1, 0, 0, 1, 1, 1), // bottom
-            new Vertex3D(-1,-1,-1, 0, 0, 1, 0, 1), new Vertex3D( 1,-1, 1, 0, 0, 1, 1, 0), new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0),
+            new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1,-1, 0,-1, 0, 1, 1), // bottom
+            new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1, 1, 0,-1, 0, 0, 0),
         },
             $"Resources/shaderscripts/Default.vert",
             $"Resources/shaderscripts/Default.frag")
