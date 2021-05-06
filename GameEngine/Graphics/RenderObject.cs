@@ -14,6 +14,7 @@ namespace Graphics
     abstract class RenderObject<Vertex> : IRenderObject where Vertex : struct, IVertex
     {
         public ShaderProgram Material;
+        private Scene Canvas;
         public ITransform Transform;
 
         private int VertexArrayHandle; // vertex array object handle
@@ -29,6 +30,10 @@ namespace Graphics
 
         public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string FragmentShader)
         {
+            this.Canvas = Canvas;
+            this.Transform = new Transform();
+            this.Material = new ShaderProgram(VertexShader, FragmentShader);
+
             Set_Visible = (value) =>
             {
                 visible = value;
@@ -37,16 +42,17 @@ namespace Graphics
             };
             Visible = true;
 
-            // initiate the shader program with the file paths to the shaders
-            Material = new ShaderProgram(VertexShader, FragmentShader);
-            Material.Uniforms["Model"] = () => Transform.Matrix;
-            Material.Uniforms["View"] = () =>  Canvas.Camera.Matrix;
-            Material.Uniforms["Projection"] = () => Canvas.Camera.ProjMat;
+            
+            Material.SetUniform("Model", Transform.Matrix);
+            Material.SetUniform("View", Canvas.Camera.Matrix);
+            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
         }
         public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string GeometryShader, string FragmentShader)
         {
+            this.Canvas = Canvas;
+            this.Transform = new Transform();
             Set_Visible = (value) =>
             {
                 visible = value;
@@ -56,10 +62,10 @@ namespace Graphics
             Visible = true;
 
             // initiate the shader program with the file paths to the shaders
-            Material = new ShaderProgram(VertexShader, GeometryShader, FragmentShader);
-            Material.Uniforms["Model"] = () => Transform.Matrix;
-            Material.Uniforms["View"] = () => Canvas.Camera.Matrix;
-            Material.Uniforms["Projection"] = () => Canvas.Camera.ProjMat;
+            //Material = new ShaderProgram(VertexShader, GeometryShader, FragmentShader);
+            Material.SetUniform("Model", Transform.Matrix);
+            Material.SetUniform("View", Canvas.Camera.Matrix);
+            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
         }
@@ -130,13 +136,13 @@ namespace Graphics
             GL.BindVertexArray(VAO); // uses this vertex array
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO); // uses this buffer
 
-            Console.WriteLine(Vertices[0].GetType());
+            //Console.WriteLine(Vertices[0].GetType());
 
             // add vertex attributes in openGl and Material
             int Location = 0, ByteOffset = 0;
             foreach(FieldInfo Field in new Vertex().GetType().GetFields())
             {
-                Console.WriteLine(Field.ToString());
+                //Console.WriteLine(Field.ToString());
                 switch (Field.FieldType.ToString())
                 {
                     case "OpenTK.Mathematics.Vector2": LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset, VAO); break;
@@ -159,6 +165,8 @@ namespace Graphics
         public void Render()
         {
             Material.Use(); // tell openGL to use this objects program
+            Material.SetUniform("Model", Transform.Matrix);
+            Material.SetUniform("View", Canvas.Camera.Matrix);
             GL.BindVertexArray(VertexArrayHandle); // use current vertex array
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode); // use this programs rendering modes
             GL.DrawArrays(RenderingType, 0, VertexArray.Length); // draw these vertices in triangles, 0 to the number of vertices

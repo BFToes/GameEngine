@@ -48,10 +48,10 @@ namespace Graphics
 
             // assign textures to shader program
             Material = new ShaderProgram(VertexShader, FragmentShader);
-            Material.Uniforms["PositionTexture"] = () => PositionTexture;
-            Material.Uniforms["NormalTexture"] = () => NormalTexture;
-            Material.Uniforms["ColourTexture"] = () => ColourTexture;
-            Material.Uniforms["ViewPos"] = () => Camera.Position;
+            Material.SetUniformSampler2D("PositionTexture", PositionTexture);
+            Material.SetUniformSampler2D("NormalTexture", NormalTexture);
+            Material.SetUniformSampler2D("ColourTexture", ColourTexture);
+            Material.SetUniform("ViewPos", Camera.Position);
         }
 
         /// <summary>

@@ -5,17 +5,14 @@ using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using System.Collections.Generic;
-using Delaunator;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using Graphics.Delaunator;
+using Graphics.Triangulator;
 namespace GameEngine
 {
     class Program
     {
         /* Thing To Do:
-         * 
-         * Camera:
-         * - matrix transforms controls
-         * - look at function
          * 
          * Animation System:
          * - ???
@@ -29,9 +26,6 @@ namespace GameEngine
          * - setup invisible occluder objects and render from light source
          * - pre or post processing???
          * 
-         * 
-         * Noise
-         * Triangles
          * 
          * 
          */
@@ -106,8 +100,8 @@ namespace GameEngine
             Transform.Scale = new Vector3(256, 1, 256);
             Transform.Position = new Vector3(0, -3, 0);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
-            Material.Uniforms["DiffuseTexture"] = () => "Resources/Textures/Grid.png";
-            Material.Uniforms["SpecularTexture"] = () => "Resources/Textures/SpecMap.png";
+            Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
+            Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
 
         }
     }
@@ -139,9 +133,8 @@ namespace GameEngine
             RenderingType = PrimitiveType.Triangles;
             Transform = new Transform();
             Transform.Position = new Vector3(0, 0, 0);
-            
-            Material.Uniforms["DiffuseTexture"] = () => "Resources/Textures/Test.png";
-            Material.Uniforms["SpecularTexture"] = () => "Resources/Textures/SpecMap.png";
+            Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
+            Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
         }
     }
     class BilWarp : RenderObject<Vertex3D>
@@ -190,9 +183,9 @@ namespace GameEngine
         {
             RenderingType = PrimitiveType.LinesAdjacency;
             Transform = new Transform();
-            
-            Material.Uniforms["DiffuseTexture"] = () => "Resources/Textures/Test.png";
-            Material.Uniforms["VP"] = () => new Vector4i(0, 0, RW.Scene.Size.X, RW.Scene.Size.Y);
+
+            Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
+            Material.SetUniform("VP", new Vector4i(0, 0, RW.Scene.Size.X, RW.Scene.Size.Y));
 
         }
     }
