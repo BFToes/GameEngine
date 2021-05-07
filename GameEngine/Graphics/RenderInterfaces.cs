@@ -12,7 +12,7 @@ namespace Graphics
     }
     interface IRenderObject : IRenderable
     {
-        public void LightRender();
+        
 
     }
     interface IRenderLight : IRenderable

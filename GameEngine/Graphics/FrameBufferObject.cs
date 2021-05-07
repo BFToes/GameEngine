@@ -9,7 +9,7 @@ namespace Graphics
 {
     abstract class FrameBufferObject
     {
-        public Color4 RefreshCol = Color.Black;
+        public Color4 RefreshCol = Color.Purple;
         public CullFaceMode CullFace = CullFaceMode.Back;
         public DepthFunction DepthFunc = DepthFunction.Less;
         public Action<Vector2i> Resize;
@@ -18,8 +18,8 @@ namespace Graphics
             get => size;
             set => Resize(value);
         }
-        protected Vector2i size;
-        protected int FBO;
+        private Vector2i size;
+        private int FBO;
         public FrameBufferObject(int Width, int Height)
         {
             Resize = (newSize) => size = newSize;
@@ -91,8 +91,11 @@ namespace Graphics
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
-    
-        public void RenderTo()
+
+        /// <summary>
+        /// sets this frame buffer to the render target
+        /// </summary>
+        public void RenderToThis()
         {
             GL.CullFace(CullFace);
             GL.DepthFunc(DepthFunc);

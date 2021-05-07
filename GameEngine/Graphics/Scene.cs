@@ -1,13 +1,7 @@
 ﻿using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
 using System;
-using System.Drawing;
 using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-using System.Collections;
 using Graphics.Shaders;
-using OpenTK.Windowing.Common;
 
 namespace Graphics
 {
@@ -31,10 +25,6 @@ namespace Graphics
 
         public Scene(string VertexShader, string FragmentShader, int Width, int Height) : base(Width, Height)
         {
-            
-            Camera = new Camera(50, Width, Height, 2, 512);
-            Resize += (Size) => Camera.Resize(Size);
-
             // geometry-buffer textures
             PositionTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment0, Width, Height);
             NormalTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment1, Width, Height);
@@ -46,12 +36,16 @@ namespace Graphics
             FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
             if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
 
+            // set camera object
+            Camera = new Camera(50, Width, Height, 2, 512);
+            Resize += (Size) => Camera.Resize(Size);
+
             // assign textures to shader program
             Material = new ShaderProgram(VertexShader, FragmentShader);
-            Material.SetUniformSampler2D("PositionTexture", PositionTexture);
-            Material.SetUniformSampler2D("NormalTexture", NormalTexture);
+            //Material.SetUniformSampler2D("PositionTexture", PositionTexture);
+            //Material.SetUniformSampler2D("NormalTexture", NormalTexture);
             Material.SetUniformSampler2D("ColourTexture", ColourTexture);
-            Material.SetUniform("ViewPos", Camera.Position);
+            //Material.SetUniform("ViewPos", Camera.Position);
         }
 
         /// <summary>
@@ -60,7 +54,7 @@ namespace Graphics
         public void Render()
         {
             // geometry shader pass
-            this.RenderTo();
+            this.RenderToThis();
             foreach (IRenderObject RO in Objects) RO.Render();
         }
         #region RenderObject Management

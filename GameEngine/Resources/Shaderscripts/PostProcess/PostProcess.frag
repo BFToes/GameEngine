@@ -1,23 +1,23 @@
 ﻿#version 450 core
 
-const int NR_LIGHTS = 3; // for testing
+//const int NR_LIGHTS = 3; // for testing
 
 
 in vec2 FragUV;
 out vec4 Colour;
 
-uniform sampler2D PositionTexture;
-uniform sampler2D NormalTexture;
+//uniform sampler2D PositionTexture;
+//uniform sampler2D NormalTexture;
 uniform sampler2D ColourTexture;
 
-uniform vec3 ViewPos;
-
+//uniform vec3 ViewPos;
+/*
 layout(std140) uniform Light {
 	vec3 Position;
 	vec3 Color;
 	float Intensity;
 	} Lights[NR_LIGHTS];
-
+*/
 
 
 
@@ -42,4 +42,5 @@ void main(void)
     if (FragUV.x > 0.5 && FragUV.y > 0.5) Colour = vec4(lighting, 1.0); // top right
     */
     Colour = vec4(texture(ColourTexture, FragUV).rgb, 1);
+    //Colour = vec4(FragUV, 0, 1);
 }

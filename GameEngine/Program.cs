@@ -41,7 +41,7 @@ namespace GameEngine
                 RW.Scene.Camera.Position = new Vector3(0, 0, 3);
                 var C = new Camera(50, 128, 128, 2, 128);
                 C.Position = new Vector3(-3, -4, 0);
-                Floor Floor = new Floor(RW.Scene);
+                //Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW, RW.Scene);
                 //var T = DelaunayPlain.FromRand(RW.ViewPort, 20000);
                 var L = new Light(RW.Scene);
@@ -107,6 +107,7 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
+        RenderWindow RW;
         public Test(RenderWindow RW, Scene RL) : base(RL, new Vertex3D[]
         {
             new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1,-1, 1, 0, 0, 1, 1, 0), // front
@@ -130,88 +131,18 @@ namespace GameEngine
             $"Resources/shaderscripts/Default.vert",
             $"Resources/shaderscripts/Default.frag")
         {
+            this.RW = RW;
             RenderingType = PrimitiveType.Triangles;
-            Transform = new Transform();
-            Transform.Position = new Vector3(0, 0, 0);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
+            Material.SetUniform("Model", Transform.Matrix);
         }
-    }
-    class BilWarp : RenderObject<Vertex3D>
-    {
-        public BilWarp(RenderWindow RW, Scene RL) : base(RL, new Vertex3D[]
-            {
-                /*
-                new Vertex3D(-1, 1, 1, 0, 0, 0, 0, 1),
-                new Vertex3D(-1,-1, 1, 0, 0, 0, 0, 0),
-                new Vertex3D( 1,-1, 1, 0, 0, 0, 1, 0),
-                new Vertex3D( 1, 1, 1, 0, 0, 0, 1, 1),
-                */
-                new Vertex3D(-1,-1,-1, 0, 0, 0, 0, 0),
-                new Vertex3D( 1,-1,-1, 0, 0, 0, 1, 0),
-                new Vertex3D( 1, 1,-1, 0, 0, 0, 1, 1),
-                new Vertex3D(-1, 1,-1, 0, 0, 0, 0, 1),
-
-                new Vertex3D(-1,-1, 1, 0, 0, 0, 0, 0),
-                new Vertex3D( 1,-1, 1, 0, 0, 0, 1, 0),
-                new Vertex3D( 1, 1, 1, 0, 0, 0, 1, 1),
-                new Vertex3D(-1, 1, 1, 0, 0, 0, 0, 1),
-
-                new Vertex3D(-1, 1, 1, 0, 0, 0, 1, 0),
-                new Vertex3D(-1, 1,-1, 0, 0, 0, 1, 1),
-                new Vertex3D(-1,-1,-1, 0, 0, 0, 0, 1),
-                new Vertex3D(-1,-1, 1, 0, 0, 0, 0, 0),
-
-                new Vertex3D( 1, 1, 1, 0, 0, 0, 1, 0),
-                new Vertex3D( 1, 1,-1, 0, 0, 0, 1, 1),
-                new Vertex3D( 1,-1,-1, 0, 0, 0, 0, 1),
-                new Vertex3D( 1,-1, 1, 0, 0, 0, 0, 0),
-
-                new Vertex3D(-1,-1,-1, 0, 0, 0, 0, 1),
-                new Vertex3D( 1,-1,-1, 0, 0, 0, 1, 1),
-                new Vertex3D( 1,-1, 1, 0, 0, 0, 1, 0),
-                new Vertex3D(-1,-1, 1, 0, 0, 0, 0, 0),
-
-                new Vertex3D(-1, 1,-1, 0, 0, 0, 0, 1),
-                new Vertex3D( 1, 1,-1, 0, 0, 0, 1, 1),
-                new Vertex3D( 1, 1, 1, 0, 0, 0, 1, 0),
-                new Vertex3D(-1, 1, 1, 0, 0, 0, 0, 0),
-            },
-            $"Resources/shaderscripts/Bilinear Warp/BilinearW.vert",
-            $"Resources/shaderscripts/Bilinear Warp/BilinearW.geom",
-            $"Resources/shaderscripts/Bilinear Warp/BilinearW.frag")
+        public override void SetUniforms()
         {
-            RenderingType = PrimitiveType.LinesAdjacency;
-            Transform = new Transform();
-
-            Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
-            Material.SetUniform("VP", new Vector4i(0, 0, RW.Scene.Size.X, RW.Scene.Size.Y));
-
-        }
-    }
-    class DelaunayPlain : RenderObject<SimpleVertex>
-    {
-
-        public static DelaunayPlain FromRand(Scene VP, int n)
-        {
+            base.SetUniforms();
+            //Material.SetUniform("Time", RW.Time);
             
-            var R = new Random(0);
-            List<Vector2> RandP = new List<Vector2>();
-            for (int i = 0; i < n; i++) RandP.Add(new Vector2((float)R.NextDouble() * 2 - 1, (float)R.NextDouble() * 2 - 1));
-            var V = Triangulator.From(RandP, (V) => V.X, (V) => V.Y).ToTriangles((x, y) => new SimpleVertex(x, y));
-            
-            return new DelaunayPlain(VP, V);
         }
-        public DelaunayPlain(Scene VP, SimpleVertex[] V) : base(VP, V,
-            $"Resources/shaderscripts/Simple.vert",
-            $"Resources/shaderscripts/Simple.frag")
-        {
-            this.RenderingType = PrimitiveType.Triangles;
-            this.PolygonMode = PolygonMode.Line;
-
-            Transform = new Transform();
-        }
-
     }
 }
 
