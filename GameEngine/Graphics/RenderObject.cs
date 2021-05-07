@@ -43,18 +43,13 @@ namespace Graphics
             this.Transform = new Transform();
 
             Material.SetUniform("Model", Matrix4.Identity);
-            Material.SetUniform("View", Canvas.Camera.Matrix);
-            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
+            Material.SetUniform("View", Matrix4.Identity);
+            Material.SetUniform("Projection", Matrix4.CreatePerspectiveFieldOfView(1.75f, 1, 1, 10));
 
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
         }
         public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string FragmentShader)
-        {
-            this.Material = new ShaderProgram(VertexShader, FragmentShader);
-            BaseConstructor(Canvas, Vertices);
-        }
-        public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string GeometryShader, string FragmentShader)
         {
             this.Material = new ShaderProgram(VertexShader, FragmentShader);
             BaseConstructor(Canvas, Vertices);
@@ -149,7 +144,7 @@ namespace Graphics
             VertexArray = Vertices; // sets array attribute to use buffers after buffer has been set
         }
         /// <summary>
-        /// Show this object on the screen.
+        /// Show this object in the viewport
         /// </summary>
         public void Render()
         {
@@ -159,13 +154,15 @@ namespace Graphics
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode); // use this programs rendering modes
             GL.DrawArrays(RenderingType, 0, VertexArray.Length); // draw these vertices in triangles, 0 to the number of vertices
         }
+        /// <summary>
+        /// Updates Uniforms 
+        /// </summary>
         public virtual void SetUniforms()
         {
             Material.SetUniform("Projection", Canvas.Camera.ProjMat);
-            //GL.GetUniform(Material.Handle, GL.GetUniformLocation(Material.Handle, "Model"), out float F);
-            Material.SetUniform("Model", Transform.Matrix);
+            //Material.SetUniform("Model", Transform.Matrix);
             Material.SetUniform("View", Canvas.Camera.Matrix);
-        }    
+        }
         #endregion
     }
 }

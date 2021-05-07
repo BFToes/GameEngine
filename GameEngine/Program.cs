@@ -41,7 +41,7 @@ namespace GameEngine
                 RW.Scene.Camera.Position = new Vector3(0, 0, 3);
                 var C = new Camera(50, 128, 128, 2, 128);
                 C.Position = new Vector3(-3, -4, 0);
-                //Floor Floor = new Floor(RW.Scene);
+                Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW, RW.Scene);
                 //var T = DelaunayPlain.FromRand(RW.ViewPort, 20000);
                 var L = new Light(RW.Scene);
