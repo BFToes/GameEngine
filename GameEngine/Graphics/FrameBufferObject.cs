@@ -95,7 +95,7 @@ namespace Graphics
         /// <summary>
         /// sets this frame buffer to the render target
         /// </summary>
-        public void RenderToThis()
+        public void UseFrameBuffer()
         {
             GL.CullFace(CullFace);
             GL.DepthFunc(DepthFunc);

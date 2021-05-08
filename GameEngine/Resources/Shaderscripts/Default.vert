@@ -1,6 +1,11 @@
 ﻿#version 450 core
 
-
+/*
+layout(std140) uniform Camera {
+	mat4 View;
+	mat4 Projection;
+};
+*/
 uniform mat4 Model;
 uniform mat4 Projection;
 uniform mat4 View;
@@ -19,8 +24,6 @@ void main(void)
 	FragUV = UV;
 	FragPos = (Model * vec4(Position, 1)).rgb; // world space position
 	FragNormal = mat3(Model) * Normal; // world space normal
-	//  Beautiful test thank you I love you bye
-	//  + vec4(Time * Position.x, Time * Position.y, 0, 1)
 	gl_Position = Projection * View * Model * vec4(Position, 1); // view space position
 	
 }

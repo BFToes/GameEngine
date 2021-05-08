@@ -14,11 +14,11 @@ namespace Graphics
         public Camera Camera;
         public ShaderProgram Material;
 
-        public readonly int ColourTexture; // colour texture
+
+        public readonly int AlbedoTexture; // colour texture
         public readonly int NormalTexture; // normal texture
         public readonly int PositionTexture; // position texture
         public readonly int DepthBuffer; // depth buffer
-
 
         public List<IRenderLight> Lights = new List<IRenderLight>();
         public List<IRenderObject> Objects = new List<IRenderObject>();
@@ -28,13 +28,13 @@ namespace Graphics
             // geometry-buffer textures
             PositionTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment0, Width, Height);
             NormalTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment1, Width, Height);
-            ColourTexture = NewTextureAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba, PixelType.UnsignedByte, FramebufferAttachment.ColorAttachment2, Width, Height);
+            AlbedoTexture = NewTextureAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba, PixelType.UnsignedByte, FramebufferAttachment.ColorAttachment2, Width, Height);
             // draws to multiple textures at once
             GL.DrawBuffers(3, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 });
             DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent24, FramebufferAttachment.DepthAttachment, Width, Height);
 
-            FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-            if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
+            //FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+            //if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
 
             // set camera object
             Camera = new Camera(50, Width, Height, 2, 512);
@@ -42,20 +42,21 @@ namespace Graphics
 
             // assign textures to shader program
             Material = new ShaderProgram(VertexShader, FragmentShader);
-            //Material.SetUniformSampler2D("PositionTexture", PositionTexture);
-            //Material.SetUniformSampler2D("NormalTexture", NormalTexture);
-            Material.SetUniformSampler2D("ColourTexture", ColourTexture);
-            //Material.SetUniform("ViewPos", Camera.Position);
+            Material.SetUniformSampler2D("PositionTexture", PositionTexture);
+            Material.SetUniformSampler2D("NormalTexture", NormalTexture);
+            Material.SetUniformSampler2D("ColourTexture", AlbedoTexture);
+            Material.SetUniform("ViewPos", Camera.Position);
         }
 
         /// <summary>
         /// renders objects inside this viewport and updates the viewport textures
         /// </summary>
-        public void Render()
+        public void Process()
         {
             // geometry shader pass
-            this.RenderToThis();
+            this.UseFrameBuffer();
             foreach (IRenderObject RO in Objects) RO.Render();
+
         }
         #region RenderObject Management
         /// <summary>
@@ -70,8 +71,6 @@ namespace Graphics
 
         #endregion
     }
-
-    
 }
 
 

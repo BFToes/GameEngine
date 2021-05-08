@@ -4,10 +4,7 @@ using OpenTK.Windowing.Desktop;
 using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
-using System.Collections.Generic;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using Graphics.Delaunator;
-using Graphics.Triangulator;
 namespace GameEngine
 {
     class Program
@@ -136,12 +133,6 @@ namespace GameEngine
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUniform("Model", Transform.Matrix);
-        }
-        public override void SetUniforms()
-        {
-            base.SetUniforms();
-            //Material.SetUniform("Time", RW.Time);
-            
         }
     }
 }

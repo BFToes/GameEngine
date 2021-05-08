@@ -30,7 +30,6 @@ namespace Graphics
 
         private void BaseConstructor(Scene Canvas, Vertex[] Vertices)
         {
-            this.Transform = new Transform();
             Set_Visible = (value) =>
             {
                 visible = value;
@@ -42,9 +41,10 @@ namespace Graphics
             this.Canvas = Canvas;
             this.Transform = new Transform();
 
-            Material.SetUniform("Model", Matrix4.Identity);
-            Material.SetUniform("View", Matrix4.Identity);
-            Material.SetUniform("Projection", Matrix4.CreatePerspectiveFieldOfView(1.75f, 1, 1, 10));
+            Material.SetUpdatingUniform("Model", () => Transform.Matrix);
+            Material.SetUpdatingUniform("View", () => Canvas.Camera.Matrix);
+            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
+
 
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
@@ -149,19 +149,9 @@ namespace Graphics
         public void Render()
         {
             Material.Use(); // tell openGL to use this objects program
-            SetUniforms();
             GL.BindVertexArray(VertexArrayHandle); // use current vertex array
             GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode); // use this programs rendering modes
             GL.DrawArrays(RenderingType, 0, VertexArray.Length); // draw these vertices in triangles, 0 to the number of vertices
-        }
-        /// <summary>
-        /// Updates Uniforms 
-        /// </summary>
-        public virtual void SetUniforms()
-        {
-            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
-            //Material.SetUniform("Model", Transform.Matrix);
-            Material.SetUniform("View", Canvas.Camera.Matrix);
         }
         #endregion
     }

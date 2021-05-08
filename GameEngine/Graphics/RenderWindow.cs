@@ -67,7 +67,7 @@ namespace Graphics
 
             Process((float)e.Time);
 
-            Scene.Render();
+            Scene.Process();
 
             // use default
             GL.CullFace(CullFaceMode.Back);
