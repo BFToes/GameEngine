@@ -5,25 +5,28 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ListExtensions;
+
+
 namespace Graphics.Shaders
 {
     /* THINGS TO DO:
      * 
      * uniform block/buffer support for faster setting of uniform values
-     * uniform array support [Maybe Done idk]???
      * uniform structs support ???
-     * setting Uniform TextureUnit
+     * setting Uniform TextureUnit [DONE]
+     * set get standard uniform [DONE]
+     * uniform array support [Maybe Done idk]???
      * 
      * This Real fuckin messy 
      * 
      */
 
-
     sealed public class ShaderProgram
     {
         public int Handle { get; private set; }
 
-        private Dictionary<string, int> ActiveUniforms;
+        private Dictionary<string, int> UniformLocation;
+        private Dictionary<string, int> UniformBlockLocation;
         private Dictionary<string, Func<dynamic>> UpdatingUniforms;
         private int[] Textures = new int[32].Fill(-1);
         private int[] TexUseCount = new int[32].Fill(0);
@@ -31,8 +34,10 @@ namespace Graphics.Shaders
 
         public ShaderProgram(string vertexpath, string fragmentpath)
         {
-            ActiveUniforms = new Dictionary<string, int>(); // for uniform location look up
+            UniformLocation = new Dictionary<string, int>(); // for uniform location look up
+            UniformBlockLocation = new Dictionary<string, int>(); // for uniform location look up
             UpdatingUniforms = new Dictionary<string, Func<dynamic>>(); // for updating uniforms
+            
             Compile(new Dictionary<ShaderType, string>()
             {
                 { ShaderType.FragmentShader, fragmentpath },
@@ -49,72 +54,88 @@ namespace Graphics.Shaders
         public void Use(int TexStartIndex = 0, int BufStartIndex = 0)
         {
             GL.UseProgram(Handle); // tell openGL to use this object
-            for(int Unit = TexStartIndex; TexUseCount[Unit] != 0; Unit++) GL.BindTextureUnit(Unit, Textures[Unit]); // bind textures into units
-            foreach (string Uniform in UpdatingUniforms.Keys) SetUniform(Uniform, UpdatingUniforms[Uniform]());
-        }
-        
-        #region Set Uniform Functions
 
+            for(int Unit = TexStartIndex; TexUseCount[Unit] != 0; Unit++) 
+                GL.BindTextureUnit(Unit, Textures[Unit]); // bind textures into units
+
+            foreach (string Uniform in UpdatingUniforms.Keys) 
+                SetUniform(Uniform, UpdatingUniforms[Uniform]());
+        }
+
+        #region Set Uniform Functions
+        #region Updating Uniform
         /// <summary>
         /// Updates Uniform before Program Use. To remove updating uniform set Getter to null.
         /// </summary>
         /// <param name="Name">the name of the uniform.</param>
         /// <param name="UniformGetter">a function to get the uniform</param>
-        public void SetUpdatingUniform(string Name, Func<dynamic>? UniformGetter)
-        {
-            UpdatingUniforms[Name] = UniformGetter;
-        }
+        public void SetUpdatingUniform(string Name, Func<dynamic>? UniformGetter) => UpdatingUniforms[Name] = UniformGetter;
+        #endregion
+        #region Block Uniform
+        /// <summary>
+        /// Binds buffer to Uniform block
+        /// </summary>
+        /// <param name="Name">the name of the block</param>
+        /// <param name="BlockBinding">the ID of the buffer</param>
+        public void SetUniformBlock(string Name, int BlockBinding) 
+        { 
 
+            if (UniformBlockLocation.TryGetValue(Name, out int Location)) 
+                GL.UniformBlockBinding(Handle, Location, BlockBinding); 
+            
+        
+        }
+        #endregion
         #region Single Uniforms
         // int & bool
-        public void SetUniform(string Name, bool Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param ? 1 : 0); }
-        public void SetUniform(string Name, int Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param); }
-        public void SetUniform(string Name, Vector2i Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, Param); }
-        public void SetUniform(string Name, Vector3i Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, Param); }
-        public void SetUniform(string Name, Vector4i Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, Param); }
+        public void SetUniform(string Name, bool Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param ? 1 : 0); }
+        public void SetUniform(string Name, int Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param); }
+        public void SetUniform(string Name, Vector2i Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, Param); }
+        public void SetUniform(string Name, Vector3i Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, Param); }
+        public void SetUniform(string Name, Vector4i Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, Param); }
 
         //doubles
-        public void SetUniform(string Name, double Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param); }
-        public void SetUniform(string Name, Vector2d Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, Param.X, Param.Y); }
-        public void SetUniform(string Name, Vector3d Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, Param.X, Param.Y, Param.Z); }
-        public void SetUniform(string Name, Vector4d Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, Param.X, Param.Y, Param.Z, Param.W); }
+        public void SetUniform(string Name, double Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param); }
+        public void SetUniform(string Name, Vector2d Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, Param.X, Param.Y); }
+        public void SetUniform(string Name, Vector3d Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, Param.X, Param.Y, Param.Z); }
+        public void SetUniform(string Name, Vector4d Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, Param.X, Param.Y, Param.Z, Param.W); }
 
         // floats
-        public void SetUniform(string Name, float Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param); }
-        public void SetUniform(string Name, Vector2 Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, Param); }
-        public void SetUniform(string Name, Vector3 Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, Param); }
-        public void SetUniform(string Name, Vector4 Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, Param); }
+        public void SetUniform(string Name, float Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, Param); }
+        public void SetUniform(string Name, Vector2 Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, Param); }
+        public void SetUniform(string Name, Vector3 Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, Param); }
+        public void SetUniform(string Name, Vector4 Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, Param); }
 
         //matrices
-        public void SetUniform(string Name, Matrix2 Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix2(Handle, Location, 1, false, new float[4] { Param.M11, Param.M12, Param.M21, Param.M22 }); }
-        public void SetUniform(string Name, Matrix3 Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix3(Handle, Location, 1, false, new float[9] { Param.M11, Param.M12, Param.M13, Param.M21, Param.M22, Param.M23, Param.M31, Param.M32, Param.M33, }); }
-        public void SetUniform(string Name, Matrix4 Param) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, 1, false, new float[16] { Param.M11, Param.M12, Param.M13, Param.M14, Param.M21, Param.M22, Param.M23, Param.M24, Param.M31, Param.M32, Param.M33, Param.M34, Param.M41, Param.M42, Param.M43, Param.M44 }); }
+        public void SetUniform(string Name, Matrix2 Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix2(Handle, Location, 1, false, new float[4] { Param.M11, Param.M12, Param.M21, Param.M22 }); }
+        public void SetUniform(string Name, Matrix3 Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix3(Handle, Location, 1, false, new float[9] { Param.M11, Param.M12, Param.M13, Param.M21, Param.M22, Param.M23, Param.M31, Param.M32, Param.M33, }); }
+        public void SetUniform(string Name, Matrix4 Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, 1, false, new float[16] { Param.M11, Param.M12, Param.M13, Param.M14, Param.M21, Param.M22, Param.M23, Param.M24, Param.M31, Param.M32, Param.M33, Param.M34, Param.M41, Param.M42, Param.M43, Param.M44 }); }
         #endregion
         #region Array Uniforms
         // int
-        public void SetUniform(string Name, IEnumerable<bool> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.Select((Bl) => Bl ? 1 : 0).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<int> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector2i> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new int[] { V.X, V.Y }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector3i> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new int[] { V.X, V.Y, V.Z }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector4i> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new int[] { V.X, V.Y, V.Z, V.W }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<bool> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.Select((Bl) => Bl ? 1 : 0).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<int> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector2i> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new int[] { V.X, V.Y }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector3i> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new int[] { V.X, V.Y, V.Z }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector4i> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new int[] { V.X, V.Y, V.Z, V.W }).ToArray()); }
 
         //doubles
-        public void SetUniform(string Name, IEnumerable<double> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector2d> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new double[] { V.X, V.Y }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector3d> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new double[] { V.X, V.Y, V.Z }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector4d> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new double[] { V.X, V.Y, V.Z, V.W }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<double> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector2d> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new double[] { V.X, V.Y }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector3d> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new double[] { V.X, V.Y, V.Z }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector4d> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new double[] { V.X, V.Y, V.Z, V.W }).ToArray()); }
 
         // floats
-        public void SetUniform(string Name, IEnumerable<float> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector2> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new float[] { V.X, V.Y }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector3> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new float[] { V.X, V.Y, V.Z }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Vector4> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new float[] { V.X, V.Y, V.Z, V.W }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<float> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector2> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new float[] { V.X, V.Y }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector3> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform3(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new float[] { V.X, V.Y, V.Z }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Vector4> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform4(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new float[] { V.X, V.Y, V.Z, V.W }).ToArray()); }
 
         //matrices
         // these matrice arrays are probably wrong
-        public void SetUniform(string Name, IEnumerable<Matrix2> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix2(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M21, M.M22 }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Matrix3> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix3(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M13, M.M21, M.M22, M.M23, M.M31, M.M32, M.M33, }).ToArray()); }
-        public void SetUniform(string Name, IEnumerable<Matrix4> ParamArray) { if (ActiveUniforms.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M13, M.M14, M.M21, M.M22, M.M23, M.M24, M.M31, M.M32, M.M33, M.M34, M.M41, M.M42, M.M43, M.M44 }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Matrix2> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix2(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M21, M.M22 }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Matrix3> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix3(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M13, M.M21, M.M22, M.M23, M.M31, M.M32, M.M33, }).ToArray()); }
+        public void SetUniform(string Name, IEnumerable<Matrix4> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M13, M.M14, M.M21, M.M22, M.M23, M.M24, M.M31, M.M32, M.M33, M.M34, M.M41, M.M42, M.M43, M.M44 }).ToArray()); }
         #endregion
         #region Sampler Uniforms
 
@@ -132,7 +153,7 @@ namespace Graphics.Shaders
         /// </summary>
         public void SetUniformSampler2D(string Name, int Tex)
         {
-            if (!ActiveUniforms.TryGetValue(Name, out int Location)) return;
+            if (!UniformLocation.TryGetValue(Name, out int Location)) return;
             UnAssignsTextureUnit(Name, Location);
             AssignTextureUnit(Tex, out int Unit);
             GL.ProgramUniform1(Handle, Location, Unit);
@@ -215,16 +236,24 @@ namespace Graphics.Shaders
             
 
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var NumOfUniforms);
-            for (int i = 0; i < NumOfUniforms; i++)
+            for (int Location = 0; Location < NumOfUniforms; Location++)
             {
-                GL.GetActiveUniform(Handle, i, 32, out _, out _, out ActiveUniformType Type, out string Name);
-                ActiveUniforms[Name] = i; // add location lookup
-                if (Type == ActiveUniformType.Sampler2D) AssignTextureUnit(TextureManager.Texture("Resources/Textures/Missing.png"), out _); // for each uniform sampler2D add default texture to unit
+                // 32 characters is maximum length of Name
+                // Because. I could make it more but no, I dont think I will.
+                GL.GetActiveUniform(Handle, Location, 32, out _, out _, out ActiveUniformType Type, out string Name);
+                UniformLocation[Name] = Location; // add location lookup
+                // for each uniform sampler2D add default texture to unit
+                if (Type == ActiveUniformType.Sampler2D) 
+                    AssignTextureUnit(TextureManager.Texture("Resources/Textures/Missing.png"), out _); 
             }
 
-
-            //GL.GetProgram(Handle, GetProgramParameterName.ActiveUniformBlocks, out var NumOfUniformBlocks);
-            //for (int i = 0; i < NumOfUniformBlocks; i++) { }
+            // same as above but for uniform blocks blocks
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniformBlocks, out var NumOfUniformBlocks);
+            for (int Location = 0; Location < NumOfUniformBlocks; Location++)
+            { 
+                GL.GetActiveUniformBlockName(Handle, Location, 32, out _, out string Name);
+                UniformBlockLocation[Name] = Location;
+            }
         }
         #endregion
     }

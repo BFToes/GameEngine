@@ -14,14 +14,12 @@ namespace Graphics
         public Camera Camera;
         public ShaderProgram Material;
 
-
         public readonly int AlbedoTexture; // colour texture
         public readonly int NormalTexture; // normal texture
         public readonly int PositionTexture; // position texture
         public readonly int DepthBuffer; // depth buffer
 
-        public List<IRenderLight> Lights = new List<IRenderLight>();
-        public List<IRenderObject> Objects = new List<IRenderObject>();
+        public List<IRenderable> Objects = new List<IRenderable>();
 
         public Scene(string VertexShader, string FragmentShader, int Width, int Height) : base(Width, Height)
         {
@@ -42,6 +40,7 @@ namespace Graphics
 
             // assign textures to shader program
             Material = new ShaderProgram(VertexShader, FragmentShader);
+
             Material.SetUniformSampler2D("PositionTexture", PositionTexture);
             Material.SetUniformSampler2D("NormalTexture", NormalTexture);
             Material.SetUniformSampler2D("ColourTexture", AlbedoTexture);
@@ -55,20 +54,12 @@ namespace Graphics
         {
             // geometry shader pass
             this.UseFrameBuffer();
-            foreach (IRenderObject RO in Objects) RO.Render();
+            foreach (IRenderable RO in Objects) RO.Render();
 
         }
         #region RenderObject Management
-        /// <summary>
-        /// adds object to render list.
-        /// </summary>
-        /// <param name="item"></param>
-        public void Add(IRenderObject item) => Objects.Add(item);
-        public void Add(IRenderLight item) => Lights.Add(item);
-
-        public void Remove(IRenderObject item) => Objects.Remove(item);
-        public void Remove(IRenderLight item) => Lights.Remove(item);
-
+        public void Add(IRenderable item) => Objects.Add(item);
+        public void Remove(IRenderable item) => Objects.Remove(item);
         #endregion
     }
 }

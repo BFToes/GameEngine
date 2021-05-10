@@ -3,11 +3,13 @@ using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Graphics.Shaders;
 
 namespace Graphics
 {
     class Camera : TransformInvert
     {
+        public UniformBuffer<CameraData> UniformBlock;
         private float nearZ;
         private float farZ;
         public float fov { get; private set; }
@@ -23,6 +25,7 @@ namespace Graphics
         /// <param name="DepthFar">larger values will render more objects</param>
         public Camera(float FOV, float Width, float Height, float DepthNear, float DepthFar)
         {
+            UniformBlock = new UniformBuffer<CameraData>();
             nearZ = DepthNear; farZ = DepthFar;
             fov = FOV / 180 * MathF.PI;
             ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, Width / Height, DepthNear, DepthFar);
@@ -36,6 +39,7 @@ namespace Graphics
         /// <param name="DepthFar">larger values will render more objects</param>
         public Camera(float Width, float Height, float DepthNear, float DepthFar)
         {
+            UniformBlock = new UniformBuffer<CameraData>();
             nearZ = DepthNear; farZ = DepthFar;
             ProjMat = Matrix4.CreateOrthographic(Width, Height, nearZ, farZ);
         }
@@ -51,7 +55,13 @@ namespace Graphics
             {
                 ProjMat = Matrix4.CreateOrthographic(Size.X, Size.Y, nearZ, farZ);
             }
+            UniformBlock.Set(0, 64, ProjMat); // set data in uniform block
         }
-        //public void LookAt(Vector3 Position) { }
+        protected override void Set(Vector3 Position, Vector3 Scale, Matrix3 RotMat)
+        {
+            base.Set(Position, Scale, RotMat);
+            UniformBlock.Set(64, 64, Matrix); // set data in uniform block
+        }
+
     }
 }

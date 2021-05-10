@@ -1,14 +1,14 @@
 ﻿#version 450 core
 
-/*
+
 layout(std140) uniform Camera {
 	mat4 View;
 	mat4 Projection;
 };
-*/
+
 uniform mat4 Model;
-uniform mat4 Projection;
-uniform mat4 View;
+//uniform mat4 Projection;
+//uniform mat4 View;
 uniform float Time;
 
 layout(location = 0) in vec3 Position;

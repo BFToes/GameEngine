@@ -20,7 +20,7 @@ namespace Graphics
                 $"Resources/shaderscripts/PostProcess/PostProcess.vert",
                 $"Resources/shaderscripts/PostProcess/PostProcess.frag", 
                 Size.X, Size.Y);
-            Process = (delta) => { Time += delta; };
+            Process = (delta) => Time += delta;
             VSync = VSyncMode.On;
 
             #region vertex buffer/array object setup

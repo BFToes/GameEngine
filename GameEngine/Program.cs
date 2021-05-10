@@ -25,6 +25,19 @@ namespace GameEngine
          * 
          * 
          * 
+         * 
+         * PROBLEMS TO SORT OUT:
+         * Setup the fucking Idisposables already 
+         * its causing problems
+         * 
+         * Uniform camera block should probably be set to the scene and not the camera 
+         * that way it wont have to be recreated when a new camera is assigned
+         * 
+         * Simplify This shit:
+         *      Stop making everything so needlessly complicated
+         *      You dont need to implement every possible feature conceivable
+         *      Make class do 1 thing and and do it well
+         * 
          */
 
         static void Main(string[] args)
@@ -34,14 +47,11 @@ namespace GameEngine
             NWS.Size = new Vector2i(800);
             using (RenderWindow RW = new RenderWindow(GWS, NWS))
             {
-                RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
+                //RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
                 RW.Scene.Camera.Position = new Vector3(0, 0, 3);
-                var C = new Camera(50, 128, 128, 2, 128);
-                C.Position = new Vector3(-3, -4, 0);
                 Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW, RW.Scene);
                 //var T = DelaunayPlain.FromRand(RW.ViewPort, 20000);
-                var L = new Light(RW.Scene);
 
 
                 Action<MouseMoveEventArgs> MoveCamera = (e) => RW.Scene.Camera.Position += 10 * new Vector3(RW.Scene.Camera.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
@@ -100,11 +110,11 @@ namespace GameEngine
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
             Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
 
+
         }
     }
     class Test : RenderObject<Vertex3D>
     {
-        RenderWindow RW;
         public Test(RenderWindow RW, Scene RL) : base(RL, new Vertex3D[]
         {
             new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1,-1, 1, 0, 0, 1, 1, 0), // front
@@ -128,10 +138,10 @@ namespace GameEngine
             $"Resources/shaderscripts/Default.vert",
             $"Resources/shaderscripts/Default.frag")
         {
-            this.RW = RW;
             RenderingType = PrimitiveType.Triangles;
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
+            Material.SetUpdatingUniform("Time", () => RW.Time);
             Material.SetUniform("Model", Transform.Matrix);
         }
     }

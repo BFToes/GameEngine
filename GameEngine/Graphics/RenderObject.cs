@@ -11,10 +11,9 @@ namespace Graphics
     /// <summary>
     /// An Object that renders onto the screen.
     /// </summary>
-    abstract class RenderObject<Vertex> : IRenderObject where Vertex : struct, IVertex
+    abstract class RenderObject<Vertex> : IRenderable where Vertex : struct, IVertex
     {
         public ShaderProgram Material;
-        private Scene Canvas;
         public ITransform Transform;
 
         private int VertexArrayHandle; // vertex array object handle
@@ -24,27 +23,20 @@ namespace Graphics
         protected PrimitiveType RenderingType = PrimitiveType.Triangles;
         protected PolygonMode PolygonMode = PolygonMode.Fill;
 
-        private bool visible = true;
-        
         private Vertex[] vertexarray;
 
         private void BaseConstructor(Scene Canvas, Vertex[] Vertices)
         {
-            Set_Visible = (value) =>
-            {
-                visible = value;
-                if (visible) Canvas.Add(this);
-                else Canvas.Remove(this);
-            };
-            Visible = true;
-
-            this.Canvas = Canvas;
             this.Transform = new Transform();
 
-            Material.SetUpdatingUniform("Model", () => Transform.Matrix);
-            Material.SetUpdatingUniform("View", () => Canvas.Camera.Matrix);
-            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
 
+            //Material.SetUniform("Projection", Canvas.Camera.ProjMat);
+            //Material.SetUpdatingUniform("View", () => Canvas.Camera.Matrix);
+
+            Material.SetUpdatingUniform("Model", () => Transform.Matrix);
+            
+            Material.SetUniformBlock("Camera", Canvas.Camera.UniformBlock);
+            GL.UniformBlockBinding(Material.Handle, 0, 0);
 
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
@@ -53,21 +45,7 @@ namespace Graphics
         {
             this.Material = new ShaderProgram(VertexShader, FragmentShader);
             BaseConstructor(Canvas, Vertices);
-        }
-
-        #region Events and Properties
-        /// <summary>
-        /// Called When Visiblty is changed
-        /// </summary>
-        public event Action<bool> Set_Visible;
-
-        /// <summary>
-        /// adds and removes this object from the render list
-        /// </summary>
-        public bool Visible
-        {
-            get => visible;
-            set => Set_Visible(value);
+            Canvas.Add(this);
         }
 
         /// <summary>
@@ -85,7 +63,6 @@ namespace Graphics
                 GL.BufferData(BufferTarget.ArrayBuffer, new Vertex().SizeInBytes * vertexarray.Length, vertexarray, BufferUsageHint.StreamDraw); // sets and creates buffer data
             }
         }
-        #endregion
 
         #region Methods
         /// <summary>
