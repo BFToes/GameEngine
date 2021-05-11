@@ -10,19 +10,19 @@ namespace Graphics.Shaders
      * so theyre padded
      * eg vec3 will have a 1 float pad which comes out as 4 bytes
      */
-    public interface UniformBufferStruct
+    public interface IUniformBufferStruct
     {
         public int SizeInBytes { get; }
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    struct CameraData : UniformBufferStruct
+    struct CameraData : IUniformBufferStruct
     {
         [FieldOffset(0)]
         public Matrix4 Projection; // + 64
         [FieldOffset(64)]
         public Matrix4 View; // + 64
-        public int SizeInBytes { get => 128; }
+        public int SizeInBytes => 128;
         public CameraData(Matrix4 Proj, Matrix4 View)
         {
             this.Projection = Proj;

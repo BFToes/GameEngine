@@ -30,13 +30,13 @@ namespace Graphics
             this.Transform = new Transform();
 
 
-            //Material.SetUniform("Projection", Canvas.Camera.ProjMat);
-            //Material.SetUpdatingUniform("View", () => Canvas.Camera.Matrix);
+            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
+            Material.SetUpdatingUniform("View", () => Canvas.Camera.Matrix);
 
             Material.SetUpdatingUniform("Model", () => Transform.Matrix);
             
-            Material.SetUniformBlock("Camera", Canvas.Camera.UniformBlock);
-            GL.UniformBlockBinding(Material.Handle, 0, 0);
+            Material.SetUniformBlock("Camera", 0/*Camera Block Binding Index*/);
+            
 
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);

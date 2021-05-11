@@ -5,14 +5,13 @@ using Graphics.Shaders;
 
 namespace Graphics
 {
-    /* Notes:
-     * - Z index sorting obselete unless object transparent
-     * - Currently not complete
-     */
     class Scene : FrameBufferObject
     {
         public Camera Camera;
+        public UniformBlock CameraBlock;
+        
         public ShaderProgram Material;
+        
 
         public readonly int AlbedoTexture; // colour texture
         public readonly int NormalTexture; // normal texture
@@ -20,7 +19,7 @@ namespace Graphics
         public readonly int DepthBuffer; // depth buffer
 
         public List<IRenderable> Objects = new List<IRenderable>();
-
+        public List<UniformBlock> UniformBlocks = new List<UniformBlock>();
         public Scene(string VertexShader, string FragmentShader, int Width, int Height) : base(Width, Height)
         {
             // geometry-buffer textures
@@ -35,10 +34,12 @@ namespace Graphics
             //if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
 
             // set camera object
-            Camera = new Camera(50, Width, Height, 2, 512);
-            Resize += (Size) => Camera.Resize(Size);
+            Camera = new Camera(this, 50, Width, Height, 2, 512);
+            CameraBlock = UniformBlock.For<CameraData>(0);
+            UniformBlocks.Add(CameraBlock);
 
-            // assign textures to shader program
+
+            // set up shader program
             Material = new ShaderProgram(VertexShader, FragmentShader);
 
             Material.SetUniformSampler2D("PositionTexture", PositionTexture);
@@ -54,6 +55,7 @@ namespace Graphics
         {
             // geometry shader pass
             this.UseFrameBuffer();
+            foreach (UniformBlock UB in UniformBlocks) UB.Bind();
             foreach (IRenderable RO in Objects) RO.Render();
 
         }

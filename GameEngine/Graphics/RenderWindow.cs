@@ -21,8 +21,7 @@ namespace Graphics
                 $"Resources/shaderscripts/PostProcess/PostProcess.frag", 
                 Size.X, Size.Y);
             Process = (delta) => Time += delta;
-            VSync = VSyncMode.On;
-
+            
             #region vertex buffer/array object setup
             // setup array
             VAO = GL.GenVertexArray();
@@ -44,12 +43,12 @@ namespace Graphics
             GL.BufferData(BufferTarget.ArrayBuffer, 4 * new Vertex2D().SizeInBytes, new float[16] { -1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1 }, BufferUsageHint.StaticDraw);
             #endregion
 
-            #region OpenGL Functions to Enable
+            #region OpenGL Functions and window parameters
+            VSync = VSyncMode.On;
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
             //GL.Enable(EnableCap.Blend);
             #endregion
-
         }
 
         protected override void OnResize(ResizeEventArgs e)

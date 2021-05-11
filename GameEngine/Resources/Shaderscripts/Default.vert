@@ -2,8 +2,8 @@
 
 
 layout(std140) uniform Camera {
-	mat4 View;
 	mat4 Projection;
+	mat4 View;
 };
 
 uniform mat4 Model;

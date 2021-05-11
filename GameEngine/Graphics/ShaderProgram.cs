@@ -51,7 +51,7 @@ namespace Graphics.Shaders
         /// </summary>
         /// <param name="TexStartIndex">For optimisation, if texture shared across multiple objects can skip reloading Texture Unit</param>
         /// <param name="BufStartIndex">For optimisation, if Buffer shared across multiple objects can skip setting Buffer Binding Point</param>
-        public void Use(int TexStartIndex = 0, int BufStartIndex = 0)
+        public void Use(int TexStartIndex = 0)
         {
             GL.UseProgram(Handle); // tell openGL to use this object
 
@@ -78,12 +78,13 @@ namespace Graphics.Shaders
         /// <param name="Name">the name of the block</param>
         /// <param name="BlockBinding">the ID of the buffer</param>
         public void SetUniformBlock(string Name, int BlockBinding) 
-        { 
-
-            if (UniformBlockLocation.TryGetValue(Name, out int Location)) 
-                GL.UniformBlockBinding(Handle, Location, BlockBinding); 
-            
-        
+        {
+            if (UniformBlockLocation.TryGetValue(Name, out int Location))
+                GL.UniformBlockBinding(Handle, Location, BlockBinding);
+            /*
+            else 
+                throw new Exception($"Uniform BLock {Name} Does not appear in Program {Handle}");
+            */
         }
         #endregion
         #region Single Uniforms
@@ -226,15 +227,15 @@ namespace Graphics.Shaders
             GL.LinkProgram(Handle);
 
             if (!string.IsNullOrWhiteSpace(GL.GetProgramInfoLog(Handle))) // check for error linking shaders to program
-                throw new Exception("Program failed to compile.");
+                throw new Exception($"Program failed to compile.{GL.GetProgramInfoLog(Handle)}");
 
             foreach(int Shader in ShaderIDs)
             {
                 GL.DetachShader(Handle, Shader);
                 GL.DeleteShader(Shader);
             }
-            
 
+            Console.WriteLine($"Program {Handle}");
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var NumOfUniforms);
             for (int Location = 0; Location < NumOfUniforms; Location++)
             {
@@ -244,7 +245,8 @@ namespace Graphics.Shaders
                 UniformLocation[Name] = Location; // add location lookup
                 // for each uniform sampler2D add default texture to unit
                 if (Type == ActiveUniformType.Sampler2D) 
-                    AssignTextureUnit(TextureManager.Texture("Resources/Textures/Missing.png"), out _); 
+                    AssignTextureUnit(TextureManager.Texture("Resources/Textures/Missing.png"), out _);
+                Console.WriteLine($"Uniform - {Location}: {Type} {Name}");
             }
 
             // same as above but for uniform blocks blocks
@@ -252,7 +254,9 @@ namespace Graphics.Shaders
             for (int Location = 0; Location < NumOfUniformBlocks; Location++)
             { 
                 GL.GetActiveUniformBlockName(Handle, Location, 32, out _, out string Name);
+                GL.GetActiveUniformBlock(Handle, Location, ActiveUniformBlockParameter.UniformBlockBinding, out int Binding);
                 UniformBlockLocation[Name] = Location;
+                Console.WriteLine($"Uniform Block - {Location}: {Name} -> {Binding}");
             }
         }
         #endregion

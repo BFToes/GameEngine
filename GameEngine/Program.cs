@@ -37,6 +37,18 @@ namespace GameEngine
          *      Stop making everything so needlessly complicated
          *      You dont need to implement every possible feature conceivable
          *      Make class do 1 thing and and do it well
+         *      
+         * Maybe I should Just switch to c++
+         *      Advantages:
+         *          struct inheritance
+         *          all the tutorial can be followed more easily
+         *          less messy
+         *          pointers are useful
+         *          
+         *      Disadvantages:
+         *          No garbage collection
+         *          new language difficulties
+         *          less inbuilt functionality
          * 
          */
 
@@ -103,7 +115,6 @@ namespace GameEngine
             $"Resources/shaderscripts/Default.frag")
         {
             RenderingType = PrimitiveType.Triangles;
-            Transform = new Transform();
             Transform.Scale = new Vector3(256, 1, 256);
             Transform.Position = new Vector3(0, -3, 0);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
