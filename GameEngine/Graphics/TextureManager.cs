@@ -70,7 +70,7 @@ namespace Graphics
             height = BMP.Height;
             float[] Serialized_Data = new float[width * height * 4];
             int index = 0;
-            for (int y = height - 1; y >= 0; y--)
+            for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {

@@ -46,13 +46,12 @@ namespace Graphics
             {
                 ProjMat = Matrix4.CreateOrthographic(Size.X, Size.Y, nearZ, farZ);
             }
-            Scene.CameraBlock.Set(0, 64, ProjMat); // set data in uniform block
+            Scene.CameraBlock.Set(0, ProjMat); // set data in uniform block
         }
         protected override void Set(Vector3 Position, Vector3 Scale, Matrix3 RotMat)
         {
             base.Set(Position, Scale, RotMat);
-            Scene.CameraBlock.Set(64, 64, Matrix); // set view in uniform block
+            Scene.CameraBlock.Set(64, Matrix); // set view in uniform block
         }
-
     }
 }

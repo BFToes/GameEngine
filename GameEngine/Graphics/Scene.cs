@@ -2,14 +2,27 @@
 using System;
 using System.Collections.Generic;
 using Graphics.Shaders;
+using System.Drawing;
+using OpenTK.Mathematics;
 
 namespace Graphics
 {
+    /* Thing To Do:
+     * 1: attenuation ie limit effect over distance
+     * 2: light volumes
+     * 3: forward render for shadows
+     * https://learnopengl.com/Advanced-Lighting/Deferred-Shading
+     * 
+     * 
+     * 
+     * 
+     * 
+     */
     class Scene : FrameBufferObject
     {
         public Camera Camera;
         public UniformBlock CameraBlock;
-        
+        public UniformBlock LightBlock;
         public ShaderProgram Material;
         
 
@@ -26,9 +39,12 @@ namespace Graphics
             PositionTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment0, Width, Height);
             NormalTexture = NewTextureAttachment(PixelInternalFormat.Rgba16f, PixelFormat.Rgba, PixelType.Float, FramebufferAttachment.ColorAttachment1, Width, Height);
             AlbedoTexture = NewTextureAttachment(PixelInternalFormat.Rgba, PixelFormat.Rgba, PixelType.UnsignedByte, FramebufferAttachment.ColorAttachment2, Width, Height);
+
+            DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent24, FramebufferAttachment.DepthAttachment, Width, Height);
+            //DepthBuffer = NewTextureAttachment(PixelInternalFormat.DepthComponent24, PixelFormat.DepthComponent, PixelType.Float, FramebufferAttachment.DepthAttachment, Width, Height);
             // draws to multiple textures at once
             GL.DrawBuffers(3, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 });
-            DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent24, FramebufferAttachment.DepthAttachment, Width, Height);
+            
 
             //FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
             //if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
@@ -37,15 +53,27 @@ namespace Graphics
             Camera = new Camera(this, 50, Width, Height, 2, 512);
             CameraBlock = UniformBlock.For<CameraData>(0);
             UniformBlocks.Add(CameraBlock);
-
-
+            
+            
             // set up shader program
-            Material = new ShaderProgram(VertexShader, FragmentShader);
+            Material = ShaderProgram.From(VertexShader, FragmentShader);
 
             Material.SetUniformSampler2D("PositionTexture", PositionTexture);
             Material.SetUniformSampler2D("NormalTexture", NormalTexture);
             Material.SetUniformSampler2D("ColourTexture", AlbedoTexture);
-            Material.SetUniform("ViewPos", Camera.Position);
+
+            
+            LightBlock = UniformBlock.For<LightData>(1, 32);
+            UniformBlocks.Add(LightBlock);
+            LightBlock.Set(0, new Vector4(0, 256, 0, 0), 0); // position
+            LightBlock.Set(16, new Vector4(1, 1, 1, 0), 0); // color
+            Material.SetUniformBlock("LightBlock", 1);
+            Material.SetUniform("LightCount", 2);
+
+            Material.Use();
+            //Material.DebugUniforms();
+
+            RefreshCol = Color.FromArgb(0, 0, 0, 0);
         }
 
         /// <summary>

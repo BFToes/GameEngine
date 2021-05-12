@@ -11,41 +11,92 @@ namespace Graphics.Shaders
 {
     /* THINGS TO DO:
      * 
-     * uniform block/buffer support for faster setting of uniform values
-     * uniform structs support ???
+     * uniform block/buffer support for faster setting of uniform values[DONE]
+     * uniform structs support ??? 
+     *      => assigned same as single uniforms but with [struct].[uniform] syntax
      * setting Uniform TextureUnit [DONE]
-     * set get standard uniform [DONE]
+     * set get single uniform [DONE]
      * uniform array support [Maybe Done idk]???
      * 
      * This Real fuckin messy 
      * 
      */
 
-    sealed public class ShaderProgram
+    public class ShaderProgram
     {
-        public int Handle { get; private set; }
-
+        public readonly int Handle;
+        // uniform management
         private Dictionary<string, int> UniformLocation;
         private Dictionary<string, int> UniformBlockLocation;
         private Dictionary<string, Func<dynamic>> UpdatingUniforms;
-        private int[] Textures = new int[32].Fill(-1);
-        private int[] TexUseCount = new int[32].Fill(0);
-
-
-        public ShaderProgram(string vertexpath, string fragmentpath)
+        // texture unit control
+        private int[] Textures = new int[32].Fill(-1); // texture unit
+        private int[] TexUseCount = new int[32].Fill(0); // number of times texture used
+        public static ShaderProgram From(string vertexpath, string fragmentpath)
         {
-            UniformLocation = new Dictionary<string, int>(); // for uniform location look up
-            UniformBlockLocation = new Dictionary<string, int>(); // for uniform location look up
-            UpdatingUniforms = new Dictionary<string, Func<dynamic>>(); // for updating uniforms
-            
-            Compile(new Dictionary<ShaderType, string>()
+            return new ShaderProgram(new Dictionary<ShaderType, string>()
             {
                 { ShaderType.FragmentShader, fragmentpath },
                 { ShaderType.VertexShader, vertexpath },
             });
         }
-        
-        
+        /// <summary>
+        /// Compiles shaders in openGL
+        /// </summary>
+        public ShaderProgram(Dictionary<ShaderType, string> Shaders)
+        {
+            // create dictionaries
+            UniformLocation = new Dictionary<string, int>(); // for uniform location look up
+            UniformBlockLocation = new Dictionary<string, int>(); // for uniform location look up
+            UpdatingUniforms = new Dictionary<string, Func<dynamic>>(); // for updating uniforms
+
+            // initiate program
+            Handle = GL.CreateProgram();
+
+            // loads each shader and stores IDs in array
+            int[] ShaderIDs = Shaders.Select(s => LoadShader(s.Key, s.Value)).ToArray();
+            
+            // link shaders together
+            GL.LinkProgram(Handle);
+
+            // error checking
+            if (!string.IsNullOrWhiteSpace(GL.GetProgramInfoLog(Handle))) // check for error linking shaders to program
+                throw new Exception($"Program failed to compile.{GL.GetProgramInfoLog(Handle)}");
+            
+            // deletes object when shader program stops using them
+            foreach (int Shader in ShaderIDs)
+            {
+                GL.DetachShader(Handle, Shader);
+                GL.DeleteShader(Shader);
+            }
+
+            // iterates over uniforms in program
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var NumOfUniforms);
+            for (int i = 0; i < NumOfUniforms; i++)
+            {
+                // 32 characters is maximum length of Name
+                // Because. I could make it more but no, I dont think I will.
+
+                GL.GetActiveUniform(Handle, i, 32, out _, out _, out ActiveUniformType Type, out string Name);
+                int Location = GL.GetUniformLocation(Handle, Name);
+
+                if (Type == ActiveUniformType.Sampler2D)  // for each uniform sampler2D add default texture to unit
+                    AssignTextureUnit(TextureManager.Texture("Resources/Textures/Missing.png"), out _);
+                
+                if (!Name.Contains(".")) 
+                    UniformLocation[Name] = Location; // add location lookup
+
+            }
+
+            // same as above but for uniform blocks
+            GL.GetProgram(Handle, GetProgramParameterName.ActiveUniformBlocks, out var NumOfUniformBlocks);
+            for (int Location = 0; Location < NumOfUniformBlocks; Location++)
+            {
+                GL.GetActiveUniformBlockName(Handle, Location, 32, out _, out string Name);
+                UniformBlockLocation[Name] = Location; // add lookup location
+            }
+        }
+
         /// <summary>
         /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
         /// </summary>
@@ -69,7 +120,8 @@ namespace Graphics.Shaders
         /// </summary>
         /// <param name="Name">the name of the uniform.</param>
         /// <param name="UniformGetter">a function to get the uniform</param>
-        public void SetUpdatingUniform(string Name, Func<dynamic>? UniformGetter) => UpdatingUniforms[Name] = UniformGetter;
+        public void SetUpdatingUniform(string Name, Func<dynamic> UniformGetter) => UpdatingUniforms[Name] = UniformGetter;
+        public void RemoveUpdatingUniform(string Name) => UpdatingUniforms.Remove(Name);
         #endregion
         #region Block Uniform
         /// <summary>
@@ -113,7 +165,7 @@ namespace Graphics.Shaders
         public void SetUniform(string Name, Matrix4 Param) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, 1, false, new float[16] { Param.M11, Param.M12, Param.M13, Param.M14, Param.M21, Param.M22, Param.M23, Param.M24, Param.M31, Param.M32, Param.M33, Param.M34, Param.M41, Param.M42, Param.M43, Param.M44 }); }
         #endregion
         #region Array Uniforms
-        // int
+        // int & bool
         public void SetUniform(string Name, IEnumerable<bool> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.Select((Bl) => Bl ? 1 : 0).ToArray()); }
         public void SetUniform(string Name, IEnumerable<int> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform1(Handle, Location, ParamArray.Count(), ParamArray.ToArray()); }
         public void SetUniform(string Name, IEnumerable<Vector2i> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniform2(Handle, Location, ParamArray.Count(), ParamArray.SelectMany((V) => new int[] { V.X, V.Y }).ToArray()); }
@@ -195,7 +247,6 @@ namespace Graphics.Shaders
         #endregion
         #endregion
 
-        #region Compile Functions
         /// <summary>
         /// creates a new shader in OpenGl
         /// </summary>
@@ -211,54 +262,45 @@ namespace Graphics.Shaders
 
             // get info to check for errors
             string info = GL.GetShaderInfoLog(NewShader);
-            if (!string.IsNullOrWhiteSpace(info)) throw new Exception($"{Type} failed to compile. Go fix your code numb nuts.\n\n{info}");
+            if (!string.IsNullOrWhiteSpace(info)) 
+                throw new Exception($"{Type} failed to compile.\r\nGo fix your code numb nuts.\n\n{info}");
             
             GL.AttachShader(Handle, NewShader);
             return NewShader;
         }
-        /// <summary>
-        /// Compiles shaders in openGL
-        /// </summary>
-        private void Compile(Dictionary<ShaderType, string> Shaders)
+        public void DebugUniforms()
         {
-            // creates new program
-            Handle = GL.CreateProgram();
-            int[] ShaderIDs = Shaders.Select(s => LoadShader(s.Key, s.Value)).ToArray();
-            GL.LinkProgram(Handle);
-
-            if (!string.IsNullOrWhiteSpace(GL.GetProgramInfoLog(Handle))) // check for error linking shaders to program
-                throw new Exception($"Program failed to compile.{GL.GetProgramInfoLog(Handle)}");
-
-            foreach(int Shader in ShaderIDs)
-            {
-                GL.DetachShader(Handle, Shader);
-                GL.DeleteShader(Shader);
-            }
-
             Console.WriteLine($"Program {Handle}");
+                       
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var NumOfUniforms);
-            for (int Location = 0; Location < NumOfUniforms; Location++)
+            for (int i = 0; i < NumOfUniforms; i++)
             {
-                // 32 characters is maximum length of Name
-                // Because. I could make it more but no, I dont think I will.
-                GL.GetActiveUniform(Handle, Location, 32, out _, out _, out ActiveUniformType Type, out string Name);
-                UniformLocation[Name] = Location; // add location lookup
-                // for each uniform sampler2D add default texture to unit
-                if (Type == ActiveUniformType.Sampler2D) 
-                    AssignTextureUnit(TextureManager.Texture("Resources/Textures/Missing.png"), out _);
-                Console.WriteLine($"Uniform - {Location}: {Type} {Name}");
+                GL.GetActiveUniform(Handle, i, 32, out int Length, out int Size, out ActiveUniformType Type, out string Name);
+                int Location = GL.GetUniformLocation(Handle, Name);
+                if (Location != -1)
+                {
+                    GL.GetUniform(Handle, Location, out int Unit);
+                    Console.WriteLine($"Uniform - {i}: Location = {Location} -> {Type} {Name} = {Unit}");
+                }
+                else
+                {
+                    Console.WriteLine($"BlockUniform - {i}: {Type} {Name} ");
+                }
+                
             }
+            Console.Write($"TextureUnits : ");
+            Textures.Select(I => { string S = I.ToString(); if (I != -1) Console.Write($"{S}, "); return S; }).ToArray();
+            Console.Write("\n");
 
-            // same as above but for uniform blocks blocks
+            // same as above but for uniform blocks
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniformBlocks, out var NumOfUniformBlocks);
             for (int Location = 0; Location < NumOfUniformBlocks; Location++)
-            { 
+            {
                 GL.GetActiveUniformBlockName(Handle, Location, 32, out _, out string Name);
                 GL.GetActiveUniformBlock(Handle, Location, ActiveUniformBlockParameter.UniformBlockBinding, out int Binding);
-                UniformBlockLocation[Name] = Location;
                 Console.WriteLine($"Uniform Block - {Location}: {Name} -> {Binding}");
+
             }
         }
-        #endregion
     }
 }

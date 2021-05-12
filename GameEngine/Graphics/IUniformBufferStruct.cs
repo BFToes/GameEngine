@@ -29,5 +29,19 @@ namespace Graphics.Shaders
             this.View = View;
         }
     }
+    [StructLayout(LayoutKind.Explicit)]
+    struct LightData : IUniformBufferStruct
+    {
+        [FieldOffset(0)]
+        public Vector4 Position; // + 12 + 4
+        [FieldOffset(16)]
+        public Vector4 Colour; // + 12 + 4
+        public int SizeInBytes => 32;
+        public LightData(Vector3 Position, Vector3 Colour)
+        {
+            this.Position = new Vector4(Position, 1);
+            this.Colour = new Vector4(Colour, 1);
+        }
+    }
     
 }

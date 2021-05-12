@@ -29,12 +29,7 @@ namespace Graphics
         {
             this.Transform = new Transform();
 
-
-            Material.SetUniform("Projection", Canvas.Camera.ProjMat);
-            Material.SetUpdatingUniform("View", () => Canvas.Camera.Matrix);
-
             Material.SetUpdatingUniform("Model", () => Transform.Matrix);
-            
             Material.SetUniformBlock("Camera", 0/*Camera Block Binding Index*/);
             
 
@@ -43,7 +38,7 @@ namespace Graphics
         }
         public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string FragmentShader)
         {
-            this.Material = new ShaderProgram(VertexShader, FragmentShader);
+            Material = ShaderProgram.From(VertexShader, FragmentShader);
             BaseConstructor(Canvas, Vertices);
             Canvas.Add(this);
         }
@@ -121,7 +116,7 @@ namespace Graphics
             VertexArray = Vertices; // sets array attribute to use buffers after buffer has been set
         }
         /// <summary>
-        /// Show this object in the viewport
+        /// Show this object in the Framebuffer
         /// </summary>
         public void Render()
         {

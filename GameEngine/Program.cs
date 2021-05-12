@@ -23,33 +23,14 @@ namespace GameEngine
          * - setup invisible occluder objects and render from light source
          * - pre or post processing???
          * 
-         * 
-         * 
-         * 
          * PROBLEMS TO SORT OUT:
-         * Setup the fucking Idisposables already 
-         * its causing problems
+         *      Setup the fucking Idisposables already 
+         *      its causing problems
          * 
-         * Uniform camera block should probably be set to the scene and not the camera 
-         * that way it wont have to be recreated when a new camera is assigned
-         * 
-         * Simplify This shit:
-         *      Stop making everything so needlessly complicated
-         *      You dont need to implement every possible feature conceivable
-         *      Make class do 1 thing and and do it well
-         *      
-         * Maybe I should Just switch to c++
-         *      Advantages:
-         *          struct inheritance
-         *          all the tutorial can be followed more easily
-         *          less messy
-         *          pointers are useful
-         *          
-         *      Disadvantages:
-         *          No garbage collection
-         *          new language difficulties
-         *          less inbuilt functionality
-         * 
+         *      Simplify This shit:
+         *          Stop making everything so needlessly complicated
+         *          You dont need to implement every possible feature conceivable
+         *          Make class do 1 thing and and do it well
          */
 
         static void Main(string[] args)
@@ -63,7 +44,7 @@ namespace GameEngine
                 RW.Scene.Camera.Position = new Vector3(0, 0, 3);
                 Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW, RW.Scene);
-                //var T = DelaunayPlain.FromRand(RW.ViewPort, 20000);
+                RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
 
 
                 Action<MouseMoveEventArgs> MoveCamera = (e) => RW.Scene.Camera.Position += 10 * new Vector3(RW.Scene.Camera.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
@@ -93,11 +74,6 @@ namespace GameEngine
                             break;
                     }
                 };
-
-                RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
-                //RW.Process += (delta) => RW.ViewPort.Camera.Rotation = new Vector3(0, RW.Time * 0.3f, 0);
-                //RW.Process += (delta) => ((Transform3D)RO1.Transform).Scale = new Vector3(1, (MathF.Cos(RW.Time * 1.2f) + 1) / 2, 1);
-                //RW.Process += (delta) => ((Transform3D)RO1.Transform).Position = new Vector3(0, 0, MathF.Sin(RW.Time * 0.5f) - 4);
 
                 RW.Run();
             }
@@ -150,6 +126,9 @@ namespace GameEngine
             $"Resources/shaderscripts/Default.frag")
         {
             RenderingType = PrimitiveType.Triangles;
+
+            this.Transform.Scale = new Vector3(0.5f, 0.5f, 0.5f);
+
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUpdatingUniform("Time", () => RW.Time);
