@@ -7,6 +7,7 @@ uniform sampler2D PositionTexture;
 uniform sampler2D NormalTexture;
 uniform sampler2D ColourTexture;
 uniform int LightCount;
+
 struct LightData { 
     vec4 Position;
     vec4 Color;
@@ -26,16 +27,15 @@ void main(void)
     vec3 lighting = vec3(0.1);
     
     for( int i = 0; i < LightCount; i++) {
-        vec3 lightDir =normalize(Lights[i].Position.rgb - FragPos);
+        vec3 lightDir = normalize(Lights[i].Position.rgb - FragPos);
         vec3 diffuse = max(dot(Normal, lightDir), 0) * Lights[i].Color.rgb;
         lighting += diffuse;
     }
     
-    //if (FragUV.x < 0.5 && FragUV.y > 0.5) Colour = vec4(FragPos, 1.0); // top left
-    //if (FragUV.x > 0.5 && FragUV.y > 0.5) Colour = vec4(Normal, 1.0); // top right
-    //if (FragUV.x > 0.5 && FragUV.y < 0.5) Colour = vec4(AlbedoSpec.rgb, 1.0); // bottom left
-    //if (FragUV.x < 0.5 && FragUV.y < 0.5) 
-    Colour = vec4(lighting * AlbedoSpec.rgb, 1.0); 
+    if (FragUV.x < 0.5 && FragUV.y > 0.5) Colour = vec4(mod(FragPos.x, 1), mod(FragPos.y, 1), mod(FragPos.z, 1), 1.0); // top left
+    if (FragUV.x > 0.5 && FragUV.y > 0.5) Colour = vec4(Normal, 1.0); // top right
+    if (FragUV.x > 0.5 && FragUV.y < 0.5) Colour = vec4(AlbedoSpec.rgb, 1.0); // bottom right
+    if (FragUV.x < 0.5 && FragUV.y < 0.5) Colour = vec4(lighting * AlbedoSpec.rgb, 1.0); // bottom left
 
     
 }

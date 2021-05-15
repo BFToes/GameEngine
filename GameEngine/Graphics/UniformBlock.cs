@@ -14,6 +14,32 @@ namespace Graphics
         private int SizeInBytes;
 
         /// <summary>
+        /// creates a uniform block with data
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="BindingPoint"></param>
+        /// <param name="Data"></param>
+        /// <returns></returns>
+        public static UniformBlock FromData<T>(int BindingPoint, T Data) where T : struct, IUniformBufferStruct
+        {
+            UniformBlock B = new UniformBlock(BindingPoint, new T().SizeInBytes, 1);
+            B.Set(Data);
+            return B;
+        }
+        /// <summary>
+        /// creates a uniform block with array data set
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="BindingPoint"></param>
+        /// <param name="Data"></param>
+        /// <returns></returns>
+        public static UniformBlock FromData<T>(int BindingPoint, T[] Data) where T : struct, IUniformBufferStruct
+        {
+            UniformBlock B = new UniformBlock(BindingPoint, new T().SizeInBytes, Data.Length);
+            for(int i = 0; i < Data.Length; i++) B.Set(Data[i], i);
+            return B;
+        }
+        /// <summary>
         /// Create Uniform Block To contain struct
         /// </summary>
         /// <typeparam name="T">the struct uniform block shall contain</typeparam>

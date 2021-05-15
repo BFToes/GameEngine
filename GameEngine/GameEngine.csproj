@@ -14,10 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Graphics\Light.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ApplicationDefinition Include="Resources\Shaderscripts\CodeFile1.shader" />
   </ItemGroup>
 
@@ -34,6 +30,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Bilinear Warp\BilinearW.vert">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Light Shaders\Light.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Light Shaders\Light.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Simple.frag">

@@ -25,21 +25,17 @@ namespace Graphics
 
         private Vertex[] vertexarray;
 
-        private void BaseConstructor(Scene Canvas, Vertex[] Vertices)
+        public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string FragmentShader)
         {
+            Material = ShaderProgram.From(VertexShader, FragmentShader);
             this.Transform = new Transform();
 
             Material.SetUpdatingUniform("Model", () => Transform.Matrix);
             Material.SetUniformBlock("Camera", 0/*Camera Block Binding Index*/);
-            
+
 
             // Buffer array is the buffer that stores the vertices. this requires shaderprogram to be initiated because it adds in the shader parameters of the vertices
             Init_BufferArray(out VertexArrayHandle, out VertexBufferHandle, Vertices);
-        }
-        public RenderObject(Scene Canvas, Vertex[] Vertices, string VertexShader, string FragmentShader)
-        {
-            Material = ShaderProgram.From(VertexShader, FragmentShader);
-            BaseConstructor(Canvas, Vertices);
             Canvas.Add(this);
         }
 

@@ -10,13 +10,7 @@ using ListExtensions;
 namespace Graphics.Shaders
 {
     /* THINGS TO DO:
-     * 
-     * uniform block/buffer support for faster setting of uniform values[DONE]
-     * uniform structs support ??? 
-     *      => assigned same as single uniforms but with [struct].[uniform] syntax
-     * setting Uniform TextureUnit [DONE]
-     * set get single uniform [DONE]
-     * uniform array support [Maybe Done idk]???
+     *
      * 
      * This Real fuckin messy 
      * 
@@ -26,12 +20,20 @@ namespace Graphics.Shaders
     {
         public readonly int Handle;
         // uniform management
-        private Dictionary<string, int> UniformLocation;
-        private Dictionary<string, int> UniformBlockLocation;
-        private Dictionary<string, Func<dynamic>> UpdatingUniforms;
-        // texture unit control
+        private Dictionary<string, int> UniformLocation; // uniform lookup
+        private Dictionary<string, int> UniformBlockLocation;// uniform block lookup
+        private Dictionary<string, Func<dynamic>> UpdatingUniforms; // uniform updater functions
+        // texture unit management
         private int[] Textures = new int[32].Fill(-1); // texture unit
         private int[] TexUseCount = new int[32].Fill(0); // number of times texture used
+        
+        
+        /// <summary>
+        /// creates a shader program from the files found at vertex path and fragment path
+        /// </summary>
+        /// <param name="vertexpath"></param>
+        /// <param name="fragmentpath"></param>
+        /// <returns>the new shader program</returns>
         public static ShaderProgram From(string vertexpath, string fragmentpath)
         {
             return new ShaderProgram(new Dictionary<ShaderType, string>()
@@ -97,22 +99,6 @@ namespace Graphics.Shaders
             }
         }
 
-        /// <summary>
-        /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
-        /// </summary>
-        /// <param name="TexStartIndex">For optimisation, if texture shared across multiple objects can skip reloading Texture Unit</param>
-        /// <param name="BufStartIndex">For optimisation, if Buffer shared across multiple objects can skip setting Buffer Binding Point</param>
-        public void Use(int TexStartIndex = 0)
-        {
-            GL.UseProgram(Handle); // tell openGL to use this object
-
-            for(int Unit = TexStartIndex; TexUseCount[Unit] != 0; Unit++) 
-                GL.BindTextureUnit(Unit, Textures[Unit]); // bind textures into units
-
-            foreach (string Uniform in UpdatingUniforms.Keys) 
-                SetUniform(Uniform, UpdatingUniforms[Uniform]());
-        }
-
         #region Set Uniform Functions
         #region Updating Uniform
         /// <summary>
@@ -129,7 +115,7 @@ namespace Graphics.Shaders
         /// </summary>
         /// <param name="Name">the name of the block</param>
         /// <param name="BlockBinding">the ID of the buffer</param>
-        public void SetUniformBlock(string Name, int BlockBinding) 
+        public void SetUniformBlock(string Name, int BlockBinding)
         {
             if (UniformBlockLocation.TryGetValue(Name, out int Location))
                 GL.UniformBlockBinding(Handle, Location, BlockBinding);
@@ -235,10 +221,10 @@ namespace Graphics.Shaders
             if (Textures.Contains(Tex)) // if texture already bound
             {
                 while (Textures[++Unit] != Tex) ; // linear search for texture unit
-            }  
+            }
             else // if texture is not already bound
             {
-                while(TexUseCount[++Unit] != 0); // linear search for unused unit
+                while (TexUseCount[++Unit] != 0) ; // linear search for unused unit
                 Textures[Unit] = Tex;
             }
 
@@ -248,28 +234,28 @@ namespace Graphics.Shaders
         #endregion
 
         /// <summary>
-        /// creates a new shader in OpenGl
+        /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
         /// </summary>
-        /// <param name="Type"></param>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private int LoadShader(ShaderType Type, string path)
+        /// <param name="TexStartIndex">For optimisation, if texture shared across multiple objects can skip reloading Texture Unit</param>
+        /// <param name="BufStartIndex">For optimisation, if Buffer shared across multiple objects can skip setting Buffer Binding Point</param>
+        public void Use(int TexStartIndex = 0)
         {
-            int NewShader = GL.CreateShader(Type); // initiate new shader
-            string code = File.ReadAllText(path); // get code
-            GL.ShaderSource(NewShader, code); // attaches shader and code           
-            GL.CompileShader(NewShader); // compiles shader code
+            GL.UseProgram(Handle); // tell openGL to use this object
 
-            // get info to check for errors
-            string info = GL.GetShaderInfoLog(NewShader);
-            if (!string.IsNullOrWhiteSpace(info)) 
-                throw new Exception($"{Type} failed to compile.\r\nGo fix your code numb nuts.\n\n{info}");
-            
-            GL.AttachShader(Handle, NewShader);
-            return NewShader;
+            for(int Unit = TexStartIndex; TexUseCount[Unit] != 0; Unit++) 
+                GL.BindTextureUnit(Unit, Textures[Unit]); // bind textures into units
+
+            foreach (string Uniform in UpdatingUniforms.Keys) 
+                SetUniform(Uniform, UpdatingUniforms[Uniform]());
         }
+        
+        /// <summary>
+        /// Writes all active uniforms' data to the console
+        /// </summary>
         public void DebugUniforms()
         {
+            //Use(); // program must be used at least once to assign values from updaters
+
             Console.WriteLine($"Program {Handle}");
                        
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var NumOfUniforms);
@@ -301,6 +287,28 @@ namespace Graphics.Shaders
                 Console.WriteLine($"Uniform Block - {Location}: {Name} -> {Binding}");
 
             }
+        }
+
+        /// <summary>
+        /// creates a new shader in OpenGL
+        /// </summary>
+        /// <param name="Type">shader Type</param>
+        /// <param name="path">the path to the shader</param>
+        /// <returns>Shader ID</returns>
+        private int LoadShader(ShaderType Type, string path)
+        {
+            int NewShader = GL.CreateShader(Type); // initiate new shader
+            string code = File.ReadAllText(path); // get code
+            GL.ShaderSource(NewShader, code); // attaches shader and code           
+            GL.CompileShader(NewShader); // compiles shader code
+
+            // get info to check for errors
+            string info = GL.GetShaderInfoLog(NewShader);
+            if (!string.IsNullOrWhiteSpace(info))
+                throw new Exception($"{Type} failed to compile.\r\nGo fix your code numb nuts.\n\n{info}");
+
+            GL.AttachShader(Handle, NewShader);
+            return NewShader;
         }
     }
 }

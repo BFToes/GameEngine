@@ -43,5 +43,5 @@ namespace Graphics.Shaders
             this.Colour = new Vector4(Colour, 1);
         }
     }
-    
+
 }
