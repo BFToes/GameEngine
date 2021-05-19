@@ -8,9 +8,7 @@ namespace Graphics
 {
     abstract class FrameBuffer
     {
-        public ShaderProgram PostProcess;
-
-        public Color4 RefreshCol = Color.Purple;
+        public Color4 RefreshCol = Color.Purple; // purple so you remember to change it
         public Vector2i Size
         {
             get => size;
@@ -23,8 +21,6 @@ namespace Graphics
 
         private Vector2i size;
         
-        protected int VAO; // vertex array object
-        protected int VBO; // vertex buffer
         protected int FBO; // frame buffer object
 
         public FrameBuffer(int Width, int Height)
@@ -37,27 +33,6 @@ namespace Graphics
             };
             Size = new Vector2i(Width, Height);
             
-            #region vertex buffer/array object setup
-            // setup array
-            VAO = GL.GenVertexArray();
-            GL.BindVertexArray(VAO);
-            // vector2 position
-            GL.VertexArrayAttribBinding(VAO, 0, 0); // generates a new attribute binding to location in vertex buffer array
-            GL.EnableVertexArrayAttrib(VAO, 0); // enables the attribute binding to location
-            GL.VertexArrayAttribFormat(VAO, 0, 2, VertexAttribType.Float, false, 0);
-            // vector2 FragUV
-            GL.VertexArrayAttribBinding(VAO, 1, 0);
-            GL.EnableVertexArrayAttrib(VAO, 1);
-            GL.VertexArrayAttribFormat(VAO, 1, 2, VertexAttribType.Float, false, 8);
-            // setup buffer
-            VBO = GL.GenBuffer(); // generates and binds vertex buffer object
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO); // uses this buffer
-            GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, new Vertex2D().SizeInBytes); // assigns vertice data
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            GL.BufferData(BufferTarget.ArrayBuffer, 4 * new Vertex2D().SizeInBytes, new float[16] { -1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1 }, BufferUsageHint.StaticDraw);
-            #endregion
-
             #region Start Setup Framebuffer
             FBO = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
@@ -136,12 +111,12 @@ namespace Graphics
         /// <summary>
         /// sets this frame buffer to the render target
         /// </summary>
-        public virtual void Render()
+        public virtual void Use()
         {
-            PostProcess.Use();
-            GL.BindVertexArray(VAO);
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode.Fill);
-            GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FBO);
+            GL.Viewport(0, 0, Size.X, Size.Y);
+            GL.ClearColor(RefreshCol);
         }
+        public static implicit operator int(FrameBuffer FB) => FB.FBO;
     }
 }

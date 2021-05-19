@@ -26,20 +26,39 @@ namespace Graphics.Shaders
         // texture unit management
         private int[] Textures = new int[32].Fill(-1); // texture unit
         private int[] TexUseCount = new int[32].Fill(0); // number of times texture used
-        
-        
-        /// <summary>
-        /// creates a shader program from the files found at vertex path and fragment path
-        /// </summary>
-        /// <param name="vertexpath"></param>
-        /// <param name="fragmentpath"></param>
-        /// <returns>the new shader program</returns>
-        public static ShaderProgram From(string vertexpath, string fragmentpath)
+
+        public static ShaderProgram From(string vertexcode, string geometrycode, string fragmentcode)
         {
             return new ShaderProgram(new Dictionary<ShaderType, string>()
             {
-                { ShaderType.FragmentShader, fragmentpath },
-                { ShaderType.VertexShader, vertexpath },
+                { ShaderType.FragmentShader, fragmentcode },
+                { ShaderType.GeometryShader, geometrycode},
+                { ShaderType.VertexShader, vertexcode },
+            });
+        }
+        public static ShaderProgram From(string vertexcode, string fragmentcode)
+        {
+            return new ShaderProgram(new Dictionary<ShaderType, string>()
+            {
+                { ShaderType.FragmentShader, fragmentcode },
+                { ShaderType.VertexShader, vertexcode },
+            });
+        }
+        public static ShaderProgram ReadFrom(string vertexpath, string geometrypath, string fragmentpath)
+        {
+            return new ShaderProgram(new Dictionary<ShaderType, string>()
+            {
+                { ShaderType.FragmentShader, File.ReadAllText(fragmentpath) },
+                { ShaderType.GeometryShader, File.ReadAllText(geometrypath) },
+                { ShaderType.VertexShader, File.ReadAllText(vertexpath) },
+            });
+        }
+        public static ShaderProgram ReadFrom(string vertexpath, string fragmentpath)
+        {
+            return new ShaderProgram(new Dictionary<ShaderType, string>()
+            {
+                { ShaderType.FragmentShader, File.ReadAllText(fragmentpath) },
+                { ShaderType.VertexShader, File.ReadAllText(vertexpath) },
             });
         }
         /// <summary>
@@ -295,10 +314,10 @@ namespace Graphics.Shaders
         /// <param name="Type">shader Type</param>
         /// <param name="path">the path to the shader</param>
         /// <returns>Shader ID</returns>
-        private int LoadShader(ShaderType Type, string path)
+        private int LoadShader(ShaderType Type, string code)
         {
             int NewShader = GL.CreateShader(Type); // initiate new shader
-            string code = File.ReadAllText(path); // get code
+            
             GL.ShaderSource(NewShader, code); // attaches shader and code           
             GL.CompileShader(NewShader); // compiles shader code
 

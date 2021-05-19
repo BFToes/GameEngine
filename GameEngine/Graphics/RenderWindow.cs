@@ -12,12 +12,8 @@ namespace Graphics
         public float Time;
         public RenderWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
-            Scene = new Scene(
-                $"Resources/shaderscripts/PostProcess/PostProcess.vert",
-                $"Resources/shaderscripts/PostProcess/PostProcess.frag", 
-                Size.X, Size.Y);
+            Scene = new Scene(Size.X, Size.Y);
             Process = (delta) => Time += delta;
-            
 
             #region OpenGL Functions and window parameters
             VSync = VSyncMode.On;
@@ -34,7 +30,7 @@ namespace Graphics
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            Scene.Process();
+            Scene.Render();
             Process((float)e.Time);
             //Title = $"{MathF.Round(1 / (float)e.Time)}";
 
@@ -42,12 +38,6 @@ namespace Graphics
             GL.ClearColor(Color.DarkRed);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            // use default
-            GL.CullFace(CullFaceMode.Back);
-            GL.DepthFunc(DepthFunction.Less);
-            GL.BlendFunc(BlendingFactor.Src1Alpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.Viewport(0, 0, Size.X, Size.Y);
-            
             Scene.Render();
 
             SwapBuffers(); // swap out old buffer with new buffer

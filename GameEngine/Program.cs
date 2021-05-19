@@ -81,12 +81,12 @@ namespace GameEngine
     }
     class Floor : RenderObject<Vertex3D>
     {
-        public Floor(Scene RL) : base(RL, new Vertex3D[]
+        public Floor(Scene RL) : base(RL, Mesh<Vertex3D>.From(new Vertex3D[]
         {
             new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D( 1, 0,-1, 0, 1, 0, 1, 1), // top
             new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D(-1, 0, 1, 0, 1, 0, 0, 0),
 
-        },
+        }),
             $"Resources/shaderscripts/Default.vert",
             $"Resources/shaderscripts/Default.frag")
         {
@@ -102,7 +102,7 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
-        public Test(RenderWindow RW, Scene RL) : base(RL, new Vertex3D[]
+        public Test(RenderWindow RW, Scene RL) : base(RL, Mesh<Vertex3D>.From(new Vertex3D[]
         {
             new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1,-1, 1, 0, 0, 1, 1, 0), // front
             new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1, 1, 1, 0, 0, 1, 0, 1),
@@ -121,7 +121,7 @@ namespace GameEngine
 
             new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1,-1, 0,-1, 0, 1, 1), // bottom
             new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1, 1, 0,-1, 0, 0, 0),
-        },
+        }),
             $"Resources/shaderscripts/Default.vert",
             $"Resources/shaderscripts/Default.frag")
         {

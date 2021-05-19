@@ -32,10 +32,10 @@
     <None Update="Resources\Shaderscripts\Bilinear Warp\BilinearW.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Light Shaders\Light.frag">
+    <None Update="Resources\Shaderscripts\PostProcess\Ambient.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Light Shaders\Light.vert">
+    <None Update="Resources\Shaderscripts\PostProcess\Ambient.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Simple.frag">
