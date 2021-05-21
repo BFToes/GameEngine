@@ -9,7 +9,7 @@ namespace Graphics
 {
     public class UniformBlock
     {
-        private int Handle;
+        private int UniformBuffer;
         private int BindingPoint;
         private int SizeInBytes;
 
@@ -51,8 +51,8 @@ namespace Graphics
         {
             this.SizeInBytes = SizeInBytes;
             this.BindingPoint = BindingPoint;
-            this.Handle = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.UniformBuffer, Handle);
+            this.UniformBuffer = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.UniformBuffer, UniformBuffer);
             GL.BufferData(BufferTarget.UniformBuffer, SizeInBytes * Count, (IntPtr)null, BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.UniformBuffer, 0);
         }
@@ -62,7 +62,7 @@ namespace Graphics
         /// <typeparam name="T"></typeparam>
         /// <param name="Data"></param>
         /// <param name="Index"></param>
-        public void Set<T>(T Data, int Index = 0) where T : struct, IUniformBufferStruct => GL.NamedBufferSubData(Handle, (IntPtr)(Index * SizeInBytes), SizeInBytes, ref Data);
+        public void Set<T>(T Data, int Index = 0) where T : struct, IUniformBufferStruct => GL.NamedBufferSubData(UniformBuffer, (IntPtr)(Index * SizeInBytes), SizeInBytes, ref Data);
         /// <summary>
         /// Set indivudual values in the uniform buffer
         /// </summary>
@@ -70,30 +70,40 @@ namespace Graphics
         /// <param name="Offset"></param>
         /// <param name="Data"></param>
         /// <param name="Index"></param>
-        unsafe public void Set<T>(int Offset, T Data, int Index = 0) where T : struct => GL.NamedBufferSubData(Handle, (IntPtr)(Index * SizeInBytes + Offset), Marshal.SizeOf(typeof(T)), ref Data);
+        unsafe public void Set<T>(int Offset, T Data, int Index = 0) where T : struct => GL.NamedBufferSubData(UniformBuffer, (IntPtr)(Index * SizeInBytes + Offset), Marshal.SizeOf(typeof(T)), ref Data);
         /// <summary>
         /// Gets the value stored in the uniform buffer.
         /// </summary>
         /// <returns></returns>
-        public T[] Get<T>(int Length = 1)where T : struct
-        {
-            T[] Array;
-            GL.GetNamedBufferSubData(Handle, IntPtr.Zero, SizeInBytes, Array = new T[Length]);
-            return Array;
-        }
-        /// <summary>
-        /// Gets the value stored in the uniform buffer.
-        /// </summary>
-        /// <returns></returns>
-        public T Get<T>(int Offset, int Size) where T : struct
+        public T Get<T>() where T : struct, IUniformBufferStruct
         {
             T Data = new T();
-            GL.GetNamedBufferSubData(Handle, (IntPtr)Offset, Size, ref Data);
+            GL.GetNamedBufferSubData(UniformBuffer, IntPtr.Zero, SizeInBytes, ref Data);
             return Data;
         }
         /// <summary>
+        /// Gets the value stored in the uniform buffer.
+        /// </summary>
+        /// <returns></returns>
+        unsafe public T Get<T>(int Offset) where T : unmanaged
+        {
+            T Data = new T();
+            GL.GetNamedBufferSubData(UniformBuffer, (IntPtr)Offset, Marshal.SizeOf(typeof(T)), ref Data);
+            return Data;
+        }
+        /// <summary>
+        /// Gets the value stored in the uniform without unsafe context.
+        /// </summary>
+        public T Get<T>(int Offset, int Size) where T : unmanaged
+        {
+            T Data = new T();
+            GL.GetNamedBufferSubData(UniformBuffer, (IntPtr)Offset, Size, ref Data);
+            return Data;
+        }
+
+        /// <summary>
         /// binds uniform block to its index for use
         /// </summary>
-        public void Bind() => GL.BindBufferBase(BufferRangeTarget.UniformBuffer, BindingPoint, Handle);
+        public void Bind() => GL.BindBufferBase(BufferRangeTarget.UniformBuffer, BindingPoint, UniformBuffer);
     }
 }

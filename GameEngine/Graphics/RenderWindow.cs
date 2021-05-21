@@ -16,8 +16,10 @@ namespace Graphics
             Process = (delta) => Time += delta;
 
             VSync = VSyncMode.On;
-            //GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
+            GL.CullFace(CullFaceMode.Back);
+            GL.DepthFunc(DepthFunction.Less);
             //GL.Enable(EnableCap.Blend);
         }
 

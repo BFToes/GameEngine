@@ -8,55 +8,79 @@ namespace Graphics
 {
     /*
     struct LightData {
-        vec3 Colour;
-        float AmbientIntensity;
-        vec3 Position;
-        float DiffuseIntensity;
-        vec3 Attenuation;
+        0, 12     vec3 Colour; 
+        12, 4     float AmbientIntensity;
+        16, 12    vec3 Position;
+        28, 4     float DiffuseIntensity;
+        32, 12    vec3 Attenuation;
+        44 = total
     };  
     */
 
     interface ILightObject
     {
-        public Vector3 Position { get; set; }
-        public float AmbientIntensity { get; set; }
-        public Vector3 Colour { get; set; }
-        public float DiffuseIntensity { get; set; }
-        public Vector3 Attenuation { get; set; }
         public void Render();
     }
-    class LightObject : ILightObject
+    class PointLight : ILightObject
     {
         private Transform Transform = new Transform();
-        public static Mesh<Simple3D> LightMesh = Mesh<Simple3D>.ReadFrom("Resources/Meshes/Sphere.obj", (p,n,t) => new Simple3D(p));
-        public Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
-        public float AmbientIntensity { get; set; }
-        public Vector3 Colour { get; set; }
-        public float DiffuseIntensity { get; set; }
-        public Vector3 Attenuation { get; set; }
+        private UniformBlock LightBlock = UniformBlock.For<LightData>(1); // light gets block binding 1
 
-        public LightObject(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 0.2f, float AmbientIntensity = 0, float CurveExp = 0.3f, float CurveLin = 0, float CurveCon = 0)
+        public static Mesh<Simple3D> LightMesh = Mesh<Simple3D>.ReadFrom("Resources/Meshes/Sphere.obj", (p,n,t) => new Simple3D(p));
+
+        public Vector3 Position { get => Transform.Position; set => Transform.Position = value; }
+        public Vector3 Colour 
+        {
+            get => LightBlock.Get<Vector3>(0);
+            set => LightBlock.Set(0, value); 
+        }
+        public float AmbientIntensity 
+        {
+            get => LightBlock.Get<float>(16);
+            set => LightBlock.Set(16, value);
+        }
+        public float DiffuseIntensity 
+        {
+            get => LightBlock.Get<float>(28);
+            set => LightBlock.Set(28, value);
+        }
+        public Vector3 Attenuation 
+        {
+            get => LightBlock.Get<Vector3>(32);
+            set => LightBlock.Set(32, value);
+        }
+
+        public PointLight(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 0.2f, float AmbientIntensity = 0, float CurveExp = 0.3f, float CurveLin = 0, float CurveCon = 0)
         {
             this.Colour = Colour;
             this.Position = Position;
             this.AmbientIntensity = AmbientIntensity;
             this.DiffuseIntensity = DiffuseIntensity;
             this.Attenuation = new Vector3(CurveCon, CurveLin, CurveExp);
-            Transform.Scale = new Vector3(CalcScale(Colour, CurveExp, CurveLin, CurveCon, DiffuseIntensity));
+            Transform.Scale = new Vector3(CalcDistance(Colour, Attenuation, DiffuseIntensity));
         }
         public void Render() 
         {
-            
-
+            LightBlock.Bind();
+            StencilPass();
+            LightPass();
+        }
+        private void StencilPass() 
+        { 
+            // do something
+        }
+        private void LightPass() 
+        { 
+            // do something else
         }
 
         /// <summary>
         /// solves quadratic to find light scale
         /// </summary>
-        private static float CalcScale(Vector3 Colour, float CurveExp, float CurveLin, float CurveCon, float DIntensity)
+        private static float CalcDistance(Vector3 Colour, Vector3 Curve, float DIntensity)
         {
             float MaxChannel = MathF.Max(MathF.Max(Colour.X, Colour.Y), Colour.Z);
-            return (-CurveLin + MathF.Sqrt(CurveLin * CurveLin - 4 * CurveExp * (CurveCon - 256 * MaxChannel * DIntensity))) / 2 / CurveExp;
+            return (-Curve.Y + MathF.Sqrt(Curve.Y * Curve.Y - 4 * Curve.Z * (Curve.X - 256 * MaxChannel * DIntensity))) / 2 / Curve.Z;
         }
     }
 }

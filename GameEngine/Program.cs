@@ -99,29 +99,11 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
-        public Test(RenderWindow RW, Scene RL) : base(RL, Mesh<Vertex3D>.From(new Vertex3D[]
-        {
-            new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1,-1, 1, 0, 0, 1, 1, 0), // front
-            new Vertex3D(-1,-1, 1, 0, 0, 1, 0, 0), new Vertex3D( 1, 1, 1, 0, 0, 1, 1, 1), new Vertex3D(-1, 1, 1, 0, 0, 1, 0, 1),
-
-            new Vertex3D(-1,-1,-1, 0, 0,-1, 0, 0), new Vertex3D( 1, 1,-1, 0, 0,-1, 1, 1), new Vertex3D( 1,-1,-1, 0, 0,-1, 1, 0), // back
-            new Vertex3D( 1, 1,-1, 0, 0,-1, 1, 1), new Vertex3D(-1,-1,-1, 0, 0,-1, 0, 0), new Vertex3D(-1, 1,-1, 0, 0,-1, 0, 1),
-
-            new Vertex3D(-1,-1,-1,-1, 0, 0, 0, 1), new Vertex3D(-1, 1, 1,-1, 0, 0, 1, 0), new Vertex3D(-1, 1,-1,-1, 0, 0, 1, 1), // left
-            new Vertex3D(-1, 1, 1,-1, 0, 0, 1, 0), new Vertex3D(-1,-1,-1,-1, 0, 0, 0, 1), new Vertex3D(-1,-1, 1,-1, 0, 0, 0, 0),
-
-            new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 0), new Vertex3D( 1,-1,-1, 1, 0, 0, 0, 1), new Vertex3D( 1, 1,-1, 1, 0, 0, 1, 1), // right
-            new Vertex3D( 1,-1,-1, 1, 0, 0, 0, 1), new Vertex3D( 1, 1, 1, 1, 0, 0, 1, 0), new Vertex3D( 1,-1, 1, 1, 0, 0, 0, 0),
-
-            new Vertex3D(-1, 1,-1, 0, 1, 0, 0, 1), new Vertex3D( 1, 1, 1, 0, 1, 0, 1, 0), new Vertex3D( 1, 1,-1, 0, 1, 0, 1, 1), // top
-            new Vertex3D( 1, 1, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 1,-1, 0, 0, 0, 0, 1), new Vertex3D(-1, 1, 1, 0, 1, 0, 0, 0),
-
-            new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1,-1, 0,-1, 0, 1, 1), // bottom
-            new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1, 1, 0,-1, 0, 0, 0),
-        }))
+        private static Mesh<Vertex3D> CubeMesh = Mesh<Vertex3D>.ReadFrom("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
+        public Test(RenderWindow RW, Scene RL) : base(RL, CubeMesh)
         {
             Transform.Scale = new Vector3(0.5f, 0.5f, 0.5f);
-
+            Transform.Position = new Vector3(0, 0.5f, 0);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUpdatingUniform("Time", () => RW.Time);

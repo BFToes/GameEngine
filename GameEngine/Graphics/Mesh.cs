@@ -117,10 +117,10 @@ namespace Graphics
         private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker)
         {
             List<Vert> Vertices = new List<Vert>();
-            List<Vector3> Positions = new List<Vector3>(); // position
-            List<Vector2> Texels = new List<Vector2>(); // texel
-            List<Vector3> Normals = new List<Vector3>(); // normal
-            List<Vector3i[]> Faces = new List<Vector3i[]>(); // face
+            List<Vector3> Positions = new List<Vector3>();
+            List<Vector2> Texels = new List<Vector2>(); 
+            List<Vector3> Normals = new List<Vector3>();
+            List<Vector3i[]> Faces = new List<Vector3i[]>();
             
             string file = File.ReadAllText(path);
             string[] Lines = file.Split('\n');
@@ -149,14 +149,15 @@ namespace Graphics
                         Normals.Add(new Vector3(xn, yn, zn));
                         break;
                     case "f":
-                        Vector3i[] Face = new Vector3i[Parameters.Length];
-                        for (int i = 1; i < Parameters.Length; i++)
+                        Vector3i[] Face = new Vector3i[Parameters.Length - 1];
+                        for (int i = 0; i < Parameters.Length - 1; i++)
                         {
-                            string[] Parts = Parameters[i].Split('/');
-                            int L = Parts.Length;
-                            
+                            string[] Parts = Parameters[i + 1].Split('/');
+                            Face[i].X = Parts[0] != "" ? int.Parse(Parts[0]) - 1 : -1;
+                            Face[i].Y = Parts[1] != "" ? int.Parse(Parts[1]) - 1 : -1;
+                            Face[i].Z = Parts[2] != "" ? int.Parse(Parts[2]) - 1 : -1;
                         }
-
+                        Faces.Add(Face);
                         break;
                 }
             }
@@ -165,8 +166,8 @@ namespace Graphics
                 foreach(Vector3i V in F) // for each vertex in face
                 {
                     Vector3 p = V.X != -1 ? Positions[V.X] : new Vector3(0);
-                    Vector3 n = V.Y != -1 ? Normals[V.Y] : new Vector3(0);
-                    Vector2 t = V.Z != -1 ? Texels[V.Z] : new Vector2(0);
+                    Vector2 t = V.Y != -1 ? Texels[V.Y] : new Vector2(0);
+                    Vector3 n = V.Z != -1 ? Normals[V.Z] : new Vector3(0);
                     Vertices.Add(VertexPacker(p, n, t));
                 }
             }

@@ -23,10 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Resources\Meshes\Cube.obj">
+    <None Update="Resources\Meshes\belly button.obj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Meshes\Cube2.obj">
+    <None Update="Resources\Meshes\Cube.obj">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Meshes\Sphere.obj">

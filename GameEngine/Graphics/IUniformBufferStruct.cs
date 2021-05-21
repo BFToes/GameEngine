@@ -29,18 +29,33 @@ namespace Graphics.Shaders
             this.View = View;
         }
     }
+    
     [StructLayout(LayoutKind.Explicit)]
     struct LightData : IUniformBufferStruct
     {
         [FieldOffset(0)]
-        public Vector4 Position; // + 12 + 4
+        Vector3 Colour; // 0 + 12
+
+        [FieldOffset(12)]
+        float AmbientIntensity; // 12 + 4
+
         [FieldOffset(16)]
-        public Vector4 Colour; // + 12 + 4
-        public int SizeInBytes => 32;
-        public LightData(Vector3 Position, Vector3 Colour)
+        Vector3 Position; // 16 + 12
+
+        [FieldOffset(28)]
+        float DiffuseIntensity; // 28 + 4
+
+        [FieldOffset(32)]
+        Vector3 Attenuation; // 32 + 12
+
+        public int SizeInBytes => 44;
+        public LightData(Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity, Vector3 Attenuation )
         {
-            this.Position = new Vector4(Position, 1);
-            this.Colour = new Vector4(Colour, 1);
+            this.Position = Position;
+            this.Colour = Colour;
+            this.AmbientIntensity = AmbientIntensity;
+            this.DiffuseIntensity = DiffuseIntensity;
+            this.Attenuation = Attenuation;
         }
     }
 

@@ -60,7 +60,7 @@ namespace Graphics
         public Vector3 Normal; // 3 float = 12 bytes
         public Vector2 UV; // 2 floats = 8 bytes
 
-        public Vertex3D(Vector3 Position, Vector3 Normal, Vector2 TextureUV, Color4 Colour)
+        public Vertex3D(Vector3 Position, Vector3 Normal, Vector2 TextureUV)
         {
             this.Position = Position;
             this.Normal = Normal;

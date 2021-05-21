@@ -13,33 +13,41 @@ namespace Graphics
      * newer OpenGL but more complicated and less explicit on what to do. still better than some.
      * 
      * Stencil shadows
-     * https://ogldev.org/www/tutorial40/tutorial40.html
+     * https://ogldev.org/www/tutorial40/tutorial40.html - maybe actually read it tho
      * https://www.angelfire.com/games5/duktroa/RealTimeShadowTutorial.htm
      * https://nehe.gamedev.net/tutorial/shadows/16010/
      * https://www.gamedev.net/articles/programming/graphics/the-theory-of-stencil-shadow-volumes-r1873/
      * 
      * IDISPOSABLE YOU PIECE OF UTTER SHIT..
-     * per instance vertex data
-     * model importing
-     * PBR materials
+     * PBR materials -> needs lighting
+     * Learn about attribute coding
      * 
      */
+
+    /* Uniformblocks:
+         * 0 -> Camera
+         * 1 -> Light
+         * ...
+         */
+
     class Scene
     {
         public Camera Camera;
-        public UniformBlock CameraBlock = UniformBlock.For<CameraData>(0);
-        //public ShaderProgram LightProgram;
-        public ShaderProgram DebugProgram;
+
+        public UniformBlock CameraBlock;
+        
+        public ShaderProgram LightProgram; // doesnt make sense for this to be here but it needs geometry textures ¯\_(ツ)_/¯
+        public ShaderProgram DebugProgram; // should delete later
 
         private GeometryBuffer GBuffer;
-        //private SceneBuffer SBuffer;
+        private SceneBuffer SBuffer; // could maybe be obselete I might be able to render light to geometry aswell or just into default
 
         // mesh that encompasses the entire screen
         private static Mesh<Simple2D> ScreenMesh = Mesh<Simple2D>.From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
 
         public List<ILightObject> LightObjects = new List<ILightObject>();
         public List<IRenderable> Objects = new List<IRenderable>();
-        public List<UniformBlock> UniformBlocks = new List<UniformBlock>();
+        public List<UniformBlock> UniformBlocks = new List<UniformBlock>(); // probably not the best way for this to work
 
         private Vector2i size;
         public Vector2i Size
@@ -48,9 +56,9 @@ namespace Graphics
             set
             {
                 size = value;
-                // resize framebuffers
+                Camera.Resize(size);
                 GBuffer.Size = size;
-                //SBuffer.Size = size;
+                SBuffer.Size = size;
             }
         }
 
@@ -59,27 +67,34 @@ namespace Graphics
             size = new Vector2i(Width, Height);
 
             GBuffer = new GeometryBuffer(Width, Height);
-            //SBuffer = new SceneBuffer(Width, Height);
+            SBuffer = new SceneBuffer(Width, Height);
 
             // setup camera
+            CameraBlock = UniformBlock.For<CameraData>(0);
             Camera = new Camera(this, 50, Width, Height, 2, 512);
-            UniformBlocks.Add(CameraBlock);
             
             // setup Light program
-            /*
             LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/Light.vert", "Resources/Shaderscripts/PostProcess/Light.frag");
             LightProgram.SetUniformSampler2D("AlbedoTexture", GBuffer.AlbedoTexture);
             LightProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
             LightProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
-            //LightProgram.DebugUniforms();
-            */
+            LightProgram.SetUniformBlock("Light", 1);///// 
 
+            //LightProgram.DebugUniforms();
+
+            #region Debug Stuff
+            
             // setup Debug program
             DebugProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/GeomDebug.vert", "Resources/Shaderscripts/PostProcess/GeomDebug.frag");
             DebugProgram.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
             DebugProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
             DebugProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
+            DebugProgram.SetUniformSampler2D("ShadedTexture", SBuffer.ColourTexture);
             DebugProgram.DebugUniforms();
+
+            #endregion
+
+            LightObjects.Add(new PointLight(new Vector3(0, 0, 5), new Vector3(12, 0, 12)));
         }
 
         /// <summary>
@@ -87,16 +102,24 @@ namespace Graphics
         /// </summary>
         public void Render()
         {
-            // bind uniform blocks
-            foreach (UniformBlock UB in UniformBlocks) UB.Bind();
+            CameraBlock.Bind();
 
             // render objects into Geometry buffer
             GBuffer.Use();
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             foreach (IRenderable RO in Objects) RO.Render();
 
-            #region Temp Debug
-            // debug
+            
+            
+            SBuffer.Use();
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+
+            // point light pass
+            LightProgram.Use();
+            foreach (ILightObject LO in LightObjects) LO.Render();
+
+            #region Debug
+            GL.Disable(EnableCap.Blend);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.ClearColor(Color.DarkRed);
             GL.Clear(ClearBufferMask.ColorBufferBit);
@@ -104,24 +127,6 @@ namespace Graphics
             ScreenMesh.Render();
             #endregion
 
-            #region Deferred Render Commented Out
-            /*
-            // ambient light pass
-            SBuffer.Use();
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-
-            // point light pass
-            LightProgram.Use();
-            foreach (ILightObject LO in LightObjects) 
-            {
-                LightProgram.SetUniform("Position", LO.Position);
-                LightProgram.SetUniform("Colour", LO.Colour);
-                LO.Render();
-            }
-
-            // directional light pass[NOT DONE]
-            */
-            #endregion
         }
         #region Object Management
         public void Add(IRenderable item) => Objects.Add(item);
@@ -157,9 +162,9 @@ namespace Graphics
             public override void Use()
             {
                 base.Use();
-                //GL.Enable(EnableCap.DepthTest);
-                //GL.Disable(EnableCap.Blend);
-                //GL.DepthMask(true);
+                GL.Enable(EnableCap.DepthTest);
+                GL.Disable(EnableCap.Blend);
+                GL.DepthMask(true);
             }
         }
 
@@ -186,10 +191,14 @@ namespace Graphics
             }
             public override void Use()
             {
+                GL.Disable(EnableCap.DepthTest);
+                GL.DepthMask(false);
+
                 // begin light pass
-                //GL.Enable(EnableCap.Blend);
-                //GL.BlendEquation(BlendEquationMode.FuncAdd);
-                //GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
+                GL.Enable(EnableCap.Blend);
+                GL.BlendEquation(BlendEquationMode.FuncAdd);
+                GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
+
                 base.Use();
             }
         }
