@@ -9,13 +9,6 @@ using ListExtensions;
 
 namespace Graphics.Shaders
 {
-    /* THINGS TO DO:
-     *
-     * 
-     * This Real fuckin messy 
-     * 
-     */
-
     public class ShaderProgram
     {
         public readonly int Handle;
@@ -26,7 +19,8 @@ namespace Graphics.Shaders
         // texture unit management
         private int[] Textures = new int[32].Fill(-1); // texture unit
         private int[] TexUseCount = new int[32].Fill(0); // number of times texture used
-
+        
+        #region Static Constructors
         public static ShaderProgram From(string vertexcode, string geometrycode, string fragmentcode)
         {
             return new ShaderProgram(new Dictionary<ShaderType, string>()
@@ -61,6 +55,8 @@ namespace Graphics.Shaders
                 { ShaderType.VertexShader, File.ReadAllText(vertexpath) },
             });
         }
+        #endregion
+
         /// <summary>
         /// Compiles shaders in openGL
         /// </summary>
@@ -121,7 +117,7 @@ namespace Graphics.Shaders
         #region Set Uniform Functions
         #region Updating Uniform
         /// <summary>
-        /// Updates Uniform before Program Use. To remove updating uniform set Getter to null.
+        /// Adds Uniform that automatically updates before Program Use.
         /// </summary>
         /// <param name="Name">the name of the uniform.</param>
         /// <param name="UniformGetter">a function to get the uniform</param>
@@ -138,10 +134,6 @@ namespace Graphics.Shaders
         {
             if (UniformBlockLocation.TryGetValue(Name, out int Location))
                 GL.UniformBlockBinding(Handle, Location, BlockBinding);
-            /*
-            else 
-                throw new Exception($"Uniform BLock {Name} Does not appear in Program {Handle}");
-            */
         }
         #endregion
         #region Single Uniforms
@@ -196,7 +188,7 @@ namespace Graphics.Shaders
         public void SetUniform(string Name, IEnumerable<Matrix4> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M13, M.M14, M.M21, M.M22, M.M23, M.M24, M.M31, M.M32, M.M33, M.M34, M.M41, M.M42, M.M43, M.M44 }).ToArray()); }
         #endregion
         #region Sampler Uniforms
-
+        
         /// <summary>
         /// sets The uniform 'Name' to the texture found at 'TexPath'
         /// </summary>
@@ -256,12 +248,11 @@ namespace Graphics.Shaders
         /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
         /// </summary>
         /// <param name="TexStartIndex">For optimisation, if texture shared across multiple objects can skip reloading Texture Unit</param>
-        /// <param name="BufStartIndex">For optimisation, if Buffer shared across multiple objects can skip setting Buffer Binding Point</param>
-        public void Use(int TexStartIndex = 0)
+        public void Use()
         {
             GL.UseProgram(Handle); // tell openGL to use this object
 
-            for(int Unit = TexStartIndex; TexUseCount[Unit] != 0; Unit++) 
+            for(int Unit = 0; TexUseCount[Unit] != 0; Unit++) 
                 GL.BindTextureUnit(Unit, Textures[Unit]); // bind textures into units
 
             foreach (string Uniform in UpdatingUniforms.Keys) 
@@ -275,28 +266,32 @@ namespace Graphics.Shaders
         {
             //Use(); // program must be used at least once to assign values from updaters
 
-            Console.WriteLine($"Program {Handle}");
+            Console.WriteLine($"\nProgram {Handle}");
                        
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniforms, out var NumOfUniforms);
             for (int i = 0; i < NumOfUniforms; i++)
             {
-                GL.GetActiveUniform(Handle, i, 32, out int Length, out int Size, out ActiveUniformType Type, out string Name);
+                GL.GetActiveUniform(Handle, i, 32, out int _, out int Size, out ActiveUniformType Type, out string Name);
                 int Location = GL.GetUniformLocation(Handle, Name);
                 if (Location != -1)
                 {
-                    GL.GetUniform(Handle, Location, out int Unit);
-                    Console.WriteLine($"Uniform - {i}: Location = {Location} -> {Type} {Name} = {Unit}");
-                }
-                else
-                {
-                    Console.WriteLine($"BlockUniform - {i}: {Type} {Name} ");
+                    if (Type  == ActiveUniformType.Sampler2D)
+                    {
+                        GL.GetUniform(Handle, Location, out int Unit); // for some reason this fucked up and set i to 0 when it couldnt read the value??? which did an infinite loop
+                        Console.WriteLine($"Uniform - {i}: {Location} = {Type} {Name} in {Unit} -> Texture {Textures[Unit]}");
+                    }
+                    else
+                    {
+                        float[] Data = new float[16];
+                        GL.GetUniform(Handle, Location, Data);
+                        Console.Write($"Uniform - {i}: {Location} = {Type} {Name} -> ");
+                        for (int j = 0; j < 16; j++) Console.Write($"{Data[j]}, ");
+                        Console.Write("\n");
+                    }
+                    
                 }
                 
             }
-            Console.Write($"TextureUnits : ");
-            Textures.Select(I => { string S = I.ToString(); if (I != -1) Console.Write($"{S}, "); return S; }).ToArray();
-            Console.Write("\n");
-
             // same as above but for uniform blocks
             GL.GetProgram(Handle, GetProgramParameterName.ActiveUniformBlocks, out var NumOfUniformBlocks);
             for (int Location = 0; Location < NumOfUniformBlocks; Location++)
@@ -304,8 +299,13 @@ namespace Graphics.Shaders
                 GL.GetActiveUniformBlockName(Handle, Location, 32, out _, out string Name);
                 GL.GetActiveUniformBlock(Handle, Location, ActiveUniformBlockParameter.UniformBlockBinding, out int Binding);
                 Console.WriteLine($"Uniform Block - {Location}: {Name} -> {Binding}");
-
             }
+
+            Console.Write($"TextureUnits : ");
+            Textures.Select(I => { string S = I.ToString(); if (I != -1) Console.Write($"{S}, "); return S; }).ToArray();
+            Console.Write("\n");
+
+
         }
 
         /// <summary>

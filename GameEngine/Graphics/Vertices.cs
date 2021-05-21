@@ -23,19 +23,34 @@ namespace Graphics
             this.TextureUV = new Vector2(TextureU, TextureV);
         }
     }
-    public struct SimpleVertex : IVertex
+    public struct Simple2D : IVertex
     {
         public int SizeInBytes { get => 8; }
 
         public Vector2 Position; // 2 floats = 8 bytes
-        public SimpleVertex(Vector2 Position)
+        public Simple2D(Vector2 Position)
         {
             this.Position = Position;
         }
-        public SimpleVertex(float PositionX, float PositionY)
+        public Simple2D(float x, float y)
         {
-            this.Position = new Vector2(PositionX, PositionY);
+            this.Position = new Vector2(x, y);
         }
+        public override string ToString() =>  $"{Position.X}, {Position.Y}";
+    }
+    public struct Simple3D : IVertex
+    {
+        public int SizeInBytes { get => 12; }
+        public Vector3 Position;
+        public Simple3D(Vector3 Position)
+        {
+            this.Position = Position;
+        }
+        public Simple3D(float x, float y, float z)
+        {
+            this.Position = new Vector3(x, y, z);
+        }
+        public override string ToString() => $"{Position.X}, {Position.Y}, {Position.Z}";
     }
     public struct Vertex3D : IVertex
     {

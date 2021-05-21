@@ -15,12 +15,10 @@ namespace Graphics
             Scene = new Scene(Size.X, Size.Y);
             Process = (delta) => Time += delta;
 
-            #region OpenGL Functions and window parameters
             VSync = VSyncMode.On;
-            GL.Enable(EnableCap.DepthTest);
+            //GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
             //GL.Enable(EnableCap.Blend);
-            #endregion
         }
 
         protected override void OnResize(ResizeEventArgs e)
@@ -30,13 +28,7 @@ namespace Graphics
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            Scene.Render();
             Process((float)e.Time);
-            //Title = $"{MathF.Round(1 / (float)e.Time)}";
-
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            GL.ClearColor(Color.DarkRed);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             Scene.Render();
 

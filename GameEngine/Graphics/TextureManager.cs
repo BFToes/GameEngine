@@ -1,17 +1,12 @@
 ﻿using System.Collections.Generic;
 using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
+using System;
 
 namespace Graphics
 {
     static class TextureManager
     {
-        /// <summary>
-        /// Textures loaded for passing to GPU. Each time A renderObject renders this is set to 0 and the new textures are loaded in.
-        /// This is used to identify the correct texture unit to load into.
-        /// </summary>
-        public static int TexturesLoaded = 0;
-
         private static Dictionary<string, int> TextureDict = new Dictionary<string, int>();
         
         public static int Texture(string path)
@@ -51,6 +46,8 @@ namespace Graphics
 
             if (TextureDict.ContainsKey(path)) GL.DeleteTexture(TextureDict[path]); // if texture path already exists overwrite it
             TextureDict[path] = Handle;
+
+            //Console.WriteLine($"Tex: {path} -> {Handle}");
             
             return Handle;
         }

@@ -44,7 +44,7 @@ namespace GameEngine
                 RW.Scene.Camera.Position = new Vector3(0, 0, 3);
                 Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW, RW.Scene);
-                RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
+                //RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
 
 
                 Action<MouseMoveEventArgs> MoveCamera = (e) => RW.Scene.Camera.Position += 10 * new Vector3(RW.Scene.Camera.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
@@ -86,18 +86,15 @@ namespace GameEngine
             new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D( 1, 0,-1, 0, 1, 0, 1, 1), // top
             new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D(-1, 0, 1, 0, 1, 0, 0, 0),
 
-        }),
-            $"Resources/shaderscripts/Default.vert",
-            $"Resources/shaderscripts/Default.frag")
+        }))
         {
-            RenderingType = PrimitiveType.Triangles;
             Transform.Scale = new Vector3(256, 1, 256);
             Transform.Position = new Vector3(0, -3, 0);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
             Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
 
-
+            Material.DebugUniforms();
         }
     }
     class Test : RenderObject<Vertex3D>
@@ -121,18 +118,17 @@ namespace GameEngine
 
             new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1,-1, 0,-1, 0, 1, 1), // bottom
             new Vertex3D(-1,-1,-1, 0,-1, 0, 0, 1), new Vertex3D( 1,-1, 1, 0,-1, 0, 1, 0), new Vertex3D(-1,-1, 1, 0,-1, 0, 0, 0),
-        }),
-            $"Resources/shaderscripts/Default.vert",
-            $"Resources/shaderscripts/Default.frag")
+        }))
         {
-            RenderingType = PrimitiveType.Triangles;
-
-            this.Transform.Scale = new Vector3(0.5f, 0.5f, 0.5f);
+            Transform.Scale = new Vector3(0.5f, 0.5f, 0.5f);
 
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUpdatingUniform("Time", () => RW.Time);
             Material.SetUniform("Model", Transform.Matrix);
+
+            Material.DebugUniforms();
+
         }
     }
 }

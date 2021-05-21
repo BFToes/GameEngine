@@ -27,12 +27,10 @@ namespace Graphics
         public Camera(Scene Scene, float FOV, float Width, float Height, float DepthNear, float DepthFar)
         {
             this.Scene = Scene;
-            Scene.Resize = (Size) => Resize(Size);
-
             nearZ = DepthNear; 
             farZ = DepthFar;
             fov = FOV / 180 * MathF.PI;
-            ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, Width / Height, DepthNear, DepthFar);
+            Resize(new Vector2i((int)Width, (int)Height));
         }
         public void Resize(Vector2i Size)
         {

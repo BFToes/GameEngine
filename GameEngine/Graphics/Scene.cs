@@ -27,15 +27,15 @@ namespace Graphics
     class Scene
     {
         public Camera Camera;
-        public UniformBlock CameraBlock;
-        public ShaderProgram AmbientProgram;
-        public ShaderProgram LightProgram;
+        public UniformBlock CameraBlock = UniformBlock.For<CameraData>(0);
+        //public ShaderProgram LightProgram;
+        public ShaderProgram DebugProgram;
 
         private GeometryBuffer GBuffer;
-        private SceneBuffer SBuffer;
+        //private SceneBuffer SBuffer;
 
         // mesh that encompasses the entire screen
-        private static Mesh<SimpleVertex> ScreenMesh = Mesh<SimpleVertex>.From<SimpleVertex>(new float[16] { -1, -1, 0, 0, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1 });
+        private static Mesh<Simple2D> ScreenMesh = Mesh<Simple2D>.From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
 
         public List<ILightObject> LightObjects = new List<ILightObject>();
         public List<IRenderable> Objects = new List<IRenderable>();
@@ -48,8 +48,9 @@ namespace Graphics
             set
             {
                 size = value;
+                // resize framebuffers
                 GBuffer.Size = size;
-                GBuffer.Size = size;
+                //SBuffer.Size = size;
             }
         }
 
@@ -58,51 +59,27 @@ namespace Graphics
             size = new Vector2i(Width, Height);
 
             GBuffer = new GeometryBuffer(Width, Height);
-            SBuffer = new SceneBuffer(Width, Height);
+            //SBuffer = new SceneBuffer(Width, Height);
 
-            // set camera object
+            // setup camera
             Camera = new Camera(this, 50, Width, Height, 2, 512);
-            CameraBlock = UniformBlock.For<CameraData>(0);
             UniformBlocks.Add(CameraBlock);
-
-            AmbientProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/Ambient.vert", "Resources/Shaderscripts/PostProcess/Ambient.frag");
-            AmbientProgram.SetUniform("Ambient", 0.1f);
-            AmbientProgram.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
-            AmbientProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            AmbientProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
-
-            LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/Light.vert", "Resources/Shaderscripts/PostProcess/Light.frag");
-
             
+            // setup Light program
             /*
-            // set up light block
-            LightBlock = UniformBlock.For<LightData>(1, 32);
-            UniformBlocks.Add(LightBlock);
-
-            // set up shader program
-            PostProcess = ShaderProgram.ReadFrom(
-                $"Resources/{VertexShader}", 
-                $"Resources/{FragmentShader}");
-
-            PostProcess.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
-            PostProcess.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            PostProcess.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
-            
-            // set up light block
-            PostProcess.SetUniform("LightCount", 0);
-            PostProcess.SetUniformBlock("LightBlock", 1); // tell shader program to use binding index 1 for light block
-
-            LightBlock.Set(0, new Vector4(2, 0, 0, 0), 0); // set light position
-            LightBlock.Set(16, new Vector4(0, 1, 0, 0), 0); // set light color
-
-            LightBlock.Set(0, new Vector4(-2, 0, 0, 0), 1); // set light position
-            LightBlock.Set(16, new Vector4(0, 0, 1, 0), 1); // set light color
-
-            LightBlock.Set(0, new Vector4(0, 0, 3.5f, 0), 2); // set light position
-            LightBlock.Set(16, new Vector4(1, 0, 0, 0), 2); // set light color
-
-            PostProcess.SetUniform("LightCount", 3); // number of lights
+            LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/Light.vert", "Resources/Shaderscripts/PostProcess/Light.frag");
+            LightProgram.SetUniformSampler2D("AlbedoTexture", GBuffer.AlbedoTexture);
+            LightProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
+            LightProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
+            //LightProgram.DebugUniforms();
             */
+
+            // setup Debug program
+            DebugProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/GeomDebug.vert", "Resources/Shaderscripts/PostProcess/GeomDebug.frag");
+            DebugProgram.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
+            DebugProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
+            DebugProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
+            DebugProgram.DebugUniforms();
         }
 
         /// <summary>
@@ -110,40 +87,50 @@ namespace Graphics
         /// </summary>
         public void Render()
         {
-            /* 
-             * For Each Object:
-                  * Render Scene objects into Geometry buffer for position, normal, Albedo
-             * Render ambient light pass to the main framebuffer
-               - only writes to colour buffer
-             * For Each Light:
-                  * Render Shadow volumes to the FBO stencil buffer
-                    - only writes to stencil buffer
-                  * Render Scene to FBO colour buffer from geometry buffer applying lighting 
-                    - only writes to colour buffer with additive blending
-             */
-
             // bind uniform blocks
             foreach (UniformBlock UB in UniformBlocks) UB.Bind();
 
-            // render scene into Gbuffer
+            // render objects into Geometry buffer
             GBuffer.Use();
-            
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             foreach (IRenderable RO in Objects) RO.Render();
 
-            
-            // light pass
+            #region Temp Debug
+            // debug
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            GL.ClearColor(Color.DarkRed);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+            DebugProgram.Use();
+            ScreenMesh.Render();
+            #endregion
+
+            #region Deferred Render Commented Out
+            /*
+            // ambient light pass
             SBuffer.Use();
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit | ClearBufferMask.StencilBufferBit);
-            AmbientProgram.Use();
-            
-            // final post processing pass which currently adds lights is called when the frame buffer is rendered
+            GL.Clear(ClearBufferMask.ColorBufferBit);
+
+            // point light pass
+            LightProgram.Use();
+            foreach (ILightObject LO in LightObjects) 
+            {
+                LightProgram.SetUniform("Position", LO.Position);
+                LightProgram.SetUniform("Colour", LO.Colour);
+                LO.Render();
+            }
+
+            // directional light pass[NOT DONE]
+            */
+            #endregion
         }
+        #region Object Management
         public void Add(IRenderable item) => Objects.Add(item);
         public void Remove(IRenderable item) => Objects.Remove(item);
         public void Add(ILightObject item) => LightObjects.Add(item);
         public void Remove(ILightObject item) => LightObjects.Remove(item);
+        #endregion
 
+        #region FrameBuffer Objects
         private class GeometryBuffer : FrameBuffer
         {
             public readonly int AlbedoTexture; // colour texture
@@ -156,7 +143,6 @@ namespace Graphics
                 PositionTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment0, Width, Height);
                 NormalTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment1, Width, Height);
                 AlbedoTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment2, Width, Height);
-
                 DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent24, FramebufferAttachment.DepthAttachment, Width, Height);
 
                 // draws to multiple textures at once
@@ -164,17 +150,16 @@ namespace Graphics
 
                 FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
                 if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
-                
-                RefreshCol = Color.FromArgb(0, 0, 0, 0);
 
+                RefreshCol = new Color4(1, 0, 1, 1);
             }
 
             public override void Use()
             {
                 base.Use();
-                GL.Enable(EnableCap.DepthTest);
-                GL.Disable(EnableCap.Blend);
-                GL.DepthMask(true);
+                //GL.Enable(EnableCap.DepthTest);
+                //GL.Disable(EnableCap.Blend);
+                //GL.DepthMask(true);
             }
         }
 
@@ -201,15 +186,14 @@ namespace Graphics
             }
             public override void Use()
             {
-                GL.Enable(EnableCap.Blend);
-                GL.BlendEquation(BlendEquationMode.FuncAdd);
-                GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
+                // begin light pass
+                //GL.Enable(EnableCap.Blend);
+                //GL.BlendEquation(BlendEquationMode.FuncAdd);
+                //GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
                 base.Use();
-                
-                GL.DepthMask(false);
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.StencilBufferBit);
             }
         }
+        #endregion
     }
 }
 

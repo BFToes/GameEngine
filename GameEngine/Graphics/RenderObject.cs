@@ -6,7 +6,10 @@ using System.Reflection;
 
 namespace Graphics
 {
-
+    interface IRenderable
+    {
+        public void Render();
+    }
 
     /// <summary>
     /// An Object that renders onto the screen.
@@ -17,11 +20,7 @@ namespace Graphics
         public Mesh<Vertex> RenderMesh;
         public ITransform Transform;
         
-        // used in Render() to determine how this object renders
-        protected PrimitiveType RenderingType = PrimitiveType.Triangles;
-        protected PolygonMode PolygonMode = PolygonMode.Fill;
-
-        public RenderObject(Scene Canvas, Mesh<Vertex> Mesh, string VertexShader, string FragmentShader)
+        public RenderObject(Scene Scene, Mesh<Vertex> Mesh, string VertexShader = "Resources/shaderscripts/Default.vert", string FragmentShader = "Resources/shaderscripts/Default.frag")
         {
             Material = ShaderProgram.ReadFrom(VertexShader, FragmentShader);
             Transform = new Transform();
@@ -29,8 +28,7 @@ namespace Graphics
 
             Material.SetUpdatingUniform("Model", () => Transform.Matrix);
             Material.SetUniformBlock("Camera", 0); // 0 = Camera Block Binding Index
-
-            Canvas.Add(this);
+            Scene.Add(this);
         }
       
         /// <summary>
@@ -39,9 +37,7 @@ namespace Graphics
         public void Render()
         {
             Material.Use(); // tell openGL to use this objects program
-            GL.BindVertexArray(RenderMesh); // use this object's mesh
-            GL.PolygonMode(MaterialFace.FrontAndBack, PolygonMode); // use this programs rendering modes
-            GL.DrawArrays(RenderingType, 0, RenderMesh.Length); // draw these vertices in triangles, 0 to the number of vertices
+            RenderMesh.Render();
         }
     }
 }

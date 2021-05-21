@@ -15,28 +15,19 @@ namespace Graphics
             set => PrivateResize(value);
         }
 
-        // seperated events so that updating texture attachment events dont get removed
-        public Action<Vector2i> Resize;
         private Action<Vector2i> PrivateResize; 
 
         private Vector2i size;
         
-        protected int FBO; // frame buffer object
+        private int FBO; // frame buffer object
 
         public FrameBuffer(int Width, int Height)
         {
-            Resize = (newSize) => { };
-            PrivateResize = (newSize) => 
-            { 
-                size = newSize; 
-                Resize(newSize); 
-            };
+            PrivateResize = (newSize) => size = newSize; 
             Size = new Vector2i(Width, Height);
             
-            #region Start Setup Framebuffer
             FBO = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
-            #endregion
         }
         /// <summary>
         /// assign new render buffer and bind to framebuffer object
@@ -56,7 +47,6 @@ namespace Graphics
 
             if (AutoResize) 
                 PrivateResize += (Size) => SetRenderBuffer(RBO, Storage, Size.X, Size.Y);
-
 
             return RBO;
         }
