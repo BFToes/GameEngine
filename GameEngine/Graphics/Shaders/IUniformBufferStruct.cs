@@ -9,6 +9,8 @@ namespace Graphics.Shaders
     /* To maintain std140 layout all fields must be a multiple of vec4
      * so theyre padded
      * eg vec3 will have a 1 float pad which comes out as 4 bytes
+     * 
+     * there are more rules than this.. just go look it up.
      */
     public interface IUniformBufferStruct
     {
@@ -22,11 +24,17 @@ namespace Graphics.Shaders
         public Matrix4 Projection; // + 64
         [FieldOffset(64)]
         public Matrix4 View; // + 64
-        public int SizeInBytes => 128;
-        public CameraData(Matrix4 Proj, Matrix4 View)
+        [FieldOffset(128)]
+        public Vector3 Position; // + 16
+        [FieldOffset(144)]
+        public Vector2 ScreenSize; // + 8
+        public int SizeInBytes => 152;
+        public CameraData(Matrix4 Proj, Matrix4 View, Vector2 ScreenSize)
         {
             this.Projection = Proj;
             this.View = View;
+            this.Position = new Vector3(View.Column3);
+            this.ScreenSize = ScreenSize;
         }
     }
     
@@ -34,23 +42,27 @@ namespace Graphics.Shaders
     struct LightData : IUniformBufferStruct
     {
         [FieldOffset(0)]
-        Vector3 Colour; // 0 + 12
+        Matrix4 Model;
 
-        [FieldOffset(12)]
-        float AmbientIntensity; // 12 + 4
+        [FieldOffset(64)]
+        Vector3 Colour; // 64 + 12
 
-        [FieldOffset(16)]
-        Vector3 Position; // 16 + 12
+        [FieldOffset(76)]
+        float AmbientIntensity; // 76 + 4
 
-        [FieldOffset(28)]
-        float DiffuseIntensity; // 28 + 4
+        [FieldOffset(80)]
+        Vector3 Position; // 80 + 12
 
-        [FieldOffset(32)]
-        Vector3 Attenuation; // 32 + 12
+        [FieldOffset(92)]
+        float DiffuseIntensity; // 92 + 4
 
-        public int SizeInBytes => 44;
-        public LightData(Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity, Vector3 Attenuation )
+        [FieldOffset(96)]
+        Vector3 Attenuation; // 96 + 12
+         // round up to 4 float
+        public int SizeInBytes => 112;
+        public LightData(Matrix4 Model, Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity, Vector3 Attenuation )
         {
+            this.Model = Model;
             this.Position = Position;
             this.Colour = Colour;
             this.AmbientIntensity = AmbientIntensity;

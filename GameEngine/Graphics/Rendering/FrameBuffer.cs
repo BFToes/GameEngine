@@ -1,10 +1,9 @@
-﻿using Graphics.Shaders;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using System;
 using System.Drawing;
 
-namespace Graphics
+namespace Graphics.Rendering
 {
     abstract class FrameBuffer
     {

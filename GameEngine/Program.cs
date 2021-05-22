@@ -1,10 +1,14 @@
-﻿using Graphics;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 using OpenTK.Windowing.Desktop;
 using System;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+
+using Graphics;
+using Graphics.Resources;
+using Graphics.Rendering;
+using Graphics.SceneObject;
 namespace GameEngine
 {
     class Program
@@ -41,9 +45,9 @@ namespace GameEngine
             using (RenderWindow RW = new RenderWindow(GWS, NWS))
             {
                 //RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
-                RW.Scene.Camera.Position = new Vector3(0, 0, 3);
+                RW.Scene.Camera.Position = new Vector3(0, 1, 3);
                 Floor Floor = new Floor(RW.Scene);
-                Test RO1 = new Test(RW, RW.Scene);
+                Test RO1 = new Test(RW.Scene);
                 //RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
 
 
@@ -81,7 +85,7 @@ namespace GameEngine
     }
     class Floor : RenderObject<Vertex3D>
     {
-        public Floor(Scene RL) : base(RL, Mesh<Vertex3D>.From(new Vertex3D[]
+        public Floor(Scene Scene) : base(Mesh<Vertex3D>.From(new Vertex3D[]
         {
             new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D( 1, 0,-1, 0, 1, 0, 1, 1), // top
             new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D(-1, 0, 1, 0, 1, 0, 0, 0),
@@ -89,28 +93,26 @@ namespace GameEngine
         }))
         {
             Transform.Scale = new Vector3(256, 1, 256);
-            Transform.Position = new Vector3(0, -3, 0);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
             Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
+            //Material.DebugUniforms();
 
-            Material.DebugUniforms();
+            Scene.Add(this);
         }
     }
     class Test : RenderObject<Vertex3D>
     {
-        private static Mesh<Vertex3D> CubeMesh = Mesh<Vertex3D>.ReadFrom("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
-        public Test(RenderWindow RW, Scene RL) : base(RL, CubeMesh)
+        private static Mesh<Vertex3D> Mesh = Mesh<Vertex3D>.ReadFrom("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
+        public Test(Scene Scene) : base(Mesh)
         {
             Transform.Scale = new Vector3(0.5f, 0.5f, 0.5f);
-            Transform.Position = new Vector3(0, 0.5f, 0);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
-            Material.SetUpdatingUniform("Time", () => RW.Time);
-            Material.SetUniform("Model", Transform.Matrix);
+            Material.SetUniform("World", Transform.Matrix);
+            //Material.DebugUniforms();
 
-            Material.DebugUniforms();
-
+            Scene.Add(this);
         }
     }
 }

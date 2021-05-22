@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using Graphics.Shaders;
 using OpenTK.Graphics.OpenGL4;
 
-namespace Graphics
+namespace Graphics.Shaders
 {
     public class UniformBlock
     {
@@ -91,13 +90,10 @@ namespace Graphics
             GL.GetNamedBufferSubData(UniformBuffer, (IntPtr)Offset, Marshal.SizeOf(typeof(T)), ref Data);
             return Data;
         }
-        /// <summary>
-        /// Gets the value stored in the uniform without unsafe context.
-        /// </summary>
-        public T Get<T>(int Offset, int Size) where T : unmanaged
+        public float[] Get(int Size)
         {
-            T Data = new T();
-            GL.GetNamedBufferSubData(UniformBuffer, (IntPtr)Offset, Size, ref Data);
+            float[] Data = new float[Size];
+            GL.GetNamedBufferSubData(UniformBuffer, IntPtr.Zero, Size * 4, Data);
             return Data;
         }
 

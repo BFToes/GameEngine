@@ -2,9 +2,8 @@
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using Graphics.Shaders;
-using System.Reflection;
-
-namespace Graphics
+using Graphics.Resources;
+namespace Graphics.SceneObject
 {
     interface IRenderable
     {
@@ -20,15 +19,14 @@ namespace Graphics
         public Mesh<Vertex> RenderMesh;
         public ITransform Transform;
         
-        public RenderObject(Scene Scene, Mesh<Vertex> Mesh, string VertexShader = "Resources/shaderscripts/Default.vert", string FragmentShader = "Resources/shaderscripts/Default.frag")
+        public RenderObject(Mesh<Vertex> Mesh, string VertexShader = "Resources/shaderscripts/Default.vert", string FragmentShader = "Resources/shaderscripts/Default.frag")
         {
             Material = ShaderProgram.ReadFrom(VertexShader, FragmentShader);
             Transform = new Transform();
             RenderMesh = Mesh;
 
             Material.SetUpdatingUniform("Model", () => Transform.Matrix);
-            Material.SetUniformBlock("Camera", 0); // 0 = Camera Block Binding Index
-            Scene.Add(this);
+            Material.SetUniformBlock("CameraBlock", 0); // 0 = Camera Block Binding Index
         }
       
         /// <summary>

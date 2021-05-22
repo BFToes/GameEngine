@@ -3,7 +3,7 @@ using OpenTK.Graphics.OpenGL4;
 using System.Drawing;
 using System;
 
-namespace Graphics
+namespace Graphics.Resources
 {
     static class TextureManager
     {

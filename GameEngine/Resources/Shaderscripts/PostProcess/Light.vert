@@ -1,10 +1,27 @@
 ﻿#version 450 core
 
+layout(std140) uniform CameraBlock {
+	mat4 Projection;
+	mat4 View;
+	vec3 Position;
+    vec2 ScreenSize;
+} Cam;
+
+ layout(std140) uniform LightBlock {
+    mat4 Model; 
+    vec3 Colour;
+    float AmbientIntensity;
+    vec3 Position;
+    float DiffuseIntensity;
+    vec3 Attenuation;
+    float Distance;
+} Light;
+
+
 in vec3 Position;
-// for directional light this should be indentity
-uniform mat4 WVP; // world view projection
+
 
 void main(void)
 {
-	gl_Position = WVP * vec4(Position, 1);
+	gl_Position = Cam.Projection * Cam.View * Light.Model * vec4(Position, 1); // 
 }

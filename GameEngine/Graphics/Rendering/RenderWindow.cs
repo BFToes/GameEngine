@@ -3,7 +3,7 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using System.Drawing;
-namespace Graphics
+namespace Graphics.Rendering
 {
     class RenderWindow : GameWindow
     {
@@ -16,11 +16,6 @@ namespace Graphics
             Process = (delta) => Time += delta;
 
             VSync = VSyncMode.On;
-            GL.Enable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.CullFace);
-            GL.CullFace(CullFaceMode.Back);
-            GL.DepthFunc(DepthFunction.Less);
-            //GL.Enable(EnableCap.Blend);
         }
 
         protected override void OnResize(ResizeEventArgs e)

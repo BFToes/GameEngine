@@ -5,14 +5,13 @@ using System.Collections.Generic;
 using System.Text;
 using Graphics.Shaders;
 
-namespace Graphics
+namespace Graphics.SceneObject
 {
     class Camera : TransformInvert
     {
-
+        public UniformBlock Block;
         public float fov { get; private set; }
         public Matrix4 ProjMat { get; private set; }
-        private Scene Scene;
         private float nearZ;
         private float farZ;
 
@@ -24,32 +23,40 @@ namespace Graphics
         /// <param name="Height"></param>
         /// <param name="DepthNear">must be greater than 0</param>
         /// <param name="DepthFar">larger values will render more objects</param>
-        public Camera(Scene Scene, float FOV, float Width, float Height, float DepthNear, float DepthFar)
+        public Camera(float FOV, float Width, float Height, float DepthNear, float DepthFar)
         {
-            this.Scene = Scene;
+            
             nearZ = DepthNear; 
             farZ = DepthFar;
             fov = FOV / 180 * MathF.PI;
-            Resize(new Vector2i((int)Width, (int)Height));
+            
+            if (fov != 0) 
+                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, Width / Height, nearZ, farZ);
+            else 
+                ProjMat = Matrix4.CreateOrthographic((int)Width, (int)Height, nearZ, farZ);
+
+            Block = UniformBlock.For<CameraData>(0);
+            Block.Set(new CameraData(ProjMat, this.Matrix, new Vector2(Width, Height))); // set data in uniform block
+            CameraData C = Block.Get<CameraData>();
         }
         public void Resize(Vector2i Size)
         {
-
             if (fov != 0)
-            {
-                Vector2 NormSize = ((Vector2)Size).Normalized();
-                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, NormSize.X / NormSize.Y, nearZ, farZ);
-            }
+                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, Size.X / Size.Y, nearZ, farZ);
             else
-            {
                 ProjMat = Matrix4.CreateOrthographic(Size.X, Size.Y, nearZ, farZ);
-            }
-            Scene.CameraBlock.Set(0, ProjMat); // set data in uniform block
+
+            Block.Set(144, (Vector2)Size); // set data in uniform block
+            Block.Set(0, ProjMat);
+            //CameraData C = Block.Get<CameraData>();
         }
         protected override void Set(Vector3 Position, Vector3 Scale, Matrix3 RotMat)
         {
             base.Set(Position, Scale, RotMat);
-            Scene.CameraBlock.Set(64, Matrix); // set view in uniform block
+            Block.Set(64, Matrix); // set camera matrix in uniform block
+            Block.Set(128, Position); // set position in uniform block
+            //CameraData C = Block.Get<CameraData>();
+            //float[] F = Block.Get(38);
         }
     }
 }

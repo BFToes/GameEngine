@@ -1,5 +1,5 @@
 ﻿using OpenTK.Mathematics;
-namespace Graphics
+namespace Graphics.Resources
 {
     public interface IVertex
     {

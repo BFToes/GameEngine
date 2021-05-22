@@ -6,7 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Globalization;
-namespace Graphics
+namespace Graphics.Resources
 {
     public class Mesh<Vertex> where Vertex : struct, IVertex
     {
