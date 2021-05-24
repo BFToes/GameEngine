@@ -7,7 +7,17 @@ namespace Graphics.Rendering
 {
     class RenderWindow : GameWindow
     {
-        public Scene Scene;
+        private Scene scene;
+        public Scene Scene 
+        {
+            get => scene;
+            set
+            {
+                scene = value;
+                scene.Use();
+            }
+            
+        }
         public Action<float> Process;
         public float Time;
         public RenderWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)

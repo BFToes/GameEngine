@@ -14,7 +14,6 @@ layout(std140) uniform CameraBlock {
     vec3 Position;
     float DiffuseIntensity;
     vec3 Attenuation;
-    float Distance;
 } Light;
 
 // global
@@ -35,6 +34,7 @@ void main(void)
     
     vec3 LightDir = Position - Light.Position;
     float Distance = length(LightDir);
+
     LightDir = normalize(LightDir);
 
     vec4 DiffuseColour;
@@ -53,8 +53,9 @@ void main(void)
         }
     }
     vec4 BaseColour = AmbientColour + DiffuseColour + SpecularColour;
-    float Attenuation = Light.Attenuation.x + Light.Attenuation.y * Distance + Light.Attenuation.z * Distance * Distance;
+    float Attenuation = Light.Attenuation.x * Distance * Distance + Light.Attenuation.y * Distance + Light.Attenuation.z;
+    Colour = vec4(1 / Attenuation);
     Attenuation = max(Attenuation, 1); // no smaller than 1
 
     Colour = vec4(Albedo.xyz, 1) * BaseColour / Attenuation;
-}
+    }

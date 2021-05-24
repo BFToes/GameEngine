@@ -38,6 +38,13 @@ namespace Graphics.Shaders
                 { ShaderType.VertexShader, vertexcode },
             });
         }
+        public static ShaderProgram From(string vertexcode)
+        {
+            return new ShaderProgram(new Dictionary<ShaderType, string>()
+            {
+                { ShaderType.VertexShader, vertexcode },
+            });
+        }
         public static ShaderProgram ReadFrom(string vertexpath, string geometrypath, string fragmentpath)
         {
             return new ShaderProgram(new Dictionary<ShaderType, string>()
@@ -53,6 +60,13 @@ namespace Graphics.Shaders
             {
                 { ShaderType.FragmentShader, File.ReadAllText(fragmentpath) },
                 { ShaderType.VertexShader, File.ReadAllText(vertexpath) },
+            });
+        }
+        public static ShaderProgram ReadFrom(string vertexcode)
+        {
+            return new ShaderProgram(new Dictionary<ShaderType, string>()
+            {
+                { ShaderType.VertexShader, File.ReadAllText(vertexcode) },
             });
         }
         #endregion

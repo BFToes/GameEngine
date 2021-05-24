@@ -29,9 +29,9 @@ namespace Graphics.Shaders
         [FieldOffset(144)]
         public Vector2 ScreenSize; // + 8
         public int SizeInBytes => 152;
-        public CameraData(Matrix4 Proj, Matrix4 View, Vector2 ScreenSize)
+        public CameraData(Matrix4 Projection, Matrix4 View, Vector2 ScreenSize)
         {
-            this.Projection = Proj;
+            this.Projection = Projection;
             this.View = View;
             this.Position = new Vector3(View.Column3);
             this.ScreenSize = ScreenSize;
@@ -58,8 +58,7 @@ namespace Graphics.Shaders
 
         [FieldOffset(96)]
         Vector3 Attenuation; // 96 + 12
-         // round up to 4 float
-        public int SizeInBytes => 112;
+        public int SizeInBytes => 108;
         public LightData(Matrix4 Model, Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity, Vector3 Attenuation )
         {
             this.Model = Model;

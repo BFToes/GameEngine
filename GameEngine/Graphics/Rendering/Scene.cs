@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using Graphics.Shaders;
 using System.Drawing;
 using OpenTK.Mathematics;
-
 using Graphics.SceneObject;
 using Graphics.Resources;
 
@@ -37,16 +36,15 @@ namespace Graphics.Rendering
     {
         public Camera Camera;
 
-        public ShaderProgram LightProgram; // doesnt make sense for this to be here but it needs geometry textures ¯\_(ツ)_/¯
-        public ShaderProgram DebugProgram; // should delete later
+        public ShaderProgram PostProcess = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/GeomDebug.vert", "Resources/Shaderscripts/Rendering/GeomDebug.frag");
 
         private GeometryBuffer GBuffer;
         private SceneBuffer SBuffer; // could maybe be obselete I might be able to render light to geometry aswell or just into default
 
         // mesh that encompasses the entire screen
-        public static Mesh<Simple2D> ScreenMesh = Mesh<Simple2D>.From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
+        
 
-        public List<ILightObject> LightObjects = new List<ILightObject>();
+        public List<Light> LightObjects = new List<Light>();
         public List<IRenderable> Objects = new List<IRenderable>();
         public List<UniformBlock> UniformBlocks = new List<UniformBlock>(); // probably not the best way for this to work
 
@@ -57,9 +55,10 @@ namespace Graphics.Rendering
             set
             {
                 size = value;
-                Camera.Resize(size);
+                
                 GBuffer.Size = size;
                 SBuffer.Size = size;
+                Camera.Resize(size);
             }
         }
 
@@ -72,37 +71,7 @@ namespace Graphics.Rendering
 
             // setup camera
             Camera = new Camera(50, Width, Height, 2, 512);
-            
-            // setup Light program
-            LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/Light.vert", "Resources/Shaderscripts/PostProcess/Light.frag");
-            LightProgram.SetUniformSampler2D("AlbedoTexture", GBuffer.AlbedoTexture);
-            LightProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            LightProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
-
-            LightProgram.SetUniform("SpecularIntensity", 1f);
-            LightProgram.SetUniform("SpecularPower", 1f);
-
-            LightProgram.SetUniformBlock("CameraBlock", 0);
-            LightProgram.SetUniformBlock("LightBlock", 1);
-
-            
-
-            LightProgram.DebugUniforms();
-
-            LightObjects.Add(new PointLight(new Vector3(0, 29, 5), new Vector3(12, 0, 12)));
-
-            #region Debug Stuff
-
-            // setup Debug program
-            DebugProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/PostProcess/GeomDebug.vert", "Resources/Shaderscripts/PostProcess/GeomDebug.frag");
-            DebugProgram.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
-            DebugProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            DebugProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
-            DebugProgram.SetUniformSampler2D("ShadedTexture", SBuffer.ColourTexture);
-            DebugProgram.DebugUniforms();
-            #endregion
-
-            
+                   
         }
 
         /// <summary>
@@ -110,46 +79,63 @@ namespace Graphics.Rendering
         /// </summary>
         public void Render()
         {
+            GL.Enable(EnableCap.CullFace);
             /*
-               1. Render the objects as usual into the G buffer so that the depth buffer will be properly populated.
-               2. Disable writing into the depth buffer. From now on we want it to be read-only.
-               3. Disable back face culling. We want the rasterizer to process all polygons of the sphere.
-               4. Set the stencil test to always succeed. What we really care about is the stencil operation.
-               5. Configure the stencil operation for the back facing polygons to increment the value in the stencil buffer when the depth test fails but to keep it unchanged when either depth test or stencil test succeed.
-               6. Configure the stencil operation for the front facing polygons to decrement the value in the stencil buffer when the depth test fails but to keep it unchanged when either depth test or stencil test succeed.
-               7. Render the light sphere.
+                1. Render the objects as usual into the G buffer so that the depth buffer will be properly populated.
+                2. Disable writing into the depth buffer.
+                3. Disable back face culling.
+                4. Set the stencil test to always succeed.
+                5. Configure the stencil operation for the back facing polygons to increment the value in the stencil buffer when the depth test fails but to keep it unchanged when either depth test or stencil test succeed.
+                6. Configure the stencil operation for the front facing polygons to decrement the value in the stencil buffer when the depth test fails but to keep it unchanged when either depth test or stencil test succeed.
+                7. Render the light sphere.
              */
             Camera.Block.Bind();
 
-            // render objects into Geometry buffer
+            // Geometry pass
             GBuffer.Use();
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             foreach (IRenderable RO in Objects) RO.Render();
-
             
-            
+            // Light pass
             SBuffer.Use();
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-
-            // point light pass
-            LightProgram.Use();
-            foreach (ILightObject LO in LightObjects) LO.Render();
-
+            foreach (Light LO in LightObjects) LO.Render();
+            
             #region Draw to screen
             GL.Disable(EnableCap.Blend);
+            GL.CullFace(CullFaceMode.Back);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            GL.ClearColor(Color.DarkRed);
+            GL.ClearColor(Color.Crimson);
             GL.Clear(ClearBufferMask.ColorBufferBit);
-            DebugProgram.Use();
-            ScreenMesh.Render();
+            // render into screen
+            PostProcess.Use();
+            Mesh.Screen.Render();
             #endregion
 
         }
+
+        public void Use()
+        {
+            // means its more awkward to use more than 1 scene at a time
+            
+            PostProcess.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
+            PostProcess.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
+            PostProcess.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
+            PostProcess.SetUniformSampler2D("ShadedTexture", SBuffer.ColourTexture);
+
+            PointLight.SpecularIntensity = 0.5f;
+            PointLight.SpecularPower = 4;
+            PointLight.LightProgram.SetUniformSampler2D("AlbedoTexture", GBuffer.AlbedoTexture);
+            PointLight.LightProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
+            PointLight.LightProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
+            PointLight.LightProgram.SetUniformBlock("CameraBlock", 0);
+            PointLight.LightProgram.SetUniformBlock("LightBlock", 1);
+            PointLight.LightProgram.DebugUniforms();
+        }
+
         #region Object Management
         public void Add(IRenderable item) => Objects.Add(item);
         public void Remove(IRenderable item) => Objects.Remove(item);
-        public void Add(ILightObject item) => LightObjects.Add(item);
-        public void Remove(ILightObject item) => LightObjects.Remove(item);
+        public void Add(Light item) => LightObjects.Add(item);
+        public void Remove(Light item) => LightObjects.Remove(item);
         #endregion
 
         #region FrameBuffer Objects
@@ -176,55 +162,46 @@ namespace Graphics.Rendering
                 RefreshCol = new Color4(1, 0, 1, 1);
             }
 
-            public override void Use()
-            {           
+            public override void Use() 
+            {
                 base.Use();
-                GL.Enable(EnableCap.DepthTest); // only geometry pass updates depth buffer
                 GL.DepthMask(true);
-                GL.Enable(EnableCap.CullFace);
-                GL.Disable(EnableCap.Blend);
-                
+                GL.Enable(EnableCap.DepthTest);
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             }
         }
-
         private class SceneBuffer : FrameBuffer
         {
             public readonly int ColourTexture; // colour texture
-            public readonly int DepthStencil; // depth buffer
 
             public SceneBuffer(int Width, int Height) : base(Width, Height)
             {
-
                 // geometry-buffer textures
                 ColourTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment0, Width, Height);
-                DepthStencil = NewRenderBufferAttachment(RenderbufferStorage.Depth24Stencil8, FramebufferAttachment.DepthStencilAttachment, Width, Height);
-
-                GL.DrawBuffers(1, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0 });
+                GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
 
                 FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
                 if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
 
-                RefreshCol = Color.FromArgb(0, 1, 0, 0);
+                RefreshCol = Color.FromArgb(0, 0, 0, 0);
 
             }
             public override void Use()
             {
-                // after geometry buffer the depth buffer is already populated and the stencil pass
-                // depends on it, but it does not write to it.
-                GL.Disable(EnableCap.DepthTest);
-                GL.DepthMask(false);
-
                 base.Use();
-                
-
                 // So light adds together
                 GL.Enable(EnableCap.Blend);
                 GL.BlendEquation(BlendEquationMode.FuncAdd);
                 GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
 
                 // so light shadows work
+                GL.DepthMask(false);
+                GL.Disable(EnableCap.DepthTest);
                 GL.Enable(EnableCap.StencilTest);
 
+                GL.CullFace(CullFaceMode.Front);
+
+                GL.Clear(ClearBufferMask.ColorBufferBit);
             }
         }
         #endregion

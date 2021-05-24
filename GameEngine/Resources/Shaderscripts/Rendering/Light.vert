@@ -14,7 +14,6 @@ layout(std140) uniform CameraBlock {
     vec3 Position;
     float DiffuseIntensity;
     vec3 Attenuation;
-    float Distance;
 } Light;
 
 
@@ -23,5 +22,5 @@ in vec3 Position;
 
 void main(void)
 {
-	gl_Position = Cam.Projection * Cam.View * Light.Model * vec4(Position, 1); // 
+	gl_Position = Cam.Projection * Cam.View * Light.Model * vec4(Position, 1); 
 }

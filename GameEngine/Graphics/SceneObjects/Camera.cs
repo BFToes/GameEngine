@@ -42,21 +42,17 @@ namespace Graphics.SceneObject
         public void Resize(Vector2i Size)
         {
             if (fov != 0)
-                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, Size.X / Size.Y, nearZ, farZ);
+                ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, (float)Size.X / (float)Size.Y, nearZ, farZ);
             else
                 ProjMat = Matrix4.CreateOrthographic(Size.X, Size.Y, nearZ, farZ);
-
-            Block.Set(144, (Vector2)Size); // set data in uniform block
             Block.Set(0, ProjMat);
-            //CameraData C = Block.Get<CameraData>();
+            Block.Set(144, (Vector2)Size); // set data in uniform block
         }
         protected override void Set(Vector3 Position, Vector3 Scale, Matrix3 RotMat)
         {
             base.Set(Position, Scale, RotMat);
             Block.Set(64, Matrix); // set camera matrix in uniform block
             Block.Set(128, Position); // set position in uniform block
-            //CameraData C = Block.Get<CameraData>();
-            //float[] F = Block.Get(38);
         }
     }
 }

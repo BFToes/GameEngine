@@ -4,14 +4,30 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
-using System.Globalization;
+
 namespace Graphics.Resources
 {
-    public class Mesh<Vertex> where Vertex : struct, IVertex
+    public abstract class Mesh
     {
-        private int VAO; // vertex array
-        private int VBO; // vertex buffer
+        protected int VAO; // vertex array
+        protected int VBO; // vertex buffer
+
+        /// <summary>
+        /// a mesh that encompasses the whole screen using simple2D vertices
+        /// </summary>
+        public static Mesh<Simple2D> Screen = Mesh<Simple2D>.From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
+        /// <summary>
+        /// renders vertex parameters
+        /// </summary>
+        public abstract void Render();
+        /// <summary>
+        /// binds and set parameters without rendering vertex array
+        /// </summary>
+        public abstract void Use();
+    }
+
+    public class Mesh<Vertex> : Mesh where Vertex : struct, IVertex
+    {
         public int VertexCount { get; private set; }
         public PrimitiveType RenderType;
         public PolygonMode RenderMode;
@@ -40,8 +56,8 @@ namespace Graphics.Resources
         /// <summary>
         /// creates mesh from file
         /// </summary>
-        public static Mesh<Vert> ReadFrom<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> Packer, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
-            => Mesh<Vert>.From(LoadObj(path, Packer), Type, Mode);
+        public static Mesh<Vert> ReadFrom<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> Builder, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex 
+            => Mesh<Vert>.From(LoadObj(path, Builder), Type, Mode);
         #endregion
 
         private Mesh(PrimitiveType Type, PolygonMode Mode)
@@ -81,7 +97,7 @@ namespace Graphics.Resources
         /// <summary>
         /// bind, set parameters and render
         /// </summary>
-        public void Render()
+        public override void Render()
         {
             GL.BindVertexArray(VAO); // use this object's mesh
             GL.PolygonMode(MaterialFace.FrontAndBack, RenderMode); // use this programs rendering modes
@@ -90,7 +106,7 @@ namespace Graphics.Resources
         /// <summary>
         /// bind and set parameters
         /// </summary>
-        public void Use()
+        public override void Use()
         {
             GL.BindVertexArray(VAO); // use this object's mesh
             GL.PolygonMode(MaterialFace.FrontAndBack, RenderMode); // use this programs rendering modes
@@ -113,7 +129,6 @@ namespace Graphics.Resources
             Location++; // increments Location
             ByteLocation += ByteSize; // Adds ByteSize to ByteLocation
         }
-        
         private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker)
         {
             List<Vert> Vertices = new List<Vert>();

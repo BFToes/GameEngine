@@ -15,12 +15,15 @@ void main(void)
     vec4 AlbedoSpec = texture(ColourTexture, FragUV);
     vec4 Shaded = texture(ShadedTexture, FragUV);
 
-    if (FragUV.x < 0.5 && FragUV.y > 0.5) Colour = vec4(mod(FragPos.x, 1), mod(FragPos.y, 1), mod(FragPos.z, 1), 1.0); // top left
-    if (FragUV.x > 0.5 && FragUV.y > 0.5) Colour = vec4(Normal, 1.0); // top right
-    if (FragUV.x < 0.5 && FragUV.y < 0.5) Colour = vec4(Shaded.rgb, 1.0); // bottom left
-    if (FragUV.x > 0.5 && FragUV.y < 0.5) Colour = vec4(AlbedoSpec.rgb, 1.0); // bottom right
-
+    //if (FragUV.x < 0.5 && FragUV.y > 0.5) Colour = vec4(mod(FragPos.x, 1), mod(FragPos.y, 1), mod(FragPos.z, 1), 1.0); // top left
+    //if (FragUV.x > 0.5 && FragUV.y > 0.5) Colour = vec4(Normal, 1.0); // top right
+    //if (FragUV.x > 0.5 && FragUV.y < 0.5) Colour = vec4(AlbedoSpec.rgb, 1.0); // bottom right
+    //if (FragUV.x < 0.5 && FragUV.y < 0.5) 
+    Colour = vec4(Shaded.rgb, 1.0); // bottom left
+    
+    /*
     vec4 GridCol = vec4(1.0);
     vec2 Grid = abs(abs(FragUV * 2 - 1) * 2 - 1);
     if (max(Grid.x, Grid.y) > 0.98) Colour = GridCol;
+    */
 }

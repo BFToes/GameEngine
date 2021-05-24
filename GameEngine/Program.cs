@@ -18,14 +18,6 @@ namespace GameEngine
          * Animation System:
          * - ???
          * 
-         * 3D model Importer:
-         * - library?
-         * - ???
-         * 
-         * Lighting:
-         * - set up camera like light thing
-         * - setup invisible occluder objects and render from light source
-         * - pre or post processing???
          * 
          * PROBLEMS TO SORT OUT:
          *      Setup the fucking Idisposables already 
@@ -48,8 +40,11 @@ namespace GameEngine
                 RW.Scene.Camera.Position = new Vector3(0, 1, 3);
                 Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW.Scene);
-                //RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
+                TestLight RL1 = new TestLight(RW.Scene);
 
+                RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 1, MathF.Cos(RW.Time) * 4);
+
+                //RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
 
                 Action<MouseMoveEventArgs> MoveCamera = (e) => RW.Scene.Camera.Position += 10 * new Vector3(RW.Scene.Camera.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
                 Action<MouseMoveEventArgs> RotaCamera = (e) => RW.Scene.Camera.Rotation += new Vector3(e.DeltaY / RW.Size.Y, e.DeltaX / RW.Size.X, 0);
@@ -113,6 +108,14 @@ namespace GameEngine
             //Material.DebugUniforms();
 
             Scene.Add(this);
+        }
+    }
+
+    class TestLight : PointLight
+    {
+        public TestLight(Scene Scene) : base(new Vector3(0, 1, 0), new Vector3(1, 1, 1))
+        {
+            Scene.LightObjects.Add(this);
         }
     }
 }
