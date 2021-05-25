@@ -116,7 +116,7 @@ namespace Graphics.Shaders
                 
                 if (!Name.Contains(".")) 
                     UniformLocation[Name] = Location; // add location lookup
-
+            
             }
 
             // same as above but for uniform blocks
@@ -204,7 +204,7 @@ namespace Graphics.Shaders
         public void SetUniform(string Name, IEnumerable<Matrix4> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M13, M.M14, M.M21, M.M22, M.M23, M.M24, M.M31, M.M32, M.M33, M.M34, M.M41, M.M42, M.M43, M.M44 }).ToArray()); }
         #endregion
         #region Sampler Uniforms
-        
+
         /// <summary>
         /// sets The uniform 'Name' to the texture found at 'TexPath'
         /// </summary>

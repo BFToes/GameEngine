@@ -10,7 +10,7 @@ layout(std140) uniform CameraBlock {
  layout(std140) uniform LightBlock {
     mat4 Model;
     vec3 Colour;
-    float AmbientIntensity;
+    float AmbientIntensity; // a bit extra dont you think?
     vec3 Position;
     float DiffuseIntensity;
     vec3 Attenuation;

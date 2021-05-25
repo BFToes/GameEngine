@@ -88,7 +88,6 @@ namespace Graphics.Rendering
         /// reassign sizes to texture
         /// </summary>
         /// <param name="Texture">the texture ID int</param>
-        /// <param name="PixelFormat">the format of the each pixel eg rgb or DepthComponent</param>
         /// <param name="Width">the width of the image.</param>
         /// <param name="Height">the height of the image.</param>
         protected void SetTextureAttachment(int Texture, int Width, int Height, PixelInternalFormat PixelInternalFormat, PixelFormat PixelFormat, PixelType PixelType)
@@ -97,6 +96,51 @@ namespace Graphics.Rendering
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
+        
+        protected int NewTextureCubeAttachment(int Width, int Height, bool AutoResize = false, FramebufferAttachment Attachment = FramebufferAttachment.DepthAttachment, PixelInternalFormat PixelInternalFormat = PixelInternalFormat.DepthComponent, PixelFormat PixelFormat = PixelFormat.DepthComponent, PixelType PixelType = PixelType.Float, TextureMinFilter MinFilter = TextureMinFilter.Nearest, TextureMagFilter MagFilter = TextureMagFilter.Nearest, TextureWrapMode WrapMode = TextureWrapMode.ClampToEdge)
+        {
+            int TextureCube = GL.GenTexture();
+            GL.BindTexture(TextureTarget.TextureCubeMap, TextureCube);
+
+            GL.TexImage2D(TextureTarget.TextureCubeMapPositiveX, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapNegativeX, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapPositiveY, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapNegativeY, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapPositiveZ, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapNegativeZ, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMagFilter, (int)MagFilter);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureMinFilter, (int)MinFilter);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapS, (int)WrapMode);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapT, (int)WrapMode);
+            GL.TexParameter(TextureTarget.TextureCubeMap, TextureParameterName.TextureWrapR, (int)WrapMode);
+
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
+            GL.FramebufferTexture(FramebufferTarget.Framebuffer, Attachment, TextureCube, 0);
+
+            if (AutoResize)
+                PrivateResize += (Size) => SetTextureCubeAttachment(TextureCube, Size.X, Size.Y, PixelInternalFormat, PixelFormat, PixelType);
+
+            return TextureCube;
+        }
+        /// <summary>
+        /// reassigns sizes to textures in cube
+        /// </summary>
+        /// <param name="TextureCube">the texture cube ID</param>
+        /// <param name="Width">the new width of the textures</param>
+        /// <param name="Height">the new height of the textures</param>
+        protected void SetTextureCubeAttachment(int TextureCube, int Width, int Height, PixelInternalFormat PixelInternalFormat, PixelFormat PixelFormat, PixelType PixelType)
+        {
+            GL.BindTexture(TextureTarget.TextureCubeMap, TextureCube);
+            GL.TexImage2D(TextureTarget.TextureCubeMapPositiveX, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapNegativeX, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapPositiveY, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapNegativeY, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapPositiveZ, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.TexImage2D(TextureTarget.TextureCubeMapNegativeZ, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
+            GL.BindTexture(TextureTarget.TextureCubeMap, 0);
+        }
+        
         /// <summary>
         /// sets this frame buffer to the render target
         /// </summary>

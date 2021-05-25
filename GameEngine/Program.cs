@@ -40,9 +40,11 @@ namespace GameEngine
                 RW.Scene.Camera.Position = new Vector3(0, 1, 3);
                 Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW.Scene);
+                //for (int i = 0; i < 10000; i++) new Test(RW.Scene, new Vector3(i * 3 -  0.5f * 3 * 10000, 0, 0));
+                for (int i = 0; i < 200; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
                 TestLight RL1 = new TestLight(RW.Scene);
 
-                RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 1, MathF.Cos(RW.Time) * 4);
+                RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 4, MathF.Cos(RW.Time) * 4);
 
                 //RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
 
@@ -98,21 +100,35 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
-        private static Mesh<Vertex3D> Mesh = Mesh<Vertex3D>.ReadFrom("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
-        public Test(Scene Scene) : base(Mesh)
+        private static Mesh<Vertex3D> ObjMesh = Mesh.ReadFrom("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
+        
+        public Test(Scene Scene, Vector3 Position) : base(ObjMesh)
         {
-            Transform.Scale = new Vector3(0.5f, 0.5f, 0.5f);
+            Transform.Position = Position;
+            Transform.Scale = new Vector3(0.4f);
+
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUniform("World", Transform.Matrix);
-            //Material.DebugUniforms();
+            Scene.Add(this);
+        }
+        public Test(Scene Scene) : base(ObjMesh)
+        {
+            Transform.Scale = new Vector3(0.4f);
 
+            Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
+            Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
+            Material.SetUniform("World", Transform.Matrix);
             Scene.Add(this);
         }
     }
 
     class TestLight : PointLight
     {
+        public TestLight(Scene Scene, Vector3 Position) : base(Position, new Vector3(1, 1, 1))
+        {
+            Scene.LightObjects.Add(this);
+        }
         public TestLight(Scene Scene) : base(new Vector3(0, 1, 0), new Vector3(1, 1, 1))
         {
             Scene.LightObjects.Add(this);

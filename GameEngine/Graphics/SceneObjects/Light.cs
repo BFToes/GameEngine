@@ -5,6 +5,8 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Graphics.Shaders;
 using Graphics.Resources;
+using Graphics.Rendering;
+
 namespace Graphics.SceneObject
 {
     abstract class Light
@@ -13,10 +15,11 @@ namespace Graphics.SceneObject
     }
     class PointLight : Light
     {
-        private static readonly Mesh<Simple3D> LightMesh = Mesh<Simple3D>.ReadFrom("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
+        private ShadowCube Shadowframebuffer = new ShadowCube(800, 800);
+        private static readonly Mesh<Simple3D> LightMesh = Mesh.ReadFrom("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
         public static ShaderProgram LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Light.vert", "Resources/Shaderscripts/Rendering/Light.frag");
         public static ShaderProgram StencilProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Shadow.vert"); // just needs to cover the stencil buffers
-
+        
         private static float specularintensity;
         public static float SpecularIntensity 
         {
@@ -39,6 +42,7 @@ namespace Graphics.SceneObject
             }
         }
 
+        
         private Transform Transform = new Transform();
         private UniformBlock LightBlock = UniformBlock.For<LightData>(1);
        
@@ -104,7 +108,7 @@ namespace Graphics.SceneObject
             }
         }
 
-        public PointLight(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 1.0f, float CurveExp = 0.1f, float CurveLin = 0.1f, float CurveCon = 0)
+        public PointLight(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f, float CurveExp = 0.1f, float CurveLin = 0.1f, float CurveCon = 0)
         {
             this.Position = Position;
             colour = Colour;
@@ -138,6 +142,26 @@ namespace Graphics.SceneObject
             if (discrim > 0) return (-Curve.Y + MathF.Sqrt(discrim)) / 2 / Curve.X;
 
             else throw new Exception("Light must degrade with distance so light curve exponent or linear component must be greater than 0");
+        }
+
+
+        private class ShadowCube : FrameBuffer 
+        {
+            public readonly int ShadowTexture;
+
+            public ShadowCube(int Width, int Height) : base(Width, Height)
+            {
+                // this frame buffer draws to no textures and only fills the depth texture
+                ShadowTexture = NewTextureCubeAttachment(Width, Height);
+
+                GL.DrawBuffer(DrawBufferMode.None);
+                GL.ReadBuffer(ReadBufferMode.None);
+
+                FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+                if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
+
+                RefreshCol = new Color4(0, 0, 0, 0);
+            }
         }
     }
 }

@@ -7,31 +7,20 @@ using System.Reflection;
 
 namespace Graphics.Resources
 {
+
+
+    /* Can Change This to behave more like texture manager
+     * would be better if meshes loaded from the same file were using the same mesh
+     * + complications with vertex because -> mesh loaded with different vertex types should be stored seperately
+     * + Meshes of certain types shouldnt be loaded with wrong vertex
+     * 
+     * 
+     */
     public abstract class Mesh
     {
+        public int VertexCount { get; private set; }
         protected int VAO; // vertex array
         protected int VBO; // vertex buffer
-
-        /// <summary>
-        /// a mesh that encompasses the whole screen using simple2D vertices
-        /// </summary>
-        public static Mesh<Simple2D> Screen = Mesh<Simple2D>.From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
-        /// <summary>
-        /// renders vertex parameters
-        /// </summary>
-        public abstract void Render();
-        /// <summary>
-        /// binds and set parameters without rendering vertex array
-        /// </summary>
-        public abstract void Use();
-    }
-
-    public class Mesh<Vertex> : Mesh where Vertex : struct, IVertex
-    {
-        public int VertexCount { get; private set; }
-        public PrimitiveType RenderType;
-        public PolygonMode RenderMode;
-
         #region static Constructors
         /// <summary>
         /// creates mesh from vertex data
@@ -39,7 +28,7 @@ namespace Graphics.Resources
         public static Mesh<Vert> From<Vert>(Vert[] Data, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
         {
             Mesh<Vert> M = new Mesh<Vert>(Type, Mode);
-            GL.NamedBufferData(M.VBO, new Vertex().SizeInBytes * Data.Length, Data, BufferUsageHint.StaticDraw);
+            GL.NamedBufferData(M.VBO, new Vert().SizeInBytes * Data.Length, Data, BufferUsageHint.StaticDraw);
             M.VertexCount = Data.Length;
             return M;
         }
@@ -56,11 +45,93 @@ namespace Graphics.Resources
         /// <summary>
         /// creates mesh from file
         /// </summary>
-        public static Mesh<Vert> ReadFrom<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> Builder, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex 
-            => Mesh<Vert>.From(LoadObj(path, Builder), Type, Mode);
+        public static Mesh<Vert> ReadFrom<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> Builder, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
+            => From(LoadObj(path, Builder), Type, Mode);
         #endregion
+        
+        /// <summary>
+        /// a mesh that encompasses the whole screen using simple2D vertices
+        /// </summary>
+        public static Mesh<Simple2D> Screen = From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
+        /// <summary>
+        /// renders vertex parameters
+        /// </summary>
+        public abstract void Render();
+        /// <summary>
+        /// binds and set parameters without rendering vertex array
+        /// </summary>
+        public abstract void Use();
 
-        private Mesh(PrimitiveType Type, PolygonMode Mode)
+        private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker)
+        {
+            List<Vert> Vertices = new List<Vert>();
+            List<Vector3> Positions = new List<Vector3>();
+            List<Vector2> Texels = new List<Vector2>();
+            List<Vector3> Normals = new List<Vector3>();
+            List<Vector3i[]> Faces = new List<Vector3i[]>();
+
+            string file = File.ReadAllText(path);
+            string[] Lines = file.Split('\n');
+            foreach (string Line in Lines)
+            {
+                string[] Parameters = Line.Split(' ');
+                switch (Parameters[0])
+                {
+                    case "p": // point
+                        break;
+                    case "v":
+                        float x = float.Parse(Parameters[1]);
+                        float y = float.Parse(Parameters[2]);
+                        float z = float.Parse(Parameters[3]);
+                        Positions.Add(new Vector3(x, y, z));
+                        break;
+                    case "vt":
+                        float u = float.Parse(Parameters[1]);
+                        float v = float.Parse(Parameters[2]);
+                        Texels.Add(new Vector2(u, 1 - v)); // inverts y axis to match texture in this program
+                        break;
+                    case "vn":
+                        float xn = float.Parse(Parameters[1]);
+                        float yn = float.Parse(Parameters[2]);
+                        float zn = float.Parse(Parameters[3]);
+                        Normals.Add(new Vector3(xn, yn, zn));
+                        break;
+                    case "f":
+                        Vector3i[] Face = new Vector3i[Parameters.Length - 1];
+                        for (int i = 0; i < Parameters.Length - 1; i++)
+                        {
+                            string[] Parts = Parameters[i + 1].Split('/');
+                            Face[i].X = Parts[0] != "" ? int.Parse(Parts[0]) - 1 : -1;
+                            Face[i].Y = Parts[1] != "" ? int.Parse(Parts[1]) - 1 : -1;
+                            Face[i].Z = Parts[2] != "" ? int.Parse(Parts[2]) - 1 : -1;
+                        }
+                        Faces.Add(Face);
+                        break;
+                }
+            }
+            foreach (Vector3i[] F in Faces) // for each face
+            {
+                foreach (Vector3i V in F) // for each vertex in face
+                {
+                    Vector3 p = V.X != -1 ? Positions[V.X] : new Vector3(0);
+                    Vector2 t = V.Y != -1 ? Texels[V.Y] : new Vector2(0);
+                    Vector3 n = V.Z != -1 ? Normals[V.Z] : new Vector3(0);
+                    Vertices.Add(VertexPacker(p, n, t));
+                }
+            }
+            return Vertices.ToArray();
+
+
+        }
+        
+    }
+
+    public class Mesh<Vertex> : Mesh where Vertex : struct, IVertex
+    {
+        public PrimitiveType RenderType;
+        public PolygonMode RenderMode;
+
+        public Mesh(PrimitiveType Type, PolygonMode Mode)
         {
             RenderType = Type;
             RenderMode = Mode;
@@ -128,67 +199,6 @@ namespace Graphics.Resources
 
             Location++; // increments Location
             ByteLocation += ByteSize; // Adds ByteSize to ByteLocation
-        }
-        private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker)
-        {
-            List<Vert> Vertices = new List<Vert>();
-            List<Vector3> Positions = new List<Vector3>();
-            List<Vector2> Texels = new List<Vector2>(); 
-            List<Vector3> Normals = new List<Vector3>();
-            List<Vector3i[]> Faces = new List<Vector3i[]>();
-            
-            string file = File.ReadAllText(path);
-            string[] Lines = file.Split('\n');
-            foreach (string Line in Lines)
-            {
-                string[] Parameters = Line.Split(' ');
-                switch (Parameters[0])
-                {
-                    case "p": // point
-                        break;
-                    case "v":
-                        float x = float.Parse(Parameters[1]);
-                        float y = float.Parse(Parameters[2]);
-                        float z = float.Parse(Parameters[3]);
-                        Positions.Add(new Vector3(x, y, z));
-                        break;
-                    case "vt":
-                        float u = float.Parse(Parameters[1]);
-                        float v = float.Parse(Parameters[2]);
-                        Texels.Add(new Vector2(u, v));
-                        break;
-                    case "vn":
-                        float xn = float.Parse(Parameters[1]);
-                        float yn = float.Parse(Parameters[2]);
-                        float zn = float.Parse(Parameters[3]);
-                        Normals.Add(new Vector3(xn, yn, zn));
-                        break;
-                    case "f":
-                        Vector3i[] Face = new Vector3i[Parameters.Length - 1];
-                        for (int i = 0; i < Parameters.Length - 1; i++)
-                        {
-                            string[] Parts = Parameters[i + 1].Split('/');
-                            Face[i].X = Parts[0] != "" ? int.Parse(Parts[0]) - 1 : -1;
-                            Face[i].Y = Parts[1] != "" ? int.Parse(Parts[1]) - 1 : -1;
-                            Face[i].Z = Parts[2] != "" ? int.Parse(Parts[2]) - 1 : -1;
-                        }
-                        Faces.Add(Face);
-                        break;
-                }
-            }
-            foreach (Vector3i[] F in Faces) // for each face
-            {
-                foreach(Vector3i V in F) // for each vertex in face
-                {
-                    Vector3 p = V.X != -1 ? Positions[V.X] : new Vector3(0);
-                    Vector2 t = V.Y != -1 ? Texels[V.Y] : new Vector2(0);
-                    Vector3 n = V.Z != -1 ? Normals[V.Z] : new Vector3(0);
-                    Vertices.Add(VertexPacker(p, n, t));
-                }
-            }
-            return Vertices.ToArray();
-
-
         }
         public static implicit operator int(Mesh<Vertex> VA) => VA.VAO;
     }

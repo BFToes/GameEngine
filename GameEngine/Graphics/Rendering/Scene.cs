@@ -20,8 +20,27 @@ namespace Graphics.Rendering
      * https://nehe.gamedev.net/tutorial/shadows/16010/
      * https://www.gamedev.net/articles/programming/graphics/the-theory-of-stencil-shadow-volumes-r1873/
      * 
+     * 
+     * TILED LIGHTING  ->       currently If I add 200 lights ontop of each other, they all render seperately 
+     *                          which is slowing down the program alot. i can instead render it as One shader pass
+     *                          but with different parameters so its just as bright. the light scale would also need
+     *                          to change.
+     *                          
+     *                          1. Geometry pass
+     *                          2. construct screenspace grid with fixed pixel/work group size
+     *                          3. find out the min/max depth of each tile.
+     *                          4. find which lights affect this tile by constructing a per tile frustrum
+     *                          5. switch over to calculate all lights that affect this tile
+     * On second thoughts maybe not what i want
+     * I quite like the sphere mesh approuch so i dont want to rewrite that. might be necessary tho
+     * 
+     * FRUSTRUM CULLING ->    just a good thing to have. add a bounding box around mesh to optimise search.
+     * CHUNK SYSTEM ->        Frustrum culling by itself is still a bit expensive. by adding a quad tree i can search for the quads and then search for the objects.
+     *   + needs loading and unloading of objects
+     * 
+     * 
+     * 
      * IDISPOSABLE YOU PIECE OF UTTER SHIT..
-     * PBR materials -> needs lighting
      * Learn about attribute coding
      * 
      */
@@ -159,7 +178,7 @@ namespace Graphics.Rendering
                 FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
                 if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
 
-                RefreshCol = new Color4(1, 0, 1, 1);
+                RefreshCol = new Color4(0, 0, 0, 0);
             }
 
             public override void Use() 
