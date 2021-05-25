@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using Graphics.Shaders;
 
-namespace Graphics.SceneObject
+namespace Graphics.SceneObjects
 {
     class Camera : TransformInvert
     {

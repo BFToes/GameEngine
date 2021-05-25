@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Graphics.Shaders;
 using System.Drawing;
 using OpenTK.Mathematics;
-using Graphics.SceneObject;
+using Graphics.SceneObjects;
 using Graphics.Resources;
 
 namespace Graphics.Rendering
@@ -37,8 +37,8 @@ namespace Graphics.Rendering
      *                          and render it as One shader pass but with different parameters so its just as 
      *                          bright. This could also be used to speed frustrum culling search time.
      *   
-     * 
-
+     * NEED TO SORT OUT OBJECT MANAGEMENT
+     * NEED TO SORT OUT RELATIVE TRANSFORMS
      * 
      * 
      * 
@@ -52,7 +52,6 @@ namespace Graphics.Rendering
          * 1 -> Light
          * ...
          */
-
     class Scene
     {
         public Camera Camera;
@@ -62,14 +61,12 @@ namespace Graphics.Rendering
         private GeometryBuffer GBuffer;
         private SceneBuffer SBuffer; // could maybe be obselete I might be able to render light to geometry aswell or just into default
 
-        // mesh that encompasses the entire screen
-        
-
-        public List<Light> LightObjects = new List<Light>();
-        public List<IRenderable> Objects = new List<IRenderable>();
-        public List<UniformBlock> UniformBlocks = new List<UniformBlock>(); // probably not the best way for this to work
+        private List<Light> LightObjects = new List<Light>();
+        private List<Occluder> OccluderObjects = new List<Occluder>();
+        private List<IRenderable> Objects = new List<IRenderable>();
 
         private Vector2i size;
+
         public Vector2i Size
         {
             get => size;
@@ -100,25 +97,30 @@ namespace Graphics.Rendering
         /// </summary>
         public void Render()
         {
-            GL.Enable(EnableCap.CullFace);
-            /*
-                1. Render the objects as usual into the G buffer so that the depth buffer will be properly populated.
-                2. Disable writing into the depth buffer.
-                3. Disable back face culling.
-                4. Set the stencil test to always succeed.
-                5. Configure the stencil operation for the back facing polygons to increment the value in the stencil buffer when the depth test fails but to keep it unchanged when either depth test or stencil test succeed.
-                6. Configure the stencil operation for the front facing polygons to decrement the value in the stencil buffer when the depth test fails but to keep it unchanged when either depth test or stencil test succeed.
-                7. Render the light sphere.
-             */
             Camera.Block.Bind();
-
+            
             // Geometry pass
             GBuffer.Use();
+            GL.DepthMask(true);
+            GL.Disable(EnableCap.StencilTest);
+            GL.Enable(EnableCap.DepthTest);
+            
             foreach (IRenderable RO in Objects) RO.Render();
             
             // Light pass
             SBuffer.Use();
-            foreach (Light LO in LightObjects) LO.Render();
+            foreach (Light LO in LightObjects)
+            {
+                /* bind LightBlock
+                 * Use ShadowProgram
+                 * 
+                 * foreach Occluder:
+                 *      Render Occluder
+                 * 
+                 * Render Light
+                 */
+                LO.Illuminate();
+            }
             
             #region Draw to screen
             GL.Disable(EnableCap.Blend);
@@ -148,10 +150,13 @@ namespace Graphics.Rendering
         }
 
         #region Object Management
+        // currently really stupid
         public void Add(IRenderable item) => Objects.Add(item);
         public void Remove(IRenderable item) => Objects.Remove(item);
         public void Add(Light item) => LightObjects.Add(item);
         public void Remove(Light item) => LightObjects.Remove(item);
+        public void Add(Occluder item) => OccluderObjects.Add(item);
+        public void Remove(Occluder item) => OccluderObjects.Remove(item);
         #endregion
 
         #region FrameBuffer Objects
@@ -181,6 +186,7 @@ namespace Graphics.Rendering
             public override void Use() 
             {
                 base.Use();
+                //GL.Enable(EnableCap.CullFace);
                 GL.DepthMask(true);
                 GL.Enable(EnableCap.DepthTest);
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -221,6 +227,8 @@ namespace Graphics.Rendering
             }
         }
         #endregion
+
+
     }
 }
 

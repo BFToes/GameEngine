@@ -8,7 +8,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using Graphics;
 using Graphics.Resources;
 using Graphics.Rendering;
-using Graphics.SceneObject;
+using Graphics.SceneObjects;
 namespace GameEngine
 {
     class Program
@@ -39,7 +39,7 @@ namespace GameEngine
                 //RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
                 RW.Scene.Camera.Position = new Vector3(0, 1, 3);
                 Floor Floor = new Floor(RW.Scene);
-                Test RO1 = new Test(RW.Scene);
+                Test RO1 = new Test(RW.Scene, new Vector3(0));
                 //for (int i = 0; i < 300; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
                 TestLight RL1 = new TestLight(RW.Scene);
 
@@ -100,7 +100,7 @@ namespace GameEngine
     class Test : RenderObject<Vertex3D>
     {
         private static Mesh<Vertex3D> ObjMesh = Mesh.ReadFrom("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
-        
+        private Occluder Occluder = new Occluder(ObjMesh);
         public Test(Scene Scene, Vector3 Position) : base(ObjMesh)
         {
             Transform.Position = Position;
@@ -110,15 +110,7 @@ namespace GameEngine
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUniform("World", Transform.Matrix);
             Scene.Add(this);
-        }
-        public Test(Scene Scene) : base(ObjMesh)
-        {
-            Transform.Scale = new Vector3(0.4f);
-
-            Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
-            Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
-            Material.SetUniform("World", Transform.Matrix);
-            Scene.Add(this);
+            Scene.Add(Occluder);
         }
     }
 
@@ -126,11 +118,11 @@ namespace GameEngine
     {
         public TestLight(Scene Scene, Vector3 Position) : base(Position, new Vector3(1, 1, 1))
         {
-            Scene.LightObjects.Add(this);
+            Scene.Add(this);
         }
         public TestLight(Scene Scene) : base(new Vector3(0, 1, 0), new Vector3(1, 1, 1))
         {
-            Scene.LightObjects.Add(this);
+            Scene.Add(this);
         }
     }
 }

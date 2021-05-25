@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using Graphics.Shaders;
 using Graphics.Resources;
-namespace Graphics.SceneObject
+namespace Graphics.SceneObjects
 {
     interface IRenderable
     {

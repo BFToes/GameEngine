@@ -50,17 +50,41 @@ namespace Graphics.Shaders
         [FieldOffset(76)]
         float AmbientIntensity; // 76 + 4
 
-        [FieldOffset(80)]
+        [FieldOffset(80)] // reused as direction
         Vector3 Position; // 80 + 12
 
         [FieldOffset(92)]
         float DiffuseIntensity; // 92 + 4
 
         public int SizeInBytes => 96;
+        /// <summary>
+        /// point light
+        /// </summary>
+        /// <param name="Model"></param>
+        /// <param name="Position"></param>
+        /// <param name="Colour"></param>
+        /// <param name="AmbientIntensity"></param>
+        /// <param name="DiffuseIntensity"></param>
         public LightData(Matrix4 Model, Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity)
         {
             this.Model = Model;
             this.Position = Position;
+            this.Colour = Colour;
+            this.AmbientIntensity = AmbientIntensity;
+            this.DiffuseIntensity = DiffuseIntensity;
+        }
+
+        /// <summary>
+        /// directional light
+        /// </summary>
+        /// <param name="Direction"></param>
+        /// <param name="Colour"></param>
+        /// <param name="AmbientIntensity"></param>
+        /// <param name="DiffuseIntensity"></param>
+        public LightData(Vector3 Direction, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity)
+        {
+            this.Model = Matrix4.Identity; // doesnt matter just 64 bytes of wasted space
+            this.Position = Direction;
             this.Colour = Colour;
             this.AmbientIntensity = AmbientIntensity;
             this.DiffuseIntensity = DiffuseIntensity;

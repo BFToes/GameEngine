@@ -7,13 +7,13 @@ using Graphics.Shaders;
 using Graphics.Resources;
 using Graphics.Rendering;
 
-namespace Graphics.SceneObject
+namespace Graphics.SceneObjects
 {
     abstract class Light
     {
-        public static ShaderProgram PntLightProg = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Light.vert", "Resources/Shaderscripts/Rendering/Light.frag");
         //public static ShaderProgram DirLightProg = ...
-        public static ShaderProgram StencilProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Shadow.vert"); // just needs to cover the stencil buffers
+        public static ShaderProgram PntLightProg = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Light.vert", "Resources/Shaderscripts/Rendering/Light.frag");
+        public static ShaderProgram StencilProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Shadow.vert"); // fixes double rendering from front and back faces
         public static readonly Mesh<Simple3D> PntLightMesh = Mesh.ReadFrom("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
 
         private static float specularintensity;
@@ -61,7 +61,7 @@ namespace Graphics.SceneObject
             PntLightProg.DebugUniforms();
         }
 
-        public abstract void Render();
+        public abstract void Illuminate();
     }
     class PointLight : Light
     {
@@ -120,7 +120,7 @@ namespace Graphics.SceneObject
                 Transform.Scale = new Vector3(value);
             }
         }
-
+        
         public PointLight(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f)
         {
             this.Position = Position;
@@ -131,7 +131,7 @@ namespace Graphics.SceneObject
 
             LightBlock.Set(new LightData(Transform.Matrix, Position, colour, aintensity, dintensity));
         }
-        public override void Render() 
+        public override void Illuminate() 
         {
             LightBlock.Bind();
             PntLightProg.Use();
@@ -226,7 +226,7 @@ namespace Graphics.SceneObject
             this.Colour = Colour;
 
         }
-        public override void Render()
+        public override void Illuminate()
         {
             LightBlock.Bind();
             //LightProgram.Use();
