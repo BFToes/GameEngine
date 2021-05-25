@@ -11,40 +11,63 @@ namespace Graphics.SceneObject
 {
     abstract class Light
     {
-        public abstract void Render();
-    }
-    class PointLight : Light
-    {
-        private ShadowCube Shadowframebuffer = new ShadowCube(800, 800);
-        private static readonly Mesh<Simple3D> LightMesh = Mesh.ReadFrom("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
-        public static ShaderProgram LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Light.vert", "Resources/Shaderscripts/Rendering/Light.frag");
+        public static ShaderProgram PntLightProg = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Light.vert", "Resources/Shaderscripts/Rendering/Light.frag");
+        //public static ShaderProgram DirLightProg = ...
         public static ShaderProgram StencilProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Shadow.vert"); // just needs to cover the stencil buffers
-        
+        public static readonly Mesh<Simple3D> PntLightMesh = Mesh.ReadFrom("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
+
         private static float specularintensity;
-        public static float SpecularIntensity 
+        public static float SpecularIntensity
         {
             get => specularintensity;
             set
             {
-                LightProgram.SetUniform("SpecularIntensity", value);
+                PntLightProg.SetUniform("SpecularIntensity", value);
                 specularintensity = value;
             }
         }
 
         private static float specularpower;
-        public static float SpecularPower 
+        public static float SpecularPower
         {
             get => specularpower;
             set
             {
-                LightProgram.SetUniform("SpecularPower", value);
+                PntLightProg.SetUniform("SpecularPower", value);
                 specularpower = value;
             }
         }
 
-        
+        private static Vector3 acurve;
+        public static Vector3 Attenuation
+        {
+            get => acurve;
+            set
+            {
+                acurve = value;
+                PntLightProg.SetUniform("Attenuation", value);
+            }
+        }
+
+        protected UniformBlock LightBlock = UniformBlock.For<LightData>(1);
+
+        static Light()
+        {
+            SpecularIntensity = 0.5f;
+            SpecularPower = 4;
+            Attenuation = new Vector3(0.1f, 0.1f, 0);
+            PntLightProg.SetUniformBlock("CameraBlock", 0);
+            PntLightProg.SetUniformBlock("LightBlock", 1);
+            PntLightProg.DebugUniforms();
+        }
+
+        public abstract void Render();
+    }
+    class PointLight : Light
+    {
+        //private ShadowCube Shadowframebuffer = new ShadowCube(800, 800);
+
         private Transform Transform = new Transform();
-        private UniformBlock LightBlock = UniformBlock.For<LightData>(1);
        
         private Vector3 colour;
         private Vector3 acurve;
@@ -86,16 +109,6 @@ namespace Graphics.SceneObject
                 Transform.Scale = new Vector3(CalcDistance(colour, acurve, dintensity));
             }
         }
-        public Vector3 Attenuation 
-        {
-            get => acurve;
-            set
-            {
-                acurve = value;
-                LightBlock.Set(32, value);
-                Transform.Scale = new Vector3(CalcDistance(colour, acurve, dintensity));
-            }
-        }
         public float Scale 
         { 
             get => Transform.Scale.X;
@@ -108,22 +121,21 @@ namespace Graphics.SceneObject
             }
         }
 
-        public PointLight(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f, float CurveExp = 0.1f, float CurveLin = 0.1f, float CurveCon = 0)
+        public PointLight(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f)
         {
             this.Position = Position;
             colour = Colour;
             aintensity = AmbientIntensity;
-            dintensity = DiffuseIntensity; 
-            acurve = new Vector3(CurveExp, CurveLin, CurveCon);
-            Transform.Scale = new Vector3(CalcDistance(colour, acurve, dintensity));
+            dintensity = DiffuseIntensity;
+            Transform.Scale = new Vector3(CalcDistance(Colour, Attenuation, DiffuseIntensity));
 
-            LightBlock.Set(new LightData(Transform.Matrix, Position, colour, aintensity, dintensity, acurve));
+            LightBlock.Set(new LightData(Transform.Matrix, Position, colour, aintensity, dintensity));
         }
         public override void Render() 
         {
             LightBlock.Bind();
-            LightProgram.Use();
-            LightMesh.Render();
+            PntLightProg.Use();
+            PntLightMesh.Render();
         }
 
         /// <summary>
@@ -144,7 +156,7 @@ namespace Graphics.SceneObject
             else throw new Exception("Light must degrade with distance so light curve exponent or linear component must be greater than 0");
         }
 
-
+        /*
         private class ShadowCube : FrameBuffer 
         {
             public readonly int ShadowTexture;
@@ -162,6 +174,63 @@ namespace Graphics.SceneObject
 
                 RefreshCol = new Color4(0, 0, 0, 0);
             }
+        }
+        */
+    }
+
+    class DirectionLight : Light
+    {
+
+        // reuses light position as light direction
+        // ignores attenuation curve
+        private Vector3 colour;
+        private Vector3 direction;
+        private float aintensity;
+        private float dintensity;
+        public Vector3 Direction
+        {
+            get => direction;
+            set
+            {
+                Direction = value;
+                LightBlock.Set(80, value);
+            }
+        }
+        public Vector3 Colour
+        {
+            get => colour;
+            set
+            {
+                colour = value;
+                LightBlock.Set(0, value);
+            }
+        }
+        public float AmbientIntensity
+        {
+            get => aintensity;
+            set => LightBlock.Set(16, value);
+        }
+        public float DiffuseIntensity
+        {
+            get => dintensity;
+            set
+            {
+                dintensity = value;
+                LightBlock.Set(28, value);
+            }
+        }
+
+        public DirectionLight(Vector3 Direction, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f)
+        {
+            this.Direction = Direction;
+            this.Colour = Colour;
+
+        }
+        public override void Render()
+        {
+            LightBlock.Bind();
+            //LightProgram.Use();
+            //LightMesh.Render();
         }
     }
 }

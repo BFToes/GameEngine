@@ -56,17 +56,14 @@ namespace Graphics.Shaders
         [FieldOffset(92)]
         float DiffuseIntensity; // 92 + 4
 
-        [FieldOffset(96)]
-        Vector3 Attenuation; // 96 + 12
-        public int SizeInBytes => 108;
-        public LightData(Matrix4 Model, Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity, Vector3 Attenuation )
+        public int SizeInBytes => 96;
+        public LightData(Matrix4 Model, Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity)
         {
             this.Model = Model;
             this.Position = Position;
             this.Colour = Colour;
             this.AmbientIntensity = AmbientIntensity;
             this.DiffuseIntensity = DiffuseIntensity;
-            this.Attenuation = Attenuation;
         }
     }
 

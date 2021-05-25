@@ -21,12 +21,7 @@ namespace Graphics.Rendering
      * https://www.gamedev.net/articles/programming/graphics/the-theory-of-stencil-shadow-volumes-r1873/
      * 
      * 
-     * TILED LIGHTING  ->       currently If I add 200 lights ontop of each other, they all render seperately 
-     *                          which is slowing down the program alot. i can instead render it as One shader pass
-     *                          but with different parameters so its just as bright. the light scale would also need
-     *                          to change.
-     *                          
-     *                          1. Geometry pass
+     * TILED LIGHTING  ->       1. Geometry pass
      *                          2. construct screenspace grid with fixed pixel/work group size
      *                          3. find out the min/max depth of each tile.
      *                          4. find which lights affect this tile by constructing a per tile frustrum
@@ -34,9 +29,16 @@ namespace Graphics.Rendering
      * On second thoughts maybe not what i want
      * I quite like the sphere mesh approuch so i dont want to rewrite that. might be necessary tho
      * 
-     * FRUSTRUM CULLING ->    just a good thing to have. add a bounding box around mesh to optimise search.
-     * CHUNK SYSTEM ->        Frustrum culling by itself is still a bit expensive. by adding a quad tree i can search for the quads and then search for the objects.
-     *   + needs loading and unloading of objects
+     * FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
+     *                          being rendered just a good thing to have. I can also add a bounding box around 
+     *                          a mesh to optimise search.
+     * LIGHT OCTATREE ->        currently If I add 300+ lights ontop of each other, they all render seperately 
+     *                          which is slowing down the program alot. I can instead group lights by distance
+     *                          and render it as One shader pass but with different parameters so its just as 
+     *                          bright. This could also be used to speed frustrum culling search time.
+     *   
+     * 
+
      * 
      * 
      * 
@@ -140,14 +142,9 @@ namespace Graphics.Rendering
             PostProcess.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
             PostProcess.SetUniformSampler2D("ShadedTexture", SBuffer.ColourTexture);
 
-            PointLight.SpecularIntensity = 0.5f;
-            PointLight.SpecularPower = 4;
-            PointLight.LightProgram.SetUniformSampler2D("AlbedoTexture", GBuffer.AlbedoTexture);
-            PointLight.LightProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            PointLight.LightProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
-            PointLight.LightProgram.SetUniformBlock("CameraBlock", 0);
-            PointLight.LightProgram.SetUniformBlock("LightBlock", 1);
-            PointLight.LightProgram.DebugUniforms();
+            Light.PntLightProg.SetUniformSampler2D("AlbedoTexture", GBuffer.AlbedoTexture);
+            Light.PntLightProg.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
+            Light.PntLightProg.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
         }
 
         #region Object Management

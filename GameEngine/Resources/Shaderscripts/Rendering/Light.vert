@@ -13,7 +13,6 @@ layout(std140) uniform CameraBlock {
     float AmbientIntensity;
     vec3 Position;
     float DiffuseIntensity;
-    vec3 Attenuation;
 } Light;
 
 

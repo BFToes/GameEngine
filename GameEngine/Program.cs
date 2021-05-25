@@ -40,8 +40,7 @@ namespace GameEngine
                 RW.Scene.Camera.Position = new Vector3(0, 1, 3);
                 Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW.Scene);
-                //for (int i = 0; i < 10000; i++) new Test(RW.Scene, new Vector3(i * 3 -  0.5f * 3 * 10000, 0, 0));
-                for (int i = 0; i < 200; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
+                //for (int i = 0; i < 300; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
                 TestLight RL1 = new TestLight(RW.Scene);
 
                 RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 4, MathF.Cos(RW.Time) * 4);

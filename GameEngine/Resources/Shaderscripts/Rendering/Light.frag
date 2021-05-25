@@ -10,15 +10,16 @@ layout(std140) uniform CameraBlock {
  layout(std140) uniform LightBlock {
     mat4 Model;
     vec3 Colour;
-    float AmbientIntensity; // a bit extra dont you think?
+    float AmbientIntensity;
     vec3 Position;
     float DiffuseIntensity;
-    vec3 Attenuation;
 } Light;
 
 // global
 uniform float SpecularPower;
 uniform float SpecularIntensity;
+uniform vec3 Attenuation;
+
 uniform sampler2D PositionTexture;
 uniform sampler2D AlbedoTexture;
 uniform sampler2D NormalTexture;
@@ -53,9 +54,7 @@ void main(void)
         }
     }
     vec4 BaseColour = AmbientColour + DiffuseColour + SpecularColour;
-    float Attenuation = Light.Attenuation.x * Distance * Distance + Light.Attenuation.y * Distance + Light.Attenuation.z;
-    Colour = vec4(1 / Attenuation);
-    Attenuation = max(Attenuation, 1); // no smaller than 1
+    float Atten = max(Attenuation.x * Distance * Distance + Attenuation.y * Distance + Attenuation.z, 1);
 
-    Colour = vec4(Albedo.xyz, 1) * BaseColour / Attenuation;
+    Colour = vec4(Albedo.xyz, 1) * BaseColour / Atten;
     }
