@@ -32,6 +32,7 @@ namespace Graphics.Rendering
      * FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
      *                          being rendered just a good thing to have. I can also add a bounding box around 
      *                          a mesh to optimise search.
+    
      * LIGHT OCTATREE ->        currently If I add 300+ lights ontop of each other, they all render seperately 
      *                          which is slowing down the program alot. I can instead group lights by distance
      *                          and render it as One shader pass but with different parameters so its just as 
@@ -43,7 +44,6 @@ namespace Graphics.Rendering
      * 
      * 
      * IDISPOSABLE YOU PIECE OF UTTER SHIT..
-     * Learn about attribute coding
      * 
      */
 
@@ -56,10 +56,12 @@ namespace Graphics.Rendering
     {
         public Camera Camera;
 
-        public ShaderProgram PostProcess = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/GeomDebug.vert", "Resources/Shaderscripts/Rendering/GeomDebug.frag");
-
         private GeometryBuffer GBuffer;
-        private SceneBuffer SBuffer; // could maybe be obselete I might be able to render light to geometry aswell or just into default
+        private SceneBuffer SBuffer;
+        
+        public ShaderProgram PostProcess = ShaderProgram.ReadFrom(
+            "Resources/Shaderscripts/Rendering/GeomDebug.vert", 
+            "Resources/Shaderscripts/Rendering/GeomDebug.frag");
 
         private List<Light> LightObjects = new List<Light>();
         private List<Occluder> OccluderObjects = new List<Occluder>();
@@ -89,10 +91,6 @@ namespace Graphics.Rendering
 
             // setup camera
             Camera = new Camera(50, Width, Height, 2, 512);
-
-            GL.Enable(EnableCap.CullFace);
-            GL.BlendEquation(BlendEquationMode.FuncAdd);
-            GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
         }
 
         /// <summary>
@@ -100,8 +98,6 @@ namespace Graphics.Rendering
         /// </summary>
         public void Render()
         {
-            Camera.Block.Bind();
-            
             // Geometry pass
             GBuffer.Use();
             
@@ -111,13 +107,15 @@ namespace Graphics.Rendering
             SBuffer.Use();
             foreach (Light LO in LightObjects)
             {
+                LO.BeginShadowPass();
                 /* bind LightBlock
                  * Use ShadowProgram
                  * 
                  * foreach Occluder:
-                 *      Render Occluder
+                 *      Render Occluder Mesh
                  * 
-                 * Render Light
+                 * Use LightProgram
+                 * Render Light Mesh
                  */
                 LO.Illuminate();
             }
@@ -126,7 +124,9 @@ namespace Graphics.Rendering
             GL.Disable(EnableCap.Blend);
             GL.Disable(EnableCap.StencilTest);
             GL.CullFace(CullFaceMode.Back);
+
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+
             GL.ClearColor(Color.Crimson);
             GL.Clear(ClearBufferMask.ColorBufferBit);
             // render into screen
@@ -143,11 +143,17 @@ namespace Graphics.Rendering
             PostProcess.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
             PostProcess.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
             PostProcess.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
+
             PostProcess.SetUniformSampler2D("ShadedTexture", SBuffer.ColourTexture);
 
-            Light.PntLightProg.SetUniformSampler2D("AlbedoTexture", GBuffer.AlbedoTexture);
-            Light.PntLightProg.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            Light.PntLightProg.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
+            Light.SetUniformSamplers(GBuffer.AlbedoTexture, GBuffer.NormalTexture, GBuffer.PositionTexture);
+            
+            Camera.Block.Bind();
+
+            // other contexts may change these values but this doesnt
+            GL.Enable(EnableCap.CullFace);
+            GL.BlendEquation(BlendEquationMode.FuncAdd);
+            GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
         }
 
         #region Object Management

@@ -41,7 +41,7 @@ namespace GameEngine
                 Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW.Scene, new Vector3(0));
                 //for (int i = 0; i < 300; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
-                TestLight RL1 = new TestLight(RW.Scene);
+                TestLight RL1 = new TestLight(RW.Scene, 0, 1, 0, 60, 60, 60);
 
                 RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 4, MathF.Cos(RW.Time) * 4);
 
@@ -116,11 +116,7 @@ namespace GameEngine
 
     class TestLight : PointLight
     {
-        public TestLight(Scene Scene, Vector3 Position) : base(Position, new Vector3(1, 1, 1))
-        {
-            Scene.Add(this);
-        }
-        public TestLight(Scene Scene) : base(new Vector3(0, 1, 0), new Vector3(1, 1, 1))
+        public TestLight(Scene Scene, float Px = 0, float Py = 1, float Pz = 0, float r = 1, float g = 1, float b = 1) : base(new Vector3(Px, Py, Pz), new Vector3(r, g, b))
         {
             Scene.Add(this);
         }

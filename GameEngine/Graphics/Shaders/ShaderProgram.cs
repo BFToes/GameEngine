@@ -17,8 +17,9 @@ namespace Graphics.Shaders
         private Dictionary<string, int> UniformBlockLocation;// uniform block lookup
         private Dictionary<string, Func<dynamic>> UpdatingUniforms; // uniform updater functions
         // texture unit management
-        private int[] Textures = new int[32].Fill(-1); // texture unit
-        private int[] TexUseCount = new int[32].Fill(0); // number of times texture used
+        private int[] ProgTex = new int[32].Fill(-1); // texture unit
+        private int[] TexUseCount = new int[32]; // number of times texture used
+        private static int[] TextureUnits = new int[32]; // bound texture units
         
         #region Static Constructors
         public static ShaderProgram From(string vertexcode, string geometrycode, string fragmentcode)
@@ -234,7 +235,7 @@ namespace Graphics.Shaders
         {
             GL.GetUniform(Handle, Index, out int Unit); // read uniform
             if (TexUseCount[Unit]-- == 0) // deincrement UnitUseCount, if Texture no longer in use
-                Textures[Unit] = -1; // remove texture from unit
+                ProgTex[Unit] = -1; // remove texture from program textures
         }
 
         /// <summary>
@@ -245,14 +246,14 @@ namespace Graphics.Shaders
         private void AssignTextureUnit(int Tex, out int Unit)
         {
             Unit = -1;
-            if (Textures.Contains(Tex)) // if texture already bound
+            if (ProgTex.Contains(Tex)) // if texture already in program textures
             {
-                while (Textures[++Unit] != Tex) ; // linear search for texture unit
+                while (ProgTex[++Unit] != Tex) ; // linear search for program texture
             }
-            else // if texture is not already bound
+            else // if texture is not already in program textures
             {
-                while (TexUseCount[++Unit] != 0) ; // linear search for unused unit
-                Textures[Unit] = Tex;
+                while (TexUseCount[++Unit] != 0) ; // linear search for unused program texture
+                ProgTex[Unit] = Tex;
             }
 
             TexUseCount[Unit]++;
@@ -268,9 +269,17 @@ namespace Graphics.Shaders
         {
             GL.UseProgram(Handle); // tell openGL to use this object
 
-            for(int Unit = 0; TexUseCount[Unit] != 0; Unit++) 
-                GL.BindTextureUnit(Unit, Textures[Unit]); // bind textures into units
-
+            for(int Unit = 0; TexUseCount[Unit] != 0; Unit++)
+            {
+                int TexID = ProgTex[Unit];
+                if (TextureUnits[Unit] != TexID) // if not bound
+                {
+                    GL.BindTextureUnit(Unit, TexID); // bind texture into unit
+                    ProgTex[Unit] = TexID;
+                }
+                // else already bound no action needed
+            }
+                
             foreach (string Uniform in UpdatingUniforms.Keys) 
                 SetUniform(Uniform, UpdatingUniforms[Uniform]());
         }
@@ -292,7 +301,7 @@ namespace Graphics.Shaders
                     if (UniformType  == ActiveUniformType.Sampler2D)
                     {
                         GL.GetUniform(Handle, Location, out int Unit); // for some reason this fucked up and set i to 0 when it couldnt read the value??? which did an infinite loop
-                        Console.WriteLine($"Uniform - {i}: {Location} = {UniformType} {Name} in {Unit} -> Texture {Textures[Unit]}");
+                        Console.WriteLine($"Uniform - {i}: {Location} = {UniformType} {Name} in {Unit} -> Texture {ProgTex[Unit]}");
                     }
                     else
                     {
@@ -327,7 +336,7 @@ namespace Graphics.Shaders
             }
             // show texture units
             Console.Write($"TextureUnits : ");
-            Textures.Select(I => { string S = I.ToString(); if (I != -1) Console.Write($"{S}, "); return S; }).ToArray();
+            ProgTex.Select(I => { string S = I.ToString(); if (I != -1) Console.Write($"{S}, "); return S; }).ToArray();
             Console.Write("\n");
 
 
