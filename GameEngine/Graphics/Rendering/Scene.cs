@@ -89,7 +89,10 @@ namespace Graphics.Rendering
 
             // setup camera
             Camera = new Camera(50, Width, Height, 2, 512);
-                   
+
+            GL.Enable(EnableCap.CullFace);
+            GL.BlendEquation(BlendEquationMode.FuncAdd);
+            GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
         }
 
         /// <summary>
@@ -101,9 +104,6 @@ namespace Graphics.Rendering
             
             // Geometry pass
             GBuffer.Use();
-            GL.DepthMask(true);
-            GL.Disable(EnableCap.StencilTest);
-            GL.Enable(EnableCap.DepthTest);
             
             foreach (IRenderable RO in Objects) RO.Render();
             
@@ -124,6 +124,7 @@ namespace Graphics.Rendering
             
             #region Draw to screen
             GL.Disable(EnableCap.Blend);
+            GL.Disable(EnableCap.StencilTest);
             GL.CullFace(CullFaceMode.Back);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.ClearColor(Color.Crimson);
@@ -186,9 +187,13 @@ namespace Graphics.Rendering
             public override void Use() 
             {
                 base.Use();
-                //GL.Enable(EnableCap.CullFace);
                 GL.DepthMask(true);
+                GL.Disable(EnableCap.Blend);
+                GL.Disable(EnableCap.StencilTest);
+
                 GL.Enable(EnableCap.DepthTest);
+                GL.CullFace(CullFaceMode.Back);
+
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             }
         }
@@ -211,16 +216,11 @@ namespace Graphics.Rendering
             public override void Use()
             {
                 base.Use();
-                // So light adds together
-                GL.Enable(EnableCap.Blend);
-                GL.BlendEquation(BlendEquationMode.FuncAdd);
-                GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
-
-                // so light shadows work
                 GL.DepthMask(false);
-                GL.Disable(EnableCap.DepthTest);
+                GL.Enable(EnableCap.Blend); // blend equation defined in constructor
                 GL.Enable(EnableCap.StencilTest);
-
+                
+                GL.Disable(EnableCap.DepthTest);
                 GL.CullFace(CullFaceMode.Front);
 
                 GL.Clear(ClearBufferMask.ColorBufferBit);
