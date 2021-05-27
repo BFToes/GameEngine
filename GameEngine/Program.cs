@@ -38,10 +38,10 @@ namespace GameEngine
             {
                 //RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
                 RW.Scene.Camera.Position = new Vector3(0, 1, 3);
-                Floor Floor = new Floor(RW.Scene);
                 Test RO1 = new Test(RW.Scene, new Vector3(0));
+                Floor Floor = new Floor(RW.Scene);
                 //for (int i = 0; i < 300; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
-                TestLight RL1 = new TestLight(RW.Scene, 0, 1, 0, 60, 60, 60);
+                TestLight RL1 = new TestLight(RW.Scene, 0, 1, 0, 8, 8, 8);
 
                 RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 4, MathF.Cos(RW.Time) * 4);
 
@@ -99,8 +99,8 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
-        private static Mesh<Vertex3D> ObjMesh = Mesh.ReadFrom("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
-        private Occluder Occluder = new Occluder(ObjMesh);
+        private static Mesh<Vertex3D> ObjMesh = Mesh.Construct("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
+        private static Occluder Occluder = new Occluder(Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Simple3D(p)));
         public Test(Scene Scene, Vector3 Position) : base(ObjMesh)
         {
             Transform.Position = Position;

@@ -44,8 +44,17 @@
     <None Update="Resources\Shaderscripts\Rendering\Dir Light.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow.vert">
+    <None Update="Resources\Shaderscripts\Rendering\Shadow - Copy.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Rendering\Shadow.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Rendering\Shadow.geom">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Rendering\Shadow.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Rendering\Light.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

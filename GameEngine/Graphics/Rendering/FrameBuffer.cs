@@ -7,18 +7,18 @@ namespace Graphics.Rendering
 {
     abstract class FrameBuffer
     {
-        public Color4 RefreshCol = Color.Purple; // purple so you remember to change it
+        public Color4 RefreshColour = Color.Purple;
+        public int RefreshStencil = 0;
+
         public Vector2i Size
         {
             get => size;
             set => PrivateResize(value);
         }
-
         private Action<Vector2i> PrivateResize; 
-
         private Vector2i size;
         
-        private int FBO; // frame buffer object
+        private int FBO; // frame buffer object handle
 
         public FrameBuffer(int Width, int Height)
         {
@@ -28,6 +28,8 @@ namespace Graphics.Rendering
             FBO = GL.GenFramebuffer();
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, FBO);
         }
+
+        #region Buffer Attachment
         /// <summary>
         /// assign new render buffer and bind to framebuffer object
         /// </summary>
@@ -62,6 +64,9 @@ namespace Graphics.Rendering
             GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, Storage, Width, Height);
             GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, 0);
         }
+        #endregion
+
+        #region Texture Attachment
         /// <summary>
         /// creates new viewport texture
         /// </summary>
@@ -96,7 +101,12 @@ namespace Graphics.Rendering
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
-        
+        #endregion
+
+        #region Texture Cube Attachment
+        /// <summary>
+        /// creates new texture cube attachment
+        /// </summary>
         protected int NewTextureCubeAttachment(int Width, int Height, bool AutoResize = false, FramebufferAttachment Attachment = FramebufferAttachment.DepthAttachment, PixelInternalFormat PixelInternalFormat = PixelInternalFormat.DepthComponent, PixelFormat PixelFormat = PixelFormat.DepthComponent, PixelType PixelType = PixelType.Float, TextureMinFilter MinFilter = TextureMinFilter.Nearest, TextureMagFilter MagFilter = TextureMagFilter.Nearest, TextureWrapMode WrapMode = TextureWrapMode.ClampToEdge)
         {
             int TextureCube = GL.GenTexture();
@@ -140,7 +150,8 @@ namespace Graphics.Rendering
             GL.TexImage2D(TextureTarget.TextureCubeMapNegativeZ, 0, PixelInternalFormat, Width, Height, 0, PixelFormat, PixelType, (float[])null);
             GL.BindTexture(TextureTarget.TextureCubeMap, 0);
         }
-        
+        #endregion
+
         /// <summary>
         /// sets this frame buffer to the render target
         /// </summary>
@@ -148,8 +159,19 @@ namespace Graphics.Rendering
         {
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, FBO);
             GL.Viewport(0, 0, Size.X, Size.Y);
-            GL.ClearColor(RefreshCol);
+            GL.ClearColor(RefreshColour);
+            GL.ClearStencil(RefreshStencil);
         }
+
+        /// <summary>
+        /// throws exception if framebuffer has loaded incorrectly. must be used immediately after construction
+        /// </summary>
+        public virtual void CheckFrameBufferStatus()
+        {
+            FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+            if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
+        }
+
         public static implicit operator int(FrameBuffer FB) => FB.FBO;
     }
 }

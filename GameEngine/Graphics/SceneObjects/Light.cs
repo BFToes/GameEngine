@@ -11,6 +11,8 @@ namespace Graphics.SceneObjects
 {
     abstract class Light
     {
+        #region Static Members
+
         #region Light Settings
         // bigger number higher precision, powers of 2 preferred
         protected const float Precision = 64;
@@ -56,7 +58,6 @@ namespace Graphics.SceneObjects
             Attenuation = new Vector3(0.1f, 0.1f, 0);
             PointLight.LightProgram.SetUniformBlock("CameraBlock", 0);
             PointLight.LightProgram.SetUniformBlock("LightBlock", 1);
-            PointLight.LightProgram.DebugUniforms();
         }
 
         public static void SetUniformSamplers(int Albedo, int Normal, int Position)
@@ -64,24 +65,17 @@ namespace Graphics.SceneObjects
             PointLight.LightProgram.SetUniformSampler2D("AlbedoTexture", Albedo);
             PointLight.LightProgram.SetUniformSampler2D("NormalTexture", Normal);
             PointLight.LightProgram.SetUniformSampler2D("PositionTexture", Position);
-            PointLight.LightProgram.SetUniformSampler2D("AlbedoTexture", Albedo);
-            PointLight.LightProgram.SetUniformSampler2D("NormalTexture", Normal);
-            PointLight.LightProgram.SetUniformSampler2D("PositionTexture", Position);
         }
-        
+        #endregion
+
         protected UniformBlock LightBlock = UniformBlock.For<LightData>(1);
         public abstract void Illuminate();
-        public virtual void BeginShadowPass()
-        {
-            LightBlock.Bind();
-
-
-        }
+        
     }
     class PointLight : Light
     {
         public static readonly ShaderProgram LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Light.vert","Resources/Shaderscripts/Rendering/Light.frag");
-        public static readonly Mesh<Simple3D> PntLightMesh = Mesh.ReadFrom("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
+        public static readonly Mesh<Simple3D> PntLightMesh = Mesh.Construct("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
 
         private Transform Transform = new Transform();
        
@@ -137,9 +131,9 @@ namespace Graphics.SceneObjects
         }
         public override void Illuminate() 
         {
-            LightBlock.Bind();
             LightProgram.Use();
-            PntLightMesh.Render();
+            LightBlock.Bind();
+            PntLightMesh.Draw();
         }
 
         /// <summary>
@@ -213,12 +207,9 @@ namespace Graphics.SceneObjects
             this.aintensity = AmbientIntensity;
 
         }
-        public override void Illuminate()
-        {
-            LightBlock.Bind();
-            //LightProgram.Use();
-
-            //LightMesh.Render();
+        public override void Illuminate() 
+        { 
+            
         }
     }
     

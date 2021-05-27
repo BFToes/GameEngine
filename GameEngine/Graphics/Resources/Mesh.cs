@@ -45,8 +45,8 @@ namespace Graphics.Resources
         /// <summary>
         /// creates mesh from file
         /// </summary>
-        public static Mesh<Vert> ReadFrom<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> Builder, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
-            => From(LoadObj(path, Builder), Type, Mode);
+        public static Mesh<Vert> Construct<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> Builder, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
+            => From(LoadObj(path, Builder, Type), Type, Mode);
         #endregion
         
         /// <summary>
@@ -56,13 +56,13 @@ namespace Graphics.Resources
         /// <summary>
         /// renders vertex parameters
         /// </summary>
-        public abstract void Render();
+        public abstract void Draw();
         /// <summary>
         /// binds and set parameters without rendering vertex array
         /// </summary>
         public abstract void Use();
 
-        private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker)
+        private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker, PrimitiveType Primitive)
         {
             List<Vert> Vertices = new List<Vert>();
             List<Vector3> Positions = new List<Vector3>();
@@ -109,16 +109,27 @@ namespace Graphics.Resources
                         break;
                 }
             }
-            foreach (Vector3i[] F in Faces) // for each face
+            switch (Primitive)
             {
-                foreach (Vector3i V in F) // for each vertex in face
-                {
-                    Vector3 p = V.X != -1 ? Positions[V.X] : new Vector3(0);
-                    Vector2 t = V.Y != -1 ? Texels[V.Y] : new Vector2(0);
-                    Vector3 n = V.Z != -1 ? Normals[V.Z] : new Vector3(0);
-                    Vertices.Add(VertexPacker(p, n, t));
-                }
+                case PrimitiveType.Triangles:
+                    foreach (Vector3i[] F in Faces) // for each face
+                    {
+                        foreach (Vector3i V in F) // for each vertex in face
+                        {
+                            Vector3 p = V.X != -1 ? Positions[V.X] : new Vector3(0);
+                            Vector2 t = V.Y != -1 ? Texels[V.Y] : new Vector2(0);
+                            Vector3 n = V.Z != -1 ? Normals[V.Z] : new Vector3(0);
+                            Vertices.Add(VertexPacker(p, n, t));
+                        }
+                    }
+                    break;
+                case PrimitiveType.TrianglesAdjacency:
+                    throw new NotImplementedException();
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
+            
             return Vertices.ToArray();
 
 
@@ -168,7 +179,7 @@ namespace Graphics.Resources
         /// <summary>
         /// bind, set parameters and render
         /// </summary>
-        public override void Render()
+        public override void Draw()
         {
             GL.BindVertexArray(VAO); // use this object's mesh
             GL.PolygonMode(MaterialFace.FrontAndBack, RenderMode); // use this programs rendering modes

@@ -4,9 +4,9 @@ const float Epsilon = 0.00390625; // 1/256
 layout (triangles_adjacency) in; // six vertices in quad
 layout (triangle_strip, max_vertices = 18) out; // 4 per quad * 3 triangle vertices + 6 for near
 
-in vec3[] VPos;
+in vec3[] VPos; // vertices of a triangle (with adjacency) = 6
 
-uniform vec3 LightPosition; // view * light 
+uniform vec3 LightPosition; // view * light
 uniform mat4 ProjMatrix; // projection
 
 bool FacesLight(vec3 a, vec3 b, vec3 c) 
@@ -18,7 +18,8 @@ bool FacesLight(vec3 a, vec3 b, vec3 c)
 
     return dot(n, da) > 0 || dot(n, db) > 0 || dot(n, dc) > 0; 
 }
-void EmitEdge(vec3 a, vec3 b) {
+void EmitEdge(vec3 a, vec3 b) 
+{
     vec3 LightDir = normalize(a - LightPosition);
     vec3 Deviation = LightDir * Epsilon;
     gl_Position = ProjMatrix * vec4(a + Deviation, 1);

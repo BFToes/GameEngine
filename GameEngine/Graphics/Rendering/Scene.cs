@@ -41,9 +41,11 @@ namespace Graphics.Rendering
      * NEED TO SORT OUT OBJECT MANAGEMENT
      * NEED TO SORT OUT RELATIVE TRANSFORMS
      * 
+     * tutorials are using triangle adjacency.. WTF why i dont understand.
+     *      occluders may need to use triangle_adjacency. fuck knows why.
+     *      
      * 
-     * 
-     * IDISPOSABLE YOU PIECE OF UTTER SHIT..
+     * IDISPOSABLE YOU PIECE OF UTTER SHIT.. 
      * 
      */
 
@@ -57,13 +59,12 @@ namespace Graphics.Rendering
         public Camera Camera;
 
         private GeometryBuffer GBuffer;
-        private SceneBuffer SBuffer;
         
-        public ShaderProgram PostProcess = ShaderProgram.ReadFrom(
+        public ShaderProgram PostProcessProgram = ShaderProgram.ReadFrom(
             "Resources/Shaderscripts/Rendering/GeomDebug.vert", 
             "Resources/Shaderscripts/Rendering/GeomDebug.frag");
 
-        private List<Light> LightObjects = new List<Light>();
+        private List<PointLight> PointLightObjects = new List<PointLight>();
         private List<Occluder> OccluderObjects = new List<Occluder>();
         private List<IRenderable> Objects = new List<IRenderable>();
 
@@ -77,7 +78,6 @@ namespace Graphics.Rendering
                 size = value;
                 
                 GBuffer.Size = size;
-                SBuffer.Size = size;
                 Camera.Resize(size);
             }
         }
@@ -85,88 +85,94 @@ namespace Graphics.Rendering
         public Scene(int Width, int Height)
         {
             size = new Vector2i(Width, Height);
-
             GBuffer = new GeometryBuffer(Width, Height);
-            SBuffer = new SceneBuffer(Width, Height);
-
-            // setup camera
             Camera = new Camera(50, Width, Height, 2, 512);
+            PostProcessProgram.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
+            PostProcessProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
+            PostProcessProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
         }
 
         /// <summary>
         /// renders objects inside this viewport and updates the viewport textures
         /// </summary>
-        public void Render()
+        public void Render(int DrawTarget = 0)
         {
-            // Geometry pass
+            // geometry pass
             GBuffer.Use();
-            
-            foreach (IRenderable RO in Objects) RO.Render();
-            
-            // Light pass
-            SBuffer.Use();
-            foreach (Light LO in LightObjects)
-            {
-                LO.BeginShadowPass();
-                /* bind LightBlock
-                 * Use ShadowProgram
-                 * 
-                 * foreach Occluder:
-                 *      Render Occluder Mesh
-                 * 
-                 * Use LightProgram
-                 * Render Light Mesh
-                 */
-                LO.Illuminate();
-            }
-            
-            #region Draw to screen
-            GL.Disable(EnableCap.Blend);
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            GL.DepthMask(true);
+            GL.Enable(EnableCap.DepthTest);
             GL.Disable(EnableCap.StencilTest);
-            GL.CullFace(CullFaceMode.Back);
 
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            foreach (IRenderable RO in Objects) 
+                RO.Render();
+            
+            
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, DrawTarget);
+            GL.ClearColor(0, 0, 0, 1); GL.Clear(ClearBufferMask.ColorBufferBit); // clear
 
-            GL.ClearColor(Color.Crimson);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-            // render into screen
-            PostProcess.Use();
-            Mesh.Screen.Render();
-            #endregion
+            GL.Disable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.StencilTest);
 
+            foreach (PointLight LO in PointLightObjects)
+            {
+                // shadow pass
+                
+                if (!false) // show edge
+                    GL.ColorMask(false, false, false, false);
+
+                if (!false) // show frustrum
+                    GL.DepthMask(false);
+
+                GL.Enable(EnableCap.DepthClamp);
+                
+                GL.Clear(ClearBufferMask.StencilBufferBit);
+
+                Occluder.ShadowProgram.Use();
+                Occluder.ShadowProgram.SetUniform("LightPosition", new Matrix3(Camera.Matrix) * LO.Position);
+                foreach(Occluder Occ in OccluderObjects)
+                    Occ.Occlude();
+
+                GL.ColorMask(true, true, true, true);
+                GL.DepthMask(true);
+                
+                // light pass
+                GL.Disable(EnableCap.DepthClamp);
+                GL.StencilFunc(StencilFunction.Equal, 0, 0xffff);
+                GL.Enable(EnableCap.Blend);
+                LO.Illuminate();
+                
+                GL.Disable(EnableCap.Blend);
+                
+            }
         }
 
         public void Use()
         {
-            // means its more awkward to use more than 1 scene at a time
-            
-            PostProcess.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
-            PostProcess.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            PostProcess.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
-
-            PostProcess.SetUniformSampler2D("ShadedTexture", SBuffer.ColourTexture);
-
+            Camera.Block.Bind();
+            //Occluder.ShadowProgram.SetUniform("ProjMatrix", Camera.ProjMat);
             Light.SetUniformSamplers(GBuffer.AlbedoTexture, GBuffer.NormalTexture, GBuffer.PositionTexture);
             
-            Camera.Block.Bind();
-
-            // other contexts may change these values but this doesnt
-            GL.Enable(EnableCap.CullFace);
+            // blending functions
             GL.BlendEquation(BlendEquationMode.FuncAdd);
             GL.BlendFunc(BlendingFactor.One, BlendingFactor.One);
+
+            // stencil functions
+            GL.StencilFunc(StencilFunction.Always, 0, 0xff);
+            GL.StencilOpSeparate(StencilFace.Front, StencilOp.Keep, StencilOp.DecrWrap, StencilOp.Keep);
+            GL.StencilOpSeparate(StencilFace.Back, StencilOp.Keep, StencilOp.IncrWrap, StencilOp.Keep);
         }
 
         #region Object Management
         // currently really stupid
         public void Add(IRenderable item) => Objects.Add(item);
         public void Remove(IRenderable item) => Objects.Remove(item);
-        public void Add(Light item) => LightObjects.Add(item);
-        public void Remove(Light item) => LightObjects.Remove(item);
+        public void Add(PointLight item) => PointLightObjects.Add(item);
+        public void Remove(PointLight item) => PointLightObjects.Remove(item);
         public void Add(Occluder item) => OccluderObjects.Add(item);
         public void Remove(Occluder item) => OccluderObjects.Remove(item);
         #endregion
 
-        #region FrameBuffer Objects
         private class GeometryBuffer : FrameBuffer
         {
             public readonly int AlbedoTexture; // colour texture
@@ -184,57 +190,9 @@ namespace Graphics.Rendering
                 // this frame buffer draws to multiple textures at once
                 GL.DrawBuffers(3, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 });
 
-                FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-                if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
-
-                RefreshCol = new Color4(0, 0, 0, 0);
-            }
-
-            public override void Use() 
-            {
-                base.Use();
-                GL.DepthMask(true);
-                GL.Disable(EnableCap.Blend);
-                GL.Disable(EnableCap.StencilTest);
-
-                GL.Enable(EnableCap.DepthTest);
-                GL.CullFace(CullFaceMode.Back);
-
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+                RefreshColour = new Color4(0, 0, 0, 1);
             }
         }
-        private class SceneBuffer : FrameBuffer
-        {
-            public readonly int ColourTexture; // colour texture
-
-            public SceneBuffer(int Width, int Height) : base(Width, Height)
-            {
-                // geometry-buffer textures
-                ColourTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment0, Width, Height);
-                GL.DrawBuffer(DrawBufferMode.ColorAttachment0);
-
-                FramebufferErrorCode FrameStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-                if (FrameStatus != FramebufferErrorCode.FramebufferComplete) throw new Exception(FrameStatus.ToString());
-
-                RefreshCol = Color.FromArgb(0, 0, 0, 0);
-
-            }
-            public override void Use()
-            {
-                base.Use();
-                GL.DepthMask(false);
-                GL.Enable(EnableCap.Blend); // blend equation defined in constructor
-                GL.Enable(EnableCap.StencilTest);
-                
-                GL.Disable(EnableCap.DepthTest);
-                GL.CullFace(CullFaceMode.Front);
-
-                GL.Clear(ClearBufferMask.ColorBufferBit);
-            }
-        }
-        #endregion
-
-
     }
 }
 

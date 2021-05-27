@@ -35,7 +35,7 @@ namespace Graphics.SceneObjects
         public void Render()
         {
             Material.Use(); // tell openGL to use this objects program
-            RenderMesh.Render();
+            RenderMesh.Draw();
         }
     }
 }

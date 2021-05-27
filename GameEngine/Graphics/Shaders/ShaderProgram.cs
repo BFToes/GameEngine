@@ -13,8 +13,8 @@ namespace Graphics.Shaders
     {
         public readonly int Handle;
         // uniform management
-        private Dictionary<string, int> UniformLocation; // uniform lookup
-        private Dictionary<string, int> UniformBlockLocation;// uniform block lookup
+        private readonly Dictionary<string, int> UniformLocation; // uniform lookup
+        private readonly Dictionary<string, int> UniformBlockLocation; // uniform block lookup
         private Dictionary<string, Func<dynamic>> UpdatingUniforms; // uniform updater functions
         // texture unit management
         private int[] ProgTex = new int[32].Fill(-1); // texture unit
@@ -39,13 +39,6 @@ namespace Graphics.Shaders
                 { ShaderType.VertexShader, vertexcode },
             });
         }
-        public static ShaderProgram From(string vertexcode)
-        {
-            return new ShaderProgram(new Dictionary<ShaderType, string>()
-            {
-                { ShaderType.VertexShader, vertexcode },
-            });
-        }
         public static ShaderProgram ReadFrom(string vertexpath, string geometrypath, string fragmentpath)
         {
             return new ShaderProgram(new Dictionary<ShaderType, string>()
@@ -61,13 +54,6 @@ namespace Graphics.Shaders
             {
                 { ShaderType.FragmentShader, File.ReadAllText(fragmentpath) },
                 { ShaderType.VertexShader, File.ReadAllText(vertexpath) },
-            });
-        }
-        public static ShaderProgram ReadFrom(string vertexcode)
-        {
-            return new ShaderProgram(new Dictionary<ShaderType, string>()
-            {
-                { ShaderType.VertexShader, File.ReadAllText(vertexcode) },
             });
         }
         #endregion
@@ -260,6 +246,8 @@ namespace Graphics.Shaders
         }
         #endregion
         #endregion
+
+        public int LocationLookUp(string Name) { UniformLocation.TryGetValue(Name, out int Location); return Location; }
 
         /// <summary>
         /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
