@@ -165,8 +165,9 @@ namespace Graphics.Resources
                                 V1.Z != -1 ? Normals[V1.Z] : new Vector3(),
                                 V1.Y != -1 ? Texels[V1.Y] : new Vector2()));
 
+                            // find adjacent vertice
                             Vector3i V2;
-                            Tuple<int, int> Key = pi1 > pi2 ? new Tuple<int, int>(pi1, pi2) : new Tuple<int, int>(pi2, pi1);
+                            Tuple<int, int> Key = pi1 > pi2 ? new Tuple<int, int>(pi1, pi2) : new Tuple<int, int>(pi2, pi1); 
                             if (Edge[Key][0] == pi3)
                                 V2 = LookUp[Edge[Key][1]];
                             else

@@ -14,7 +14,10 @@ namespace Graphics.SceneObjects
             "Resources/Shaderscripts/Rendering/Shadow.vert",
             "Resources/Shaderscripts/Rendering/Shadow.geom",
             "Resources/Shaderscripts/Rendering/Shadow.frag");
-
+        static Occluder()
+        {
+            ShadowProgram.SetUniformBlock("CameraBlock", 0);
+        }
 
         private Mesh<Simple3D> OccMesh;
         public ITransform Transform;

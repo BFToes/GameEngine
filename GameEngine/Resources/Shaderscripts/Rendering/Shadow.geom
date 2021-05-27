@@ -1,13 +1,19 @@
 ﻿#version 450 core
-const float Epsilon = 0.00390625; // 1/256
+const float Epsilon = 0.0078125; // 0.015625 // 0.0078125 // 0.00390625
 
-layout (triangles_adjacency) in; // six vertices in quad
-layout (triangle_strip, max_vertices = 18) out; // 4 per quad * 3 triangle vertices + 6 for near
+layout (triangles_adjacency) in; 
+layout (triangle_strip, max_vertices = 18) out; 
 
-in vec3[] VPos; // vertices of a triangle (with adjacency) = 6
+// world space position of face in a triangle adjacency matrix
+in vec3[] VPos; 
 
-uniform vec3 LightPosition; // view * light
-uniform mat4 ProjMatrix; // projection
+uniform vec3 LightPosition;
+layout(std140) uniform CameraBlock {
+	mat4 Projection;
+	mat4 View;
+	vec3 Position;
+    vec2 ScreenSize;
+} Cam;
 
 bool FacesLight(vec3 a, vec3 b, vec3 c) 
 {
@@ -22,18 +28,18 @@ void EmitEdge(vec3 a, vec3 b)
 {
     vec3 LightDir = normalize(a - LightPosition);
     vec3 Deviation = LightDir * Epsilon;
-    gl_Position = ProjMatrix * vec4(a + Deviation, 1);
+    gl_Position = Cam.Projection * vec4(a + Deviation, 1);
     EmitVertex();
 
-    gl_Position = ProjMatrix * vec4(LightPosition, 0);
+    gl_Position = Cam.Projection * vec4(LightPosition, 0);
     EmitVertex();
 
     LightDir = normalize(b - LightPosition);
     Deviation = LightDir * Epsilon;
-    gl_Position = ProjMatrix * vec4(b + Deviation, 1);
+    gl_Position = Cam.Projection * vec4(b + Deviation, 1);
     EmitVertex();
 
-    gl_Position = ProjMatrix * vec4(LightDir, 0);
+    gl_Position = Cam.Projection * vec4(LightDir, 0);
     EmitVertex();
 
     EndPrimitive();
@@ -52,31 +58,31 @@ void main(void)
         // front cap
         vec3 LightDir = normalize(VPos[0] - LightPosition);
         vec3 Deviation = LightDir * Epsilon;
-        gl_Position = ProjMatrix * vec4(VPos[0] + Deviation, 1);
+        gl_Position = Cam.Projection * vec4(VPos[0] + Deviation, 1);
         EmitVertex();
 
         LightDir = normalize(VPos[2] - LightPosition); 
 		Deviation = LightDir * Epsilon;
-		gl_Position =  ProjMatrix * vec4(VPos[2] + Deviation, 1);
+		gl_Position =  Cam.Projection * vec4(VPos[2] + Deviation, 1);
 		EmitVertex();
 
 		LightDir = normalize(VPos[4] - LightPosition); 
 		Deviation = LightDir * Epsilon;
-		gl_Position =  ProjMatrix * vec4(VPos[4] + Deviation, 1);
+		gl_Position =  Cam.Projection * vec4(VPos[4] + Deviation, 1);
 		EmitVertex();
 	    EndPrimitive();
 
         //BACK CAP
 		LightDir = normalize(VPos[0] - LightPosition); 
-		gl_Position = ProjMatrix * vec4(LightDir, 0);
+		gl_Position = Cam.Projection * vec4(LightDir, 0);
 		EmitVertex();
 
 		LightDir = normalize(VPos[4] - LightPosition); 
-		gl_Position =  ProjMatrix * vec4(LightDir, 0);
+		gl_Position =  Cam.Projection * vec4(LightDir, 0);
 		EmitVertex();
 
 		LightDir = normalize(VPos[2] - LightPosition); 
-		gl_Position =  ProjMatrix * vec4(LightDir, 0);
+		gl_Position =  Cam.Projection * vec4(LightDir, 0);
 		EmitVertex();
         EndPrimitive();
     }

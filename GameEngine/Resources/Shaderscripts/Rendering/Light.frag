@@ -57,4 +57,5 @@ void main(void)
     float Atten = max(Attenuation.x * Distance * Distance + Attenuation.y * Distance + Attenuation.z, 1);
 
     Colour = vec4(Albedo.xyz, 1) * BaseColour / Atten;
+    Colour += vec4(0.1);
     }

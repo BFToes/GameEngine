@@ -102,8 +102,9 @@ namespace Graphics.Rendering
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GL.DepthMask(true);
             GL.Enable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.CullFace);
             GL.Disable(EnableCap.StencilTest);
-
+            
             foreach (IRenderable RO in Objects) 
                 RO.Render();
             
@@ -111,14 +112,19 @@ namespace Graphics.Rendering
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, DrawTarget);
             GL.ClearColor(0, 0, 0, 1); GL.Clear(ClearBufferMask.ColorBufferBit); // clear
 
-            GL.Disable(EnableCap.DepthTest);
+            //
             GL.Enable(EnableCap.StencilTest);
+            GL.Enable(EnableCap.Blend);
+            GL.Disable(EnableCap.CullFace);
+            GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, GBuffer);
+            GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, DrawTarget);
+            GL.BlitFramebuffer(0, 0, size.X, size.Y, 0, 0, size.X, size.Y, ClearBufferMask.DepthBufferBit,  BlitFramebufferFilter.Nearest);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, DrawTarget);
 
             foreach (PointLight LO in PointLightObjects)
             {
                 // shadow pass
-                
-                if (!false) // show edge
+                if (!true) // show edge
                     GL.ColorMask(false, false, false, false);
 
                 if (!false) // show frustrum
@@ -129,19 +135,21 @@ namespace Graphics.Rendering
                 GL.Clear(ClearBufferMask.StencilBufferBit);
 
                 Occluder.ShadowProgram.Use();
-                Occluder.ShadowProgram.SetUniform("LightPosition", new Matrix3(Camera.Matrix) * LO.Position);
+                Occluder.ShadowProgram.SetUniform("LightPosition", new Matrix3(Camera.Matrix.Inverted()) * LO.Position);
                 foreach(Occluder Occ in OccluderObjects)
                     Occ.Occlude();
 
                 GL.ColorMask(true, true, true, true);
                 GL.DepthMask(true);
-                
+
                 // light pass
+                GL.Disable(EnableCap.DepthTest);
                 GL.Disable(EnableCap.DepthClamp);
                 GL.StencilFunc(StencilFunction.Equal, 0, 0xffff);
-                GL.Enable(EnableCap.Blend);
-                LO.Illuminate();
                 
+                LO.Illuminate();
+
+                GL.Enable(EnableCap.DepthTest);
                 GL.Disable(EnableCap.Blend);
                 
             }
@@ -150,7 +158,6 @@ namespace Graphics.Rendering
         public void Use()
         {
             Camera.Block.Bind();
-            //Occluder.ShadowProgram.SetUniform("ProjMatrix", Camera.ProjMat);
             Light.SetUniformSamplers(GBuffer.AlbedoTexture, GBuffer.NormalTexture, GBuffer.PositionTexture);
             
             // blending functions

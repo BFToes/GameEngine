@@ -38,10 +38,10 @@ namespace GameEngine
             {
                 //RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
                 RW.Scene.Camera.Position = new Vector3(0, 1, 3);
-                Test RO1 = new Test(RW.Scene, new Vector3(0));
+                Test RO1 = new Test(RW.Scene, new Vector3(0, 1, 0));
                 Floor Floor = new Floor(RW.Scene);
                 //for (int i = 0; i < 300; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
-                TestLight RL1 = new TestLight(RW.Scene, 0, 1, 0, 8, 8, 8);
+                TestLight RL1 = new TestLight(RW.Scene, 0, 2, 5, 8, 8, 8);
 
                 RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 4, MathF.Cos(RW.Time) * 4);
 
@@ -81,14 +81,9 @@ namespace GameEngine
     }
     class Floor : RenderObject<Vertex3D>
     {
-        public Floor(Scene Scene) : base(Mesh<Vertex3D>.From(new Vertex3D[]
+        public Floor(Scene Scene) : base(Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t)))
         {
-            new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D( 1, 0,-1, 0, 1, 0, 1, 1), // top
-            new Vertex3D( 1, 0, 1, 0, 1, 0, 1, 0), new Vertex3D(-1, 0,-1, 0, 1, 0, 0, 1), new Vertex3D(-1, 0, 1, 0, 1, 0, 0, 0),
-
-        }))
-        {
-            Transform.Scale = new Vector3(256, 1, 256);
+            Transform.Scale = new Vector3(256, 0.001f, 256);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
             Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
@@ -99,13 +94,15 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
-        private static Mesh<Vertex3D> ObjMesh = Mesh.Construct("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
+        private static Mesh<Vertex3D> ObjMesh = Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
         private Occluder Occluder = new Occluder("Resources/Meshes/Cube.obj");
         public Test(Scene Scene, Vector3 Position) : base(ObjMesh)
         {
             Transform.Position = Position;
             Transform.Scale = new Vector3(0.4f);
-
+            Occluder.Transform.Position = Position;
+            Occluder.Transform.Scale = new Vector3(0.4f);
+            
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUniform("World", Transform.Matrix);
