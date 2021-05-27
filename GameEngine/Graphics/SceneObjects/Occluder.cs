@@ -19,9 +19,9 @@ namespace Graphics.SceneObjects
         private Mesh<Simple3D> OccMesh;
         public ITransform Transform;
 
-        public Occluder(Mesh<Simple3D> OccMesh) 
+        public Occluder(string path) 
         {
-            this.OccMesh = OccMesh;
+            this.OccMesh = Mesh.Construct(path, (p, n, t) => new Simple3D(p), PrimitiveType.TrianglesAdjacency);
             this.Transform = new Transform(); // 3D transform
         }
 

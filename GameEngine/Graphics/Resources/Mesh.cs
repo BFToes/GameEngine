@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Graphics.Resources
 {
@@ -65,7 +67,7 @@ namespace Graphics.Resources
         private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker, PrimitiveType Primitive)
         {
             List<Vert> Vertices = new List<Vert>();
-            List<Vector3> Positions = new List<Vector3>();
+            List<Vector3> Positions = new List<Vector3>(); // there will be one position for every vertice what ever else
             List<Vector2> Texels = new List<Vector2>();
             List<Vector3> Normals = new List<Vector3>();
             List<Vector3i[]> Faces = new List<Vector3i[]>();
@@ -124,7 +126,58 @@ namespace Graphics.Resources
                     }
                     break;
                 case PrimitiveType.TrianglesAdjacency:
-                    throw new NotImplementedException();
+                    Dictionary<Tuple<int, int>, int[]> Edge = new Dictionary<Tuple<int, int>, int[]>();
+                    Vector3i[] LookUp = new Vector3i[3 * Faces.Count];
+
+                    for (int Fi = 0; Fi < Faces.Count; Fi++) // for each face
+                    {
+                        
+                        for (int Vi = 0; Vi < 3; Vi++) // for each vertex in face
+                        {
+                            int pi1 = Faces[Fi][Vi].X; // position index
+                            int pi2 = Faces[Fi][(Vi + 1) % 3].X;
+                            int pi3 = Faces[Fi][(Vi + 2) % 3].X;
+                            
+
+                            Tuple<int, int> Key = pi1 > pi2 ? new Tuple<int, int>(pi1, pi2) : new Tuple<int, int>(pi2, pi1);
+
+                            if (Edge.ContainsKey(Key))
+                                Edge[Key] = new int[] { Edge[Key][0], pi3 };
+                            else
+                                Edge[Key] = new int[] { pi3 };
+
+                            LookUp[pi1] = Faces[Fi][Vi];
+                        } 
+                    }
+
+                    for (int Fi = 0; Fi < Faces.Count; Fi++) // for each face
+                    {
+                        Vector3i[] Face = Faces[Fi];
+                        for (int Vi = 0; Vi < 3; Vi++) // for each vertex in face
+                        {
+                            int pi1 = Faces[Fi][Vi].X; // position index
+                            int pi2 = Faces[Fi][(Vi + 1) % 3].X;
+                            int pi3 = Faces[Fi][(Vi + 2) % 3].X;
+
+                            Vector3i V1 = LookUp[pi1];
+                            Vertices.Add(VertexPacker(
+                                V1.X != -1 ? Positions[V1.X] : new Vector3(),
+                                V1.Z != -1 ? Normals[V1.Z] : new Vector3(),
+                                V1.Y != -1 ? Texels[V1.Y] : new Vector2()));
+
+                            Vector3i V2;
+                            Tuple<int, int> Key = pi1 > pi2 ? new Tuple<int, int>(pi1, pi2) : new Tuple<int, int>(pi2, pi1);
+                            if (Edge[Key][0] == pi3)
+                                V2 = LookUp[Edge[Key][1]];
+                            else
+                                V2 = LookUp[Edge[Key][0]];
+
+                            Vertices.Add(VertexPacker(
+                                V2.X != -1 ? Positions[V2.X] : new Vector3(),
+                                V2.Z != -1 ? Normals[V2.Z] : new Vector3(),
+                                V2.Y != -1 ? Texels[V2.Y] : new Vector2()));
+                        }
+                    }
                     break;
                 default:
                     throw new NotImplementedException();
@@ -134,7 +187,7 @@ namespace Graphics.Resources
 
 
         }
-        
+
     }
 
     public class Mesh<Vertex> : Mesh where Vertex : struct, IVertex

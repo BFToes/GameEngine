@@ -100,7 +100,7 @@ namespace GameEngine
     class Test : RenderObject<Vertex3D>
     {
         private static Mesh<Vertex3D> ObjMesh = Mesh.Construct("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
-        private static Occluder Occluder = new Occluder(Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Simple3D(p)));
+        private Occluder Occluder = new Occluder("Resources/Meshes/Cube.obj");
         public Test(Scene Scene, Vector3 Position) : base(ObjMesh)
         {
             Transform.Position = Position;
