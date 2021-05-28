@@ -12,5 +12,5 @@ layout(std140) uniform CameraBlock {
 } Cam;
 void main(void)
 {
-	VPos = (Cam.View * Model * vec4(Position, 1)).xyz;
+	VPos = (Model * vec4(Position, 1)).xyz;
 }

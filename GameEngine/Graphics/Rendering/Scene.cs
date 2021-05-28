@@ -101,9 +101,10 @@ namespace Graphics.Rendering
             GBuffer.Use();
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             GL.DepthMask(true);
+            GL.Disable(EnableCap.StencilTest);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.CullFace);
-            GL.Disable(EnableCap.StencilTest);
+            
             
             foreach (IRenderable RO in Objects) 
                 RO.Render();
@@ -112,46 +113,50 @@ namespace Graphics.Rendering
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, DrawTarget);
             GL.ClearColor(0, 0, 0, 1); GL.Clear(ClearBufferMask.ColorBufferBit); // clear
 
-            //
+            // Begin LightPass
             GL.Enable(EnableCap.StencilTest);
-            GL.Enable(EnableCap.Blend);
             GL.Disable(EnableCap.CullFace);
+
+
+            // copies depth to render context
+            
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, GBuffer);
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, DrawTarget);
             GL.BlitFramebuffer(0, 0, size.X, size.Y, 0, 0, size.X, size.Y, ClearBufferMask.DepthBufferBit,  BlitFramebufferFilter.Nearest);
+            
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, DrawTarget);
-
+            
             foreach (PointLight LO in PointLightObjects)
             {
                 // shadow pass
-                if (!true) // show edge
+                if (!false) // show edge
                     GL.ColorMask(false, false, false, false);
 
                 if (!false) // show frustrum
                     GL.DepthMask(false);
 
                 GL.Enable(EnableCap.DepthClamp);
-                
                 GL.Clear(ClearBufferMask.StencilBufferBit);
 
                 Occluder.ShadowProgram.Use();
-                Occluder.ShadowProgram.SetUniform("LightPosition", new Matrix3(Camera.Matrix.Inverted()) * LO.Position);
+                Occluder.ShadowProgram.SetUniform("LightPosition", LO.Position);
                 foreach(Occluder Occ in OccluderObjects)
                     Occ.Occlude();
 
+                GL.Disable(EnableCap.DepthClamp);
                 GL.ColorMask(true, true, true, true);
                 GL.DepthMask(true);
 
                 // light pass
                 GL.Disable(EnableCap.DepthTest);
-                GL.Disable(EnableCap.DepthClamp);
-                GL.StencilFunc(StencilFunction.Equal, 0, 0xffff);
-                
+                GL.Enable(EnableCap.Blend);
+                GL.StencilFunc(StencilFunction.Equal, 0x0, 0xff);
+                //GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
                 LO.Illuminate();
-
                 GL.Enable(EnableCap.DepthTest);
                 GL.Disable(EnableCap.Blend);
-                
+                GL.StencilFunc(StencilFunction.Always, 0, 0xff);
+
             }
         }
 
@@ -168,6 +173,9 @@ namespace Graphics.Rendering
             GL.StencilFunc(StencilFunction.Always, 0, 0xff);
             GL.StencilOpSeparate(StencilFace.Front, StencilOp.Keep, StencilOp.DecrWrap, StencilOp.Keep);
             GL.StencilOpSeparate(StencilFace.Back, StencilOp.Keep, StencilOp.IncrWrap, StencilOp.Keep);
+
+            // cullface functions
+            GL.CullFace(CullFaceMode.Back);
         }
 
         #region Object Management

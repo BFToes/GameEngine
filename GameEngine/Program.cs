@@ -38,12 +38,12 @@ namespace GameEngine
             {
                 //RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
                 RW.Scene.Camera.Position = new Vector3(0, 1, 3);
-                Test RO1 = new Test(RW.Scene, new Vector3(0, 1, 0));
+                Test RO1 = new Test(RW.Scene, new Vector3(0, 0.5f, 0));
                 Floor Floor = new Floor(RW.Scene);
                 //for (int i = 0; i < 300; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
                 TestLight RL1 = new TestLight(RW.Scene, 0, 2, 5, 8, 8, 8);
 
-                RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 4, MathF.Cos(RW.Time) * 4);
+                RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 1, MathF.Cos(RW.Time) * 4);
 
                 //RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
 
@@ -84,6 +84,7 @@ namespace GameEngine
         public Floor(Scene Scene) : base(Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t)))
         {
             Transform.Scale = new Vector3(256, 0.001f, 256);
+            Transform.Position = new Vector3(0, 0, 0);
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
             Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
