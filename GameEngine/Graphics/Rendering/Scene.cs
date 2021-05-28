@@ -151,12 +151,15 @@ namespace Graphics.Rendering
                 GL.Disable(EnableCap.DepthTest);
                 GL.Enable(EnableCap.Blend);
                 GL.StencilFunc(StencilFunction.Equal, 0x0, 0xff);
+                GL.Enable(EnableCap.CullFace);
+                GL.CullFace(CullFaceMode.Front);
                 //GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Keep);
                 LO.Illuminate();
                 GL.Enable(EnableCap.DepthTest);
                 GL.Disable(EnableCap.Blend);
                 GL.StencilFunc(StencilFunction.Always, 0, 0xff);
-
+                GL.Disable(EnableCap.CullFace);
+                GL.CullFace(CullFaceMode.Back);
             }
         }
 
