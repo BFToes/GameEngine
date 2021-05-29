@@ -247,8 +247,6 @@ namespace Graphics.Shaders
         #endregion
         #endregion
 
-        public int LocationLookUp(string Name) { UniformLocation.TryGetValue(Name, out int Location); return Location; }
-
         /// <summary>
         /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
         /// </summary>

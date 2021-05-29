@@ -13,46 +13,26 @@ namespace GameEngine
 {
     class Program
     {
-        /* Thing To Do:
-         * 
-         * Animation System:
-         * - ???
-         * 
-         * 
-         * PROBLEMS TO SORT OUT:
-         *      Setup the fucking Idisposables already 
-         *      its causing problems
-         * 
-         *      Simplify This shit:
-         *          Stop making everything so needlessly complicated
-         *          You dont need to implement every possible feature conceivable
-         *          Make class do 1 thing and and do it well
-         */
+
 
         static void Main(string[] args)
         {
             GameWindowSettings GWS = GameWindowSettings.Default;
             NativeWindowSettings NWS = NativeWindowSettings.Default;
             NWS.Size = new Vector2i(800);
+            
             using (RenderWindow RW = new RenderWindow(GWS, NWS))
             {
-                //RW.Scene.Camera = new Camera(50, RW.Size.X, RW.Size.Y, 2, 1024);
-                RW.Scene.Camera.Position = new Vector3(0, 1, 3);
-                Test RO1 = new Test(RW.Scene, new Vector3(0, 0.5f, 0));
-                Floor Floor = new Floor(RW.Scene);
-                //for (int i = 0; i < 300; i++) new TestLight(RW.Scene, new Vector3(0, 1, 0));
-                TestLight RL1 = new TestLight(RW.Scene, 0, 2, 5, 8, 8, 8);
-
-                RW.Process += (delta) => RL1.Position = new Vector3(MathF.Sin(RW.Time) * 4, 1, MathF.Cos(RW.Time) * 4);
-
-                //RW.Process += (delta) => RO1.Transform.Rotation = new Vector3(RW.Time * 0.3f, RW.Time * 0.7f, 0);
+                Scene Scene = new World();
+                RW.Scene = Scene;
 
                 Action<MouseMoveEventArgs> MoveCamera = (e) => RW.Scene.Camera.Position += 10 * new Vector3(RW.Scene.Camera.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
                 Action<MouseMoveEventArgs> RotaCamera = (e) => RW.Scene.Camera.Rotation += new Vector3(e.DeltaY / RW.Size.Y, e.DeltaX / RW.Size.X, 0);
-                RW.MouseWheel += (e) => RW.Scene.Camera.Position += new Vector3(RW.Scene.Camera.Matrix * - new Vector4(0, 0, e.OffsetY, 1));
+
+                RW.MouseWheel += (e) => RW.Scene.Camera.Position += new Vector3(RW.Scene.Camera.Matrix * -new Vector4(0, 0, e.OffsetY, 1));
                 RW.MouseDown += (e) =>
                 {
-                    switch (e.Button) 
+                    switch (e.Button)
                     {
                         case MouseButton.Button1:
                             RW.MouseMove += MoveCamera;
@@ -62,7 +42,7 @@ namespace GameEngine
                             break;
                     }
                 };
-                RW.MouseUp += (e) => 
+                RW.MouseUp += (e) =>
                 {
                     switch (e.Button)
                     {
@@ -79,30 +59,49 @@ namespace GameEngine
             }
         }
     }
+    class World : Scene
+    {
+        private float Time;
+
+        public World() : base(800, 800)
+        {
+            Camera.Position = new Vector3(0, 2, 3);
+
+            var RO1 = new Test(this, new Vector3(2, 3, 0));
+            var RO2 = new Floor(this);
+            var RL1 = new TestLight_Point(this, 0, 5, 5, 1, 1, 1);
+            var RL2 = new TestLight_Direction(this, -1, -1, 1, 0.5f, 0.5f, 0.5f);
+
+            Process += (delta) => Time += delta;
+            Process += (delta) => RL1.Position = new Vector3(MathF.Sin(Time) * 4, 3, MathF.Cos(Time) * 4);
+        }
+    }
     class Floor : RenderObject<Vertex3D>
     {
+        //private Occluder Occluder = new Occluder("Resources/Meshes/Cube.obj");
         public Floor(Scene Scene) : base(Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t)))
         {
-            Transform.Scale = new Vector3(256, 0.001f, 256);
+            Transform.Scale = new Vector3(16, 0.01f, 16);
             Transform.Position = new Vector3(0, 0, 0);
+            //Occluder.Transform.Scale = new Vector3(16, 0.01f, 16);
+            //Occluder.Transform.Position = new Vector3(0, 0, 0);
+
             TextureManager.Add_Texture("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
             Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
             //Material.DebugUniforms();
 
             Scene.Add(this);
+            //Scene.Add(Occluder);
         }
     }
     class Test : RenderObject<Vertex3D>
     {
-        private static Mesh<Vertex3D> ObjMesh = Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
         private Occluder Occluder = new Occluder("Resources/Meshes/Cube.obj");
-        public Test(Scene Scene, Vector3 Position) : base(ObjMesh)
+        public Test(Scene Scene, Vector3 Position) : base(Mesh.Cube)
         {
             Transform.Position = Position;
-            Transform.Scale = new Vector3(0.4f);
             Occluder.Transform.Position = Position;
-            Occluder.Transform.Scale = new Vector3(0.4f);
             
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
@@ -112,9 +111,16 @@ namespace GameEngine
         }
     }
 
-    class TestLight : PointLight
+    class TestLight_Point : Light_Point
     {
-        public TestLight(Scene Scene, float Px = 0, float Py = 1, float Pz = 0, float r = 1, float g = 1, float b = 1) : base(new Vector3(Px, Py, Pz), new Vector3(r, g, b))
+        public TestLight_Point(Scene Scene, float Px = 0, float Py = 1, float Pz = 0, float r = 1, float g = 1, float b = 1) : base(new Vector3(Px, Py, Pz), new Vector3(r, g, b))
+        {
+            Scene.Add(this);
+        }
+    }
+    class TestLight_Direction : Light_Directional
+    {
+        public TestLight_Direction(Scene Scene, float Dx = 0, float Dy = 1, float Dz = 0, float r = 1, float g = 1, float b = 1) : base(new Vector3(Dx, Dy, Dz), new Vector3(r, g, b))
         {
             Scene.Add(this);
         }

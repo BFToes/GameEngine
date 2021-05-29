@@ -9,207 +9,80 @@ using Graphics.Rendering;
 
 namespace Graphics.SceneObjects
 {
-    abstract class Light
+    public abstract class Light
     {
-        #region Static Members
+        #region Debug Fields
+        private const bool SHOW_EDGE = false;
+        #endregion
 
-        #region Light Settings
-        // bigger number higher precision, powers of 2 preferred
-        protected const float Precision = 64;
+        #region
+        protected static Action<int> SetNormalTexture = (Tex) => { };
+        protected static Action<int> SetAlbedoTexture = (Tex) => { };
+        protected static Action<int> SetPositionTexture = (Tex) => { };
+        public static int NormalTexture
+        {
+            get => throw new NotImplementedException();
+            set => SetNormalTexture(value);
+        }
+        public static int AlbedoTexture
+        {
+            get => throw new NotImplementedException();
+            set => SetAlbedoTexture(value);
+        }
+        public static int PositionTexture
+        {
+            get => throw new NotImplementedException();
+            set => SetPositionTexture(value);
+        }
 
-        private static float specularintensity;
+        protected static Action<float> SetSpecularIntensity = (Tex) => { };
+        protected static Action<float> SetSpecularPower = (Tex) => { };
         public static float SpecularIntensity
         {
-            get => specularintensity;
-            set
-            {
-                PointLight.LightProgram.SetUniform("SpecularIntensity", value);
-                specularintensity = value;
-            }
+            get => throw new NotImplementedException();
+            set => SetSpecularIntensity(value);
         }
-
-        private static float specularpower;
         public static float SpecularPower
         {
-            get => specularpower;
-            set
-            {
-                PointLight.LightProgram.SetUniform("SpecularPower", value);
-                specularpower = value;
-            }
-        }
-
-        private static Vector3 acurve;
-        public static Vector3 Attenuation
-        {
-            get => acurve;
-            set
-            {
-                acurve = value;
-                PointLight.LightProgram.SetUniform("Attenuation", value);
-            }
+            get => throw new NotImplementedException();
+            set => SetSpecularPower(value);
         }
         #endregion
 
-        static Light()
-        {
-            SpecularIntensity = 0.5f;
-            SpecularPower = 4;
-            Attenuation = new Vector3(0.1f, 0.1f, 0);
-            PointLight.LightProgram.SetUniformBlock("CameraBlock", 0);
-            PointLight.LightProgram.SetUniformBlock("LightBlock", 1);
-        }
+        public abstract ShaderProgram ShadowProgram { get; }
+        public abstract ShaderProgram LightProgram { get; }
+        public abstract Mesh LightMesh { get; }
 
-        public static void SetUniformSamplers(int Albedo, int Normal, int Position)
-        {
-            PointLight.LightProgram.SetUniformSampler2D("AlbedoTexture", Albedo);
-            PointLight.LightProgram.SetUniformSampler2D("NormalTexture", Normal);
-            PointLight.LightProgram.SetUniformSampler2D("PositionTexture", Position);
-        }
-        #endregion
+        protected abstract UniformBlock LightBlock { get; }
 
-        protected UniformBlock LightBlock = UniformBlock.For<LightData>(1);
-        public abstract void Illuminate();
-        
-    }
-    class PointLight : Light
-    {
-        public static readonly ShaderProgram LightProgram = ShaderProgram.ReadFrom("Resources/Shaderscripts/Rendering/Light.vert","Resources/Shaderscripts/Rendering/Light.frag");
-        public static readonly Mesh<Simple3D> PntLightMesh = Mesh.Construct("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
+        public virtual void UseLight() 
+        {
+            GL.Clear(ClearBufferMask.StencilBufferBit);
 
-        private Transform Transform = new Transform();
-       
-        private Vector3 colour;
-        private float aintensity;
-        private float dintensity;
+            GL.DepthMask(false);
+            if (!SHOW_EDGE) GL.ColorMask(false, false, false, false);
+            GL.Enable(EnableCap.DepthClamp);
 
-        public Vector3 Position 
-        { 
-            get => Transform.Position; 
-            set 
-            {
-                LightBlock.Set(80, value);
-                Transform.Position = value;
-                LightBlock.Set(0, Transform.Matrix);
-            }
-        }
-        public Vector3 Colour 
-        {
-            get => colour;
-            set
-            {
-                colour = value;
-                LightBlock.Set(0, value);
-                Transform.Scale = new Vector3(CalcDistance(colour, Attenuation, dintensity));
-            }
-        }
-        public float AmbientIntensity 
-        {
-            get => aintensity;
-            set => LightBlock.Set(16, value);
-        }
-        public float DiffuseIntensity 
-        {
-            get => dintensity;
-            set
-            {
-                dintensity = value;
-                LightBlock.Set(28, value);
-                Transform.Scale = new Vector3(CalcDistance(colour, Attenuation, dintensity));
-            }
-        }
-        
-        public PointLight(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f)
-        {
-            this.Position = Position;
-            colour = Colour;
-            aintensity = AmbientIntensity;
-            dintensity = DiffuseIntensity;
-            Transform.Scale = new Vector3(CalcDistance(Colour, Attenuation, DiffuseIntensity));
-
-            LightBlock.Set(new LightData(Transform.Matrix, Position, colour, aintensity, dintensity));
-        }
-        public override void Illuminate() 
-        {
-            LightProgram.Use();
             LightBlock.Bind();
-            PntLightMesh.Draw();
+            ShadowProgram.Use();
         }
-
-        /// <summary>
-        /// solves quadratic to find light scale
-        /// </summary>
-        private static float CalcDistance(Vector3 Colour, Vector3 Curve, float DIntensity)
+        public virtual void Illuminate() 
         {
-            float MaxChannel = MathF.Max(MathF.Max(Colour.X, Colour.Y), Colour.Z);
-            
-            // linear
-            if (Curve.X == 0) 
-                return (Precision - Curve.Z) / Curve.Y;
+            GL.DepthMask(true);
+            GL.ColorMask(true, true, true, true);
+            GL.Disable(EnableCap.DepthClamp);
 
-            // quadratic
-            float discrim = Curve.Y * Curve.Y - 4 * Curve.X * (Curve.Z - Precision * MaxChannel * DIntensity);
-            if (discrim >= 0) 
-                return (-Curve.Y + MathF.Sqrt(discrim)) / 2 / Curve.X;
+            GL.Disable(EnableCap.DepthTest);
+            GL.Enable(EnableCap.Blend);
+            GL.StencilFunc(StencilFunction.Equal, 0x0, 0xff);
 
-            else 
-                throw new Exception("Light must degrade with distance so light curve exponent or linear component must be greater than 0");
-        }
-    }
-    
-    class DirectionLight : Light
-    {
+            LightProgram.Use();
+            LightMesh.Draw();
 
-        // reuses light position as light direction
-        // ignores attenuation curve and transform matrix
-        private Vector3 colour;
-        private Vector3 direction;
-        private float aintensity;
-        private float dintensity;
-        public Vector3 Direction
-        {
-            get => direction;
-            set
-            {
-                Direction = value;
-                LightBlock.Set(80, value);
-            }
-        }
-        public Vector3 Colour
-        {
-            get => colour;
-            set
-            {
-                colour = value;
-                LightBlock.Set(0, value);
-            }
-        }
-        public float AmbientIntensity
-        {
-            get => aintensity;
-            set => LightBlock.Set(16, value);
-        }
-        public float DiffuseIntensity
-        {
-            get => dintensity;
-            set
-            {
-                dintensity = value;
-                LightBlock.Set(28, value);
-            }
-        }
+            GL.Enable(EnableCap.DepthTest);
+            GL.Disable(EnableCap.Blend);
+            GL.StencilFunc(StencilFunction.Always, 0, 0xff);
 
-        public DirectionLight(Vector3 Direction, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f)
-        {
-            this.Direction = Direction;
-            this.Colour = Colour;
-            this.dintensity = DiffuseIntensity;
-            this.aintensity = AmbientIntensity;
-
-        }
-        public override void Illuminate() 
-        { 
-            
         }
     }
     

@@ -9,14 +9,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ApplicationDefinition Include="Resources\Shaderscripts\CodeFile1.shader" />
-  </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.6.3" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
@@ -44,22 +36,28 @@
     <None Update="Resources\Shaderscripts\Rendering\Dir Light.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow - Copy.vert">
+    <None Update="Resources\Shaderscripts\Rendering\Light_Point.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow.geom">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Update="Resources\Shaderscripts\Rendering\Light_Directional.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Rendering\Shadow.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Light.frag">
+    <None Update="Resources\Shaderscripts\Rendering\Shadow_Directional.geom">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Rendering\Shadow.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Rendering\Shadow_Point.geom">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\Shaderscripts\Rendering\Light_Point.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Light.vert">
+    <None Update="Resources\Shaderscripts\Rendering\Light_Directional.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Simple.frag">
@@ -82,12 +80,6 @@
     </None>
     <None Update="Resources\Textures\Grid.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\Textures\Image1.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Resources\Textures\Missing - Copy.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Textures\Missing.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

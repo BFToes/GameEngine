@@ -39,7 +39,7 @@ namespace Graphics.Shaders
     }
     
     [StructLayout(LayoutKind.Explicit)]
-    struct LightData : IUniformBufferStruct
+    struct PointLightData : IUniformBufferStruct
     {
         [FieldOffset(0)]
         Matrix4 Model;
@@ -57,15 +57,8 @@ namespace Graphics.Shaders
         float DiffuseIntensity; // 92 + 4
 
         public int SizeInBytes => 96;
-        /// <summary>
-        /// point light
-        /// </summary>
-        /// <param name="Model"></param>
-        /// <param name="Position"></param>
-        /// <param name="Colour"></param>
-        /// <param name="AmbientIntensity"></param>
-        /// <param name="DiffuseIntensity"></param>
-        public LightData(Matrix4 Model, Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity)
+        
+        public PointLightData(Matrix4 Model, Vector3 Position, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity)
         {
             this.Model = Model;
             this.Position = Position;
@@ -73,18 +66,28 @@ namespace Graphics.Shaders
             this.AmbientIntensity = AmbientIntensity;
             this.DiffuseIntensity = DiffuseIntensity;
         }
+    }
 
-        /// <summary>
-        /// directional light
-        /// </summary>
-        /// <param name="Direction"></param>
-        /// <param name="Colour"></param>
-        /// <param name="AmbientIntensity"></param>
-        /// <param name="DiffuseIntensity"></param>
-        public LightData(Vector3 Direction, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity)
+    [StructLayout(LayoutKind.Explicit)]
+    struct DirectionalLightData : IUniformBufferStruct
+    {
+        [FieldOffset(0)]
+        Vector3 Colour; // 0
+
+        [FieldOffset(12)]
+        float AmbientIntensity; // 12 + 4
+
+        [FieldOffset(16)] // reused as direction
+        Vector3 Direction; // 16 + 12
+
+        [FieldOffset(28)]
+        float DiffuseIntensity; // 92 + 4
+
+        public int SizeInBytes => 32;
+
+        public DirectionalLightData(Vector3 Direction, Vector3 Colour, float AmbientIntensity, float DiffuseIntensity)
         {
-            this.Model = Matrix4.Identity; // doesnt matter just 64 bytes of wasted space
-            this.Position = Direction;
+            this.Direction = Direction;
             this.Colour = Colour;
             this.AmbientIntensity = AmbientIntensity;
             this.DiffuseIntensity = DiffuseIntensity;

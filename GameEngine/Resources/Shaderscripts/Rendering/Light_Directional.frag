@@ -7,18 +7,16 @@ layout(std140) uniform CameraBlock {
     vec2 ScreenSize;
 } Cam;
 
- layout(std140) uniform LightBlock {
-    mat4 Model;
+layout(std140) uniform LightBlock {
     vec3 Colour;
     float AmbientIntensity;
-    vec3 Position;
+    vec3 Direction;
     float DiffuseIntensity;
 } Light;
 
 // global
 uniform float SpecularPower;
 uniform float SpecularIntensity;
-uniform vec3 Attenuation;
 
 uniform sampler2D PositionTexture;
 uniform sampler2D AlbedoTexture;
@@ -33,29 +31,21 @@ void main(void)
     vec4 Albedo = texture(AlbedoTexture, TexCoord);
     vec3 Normal = normalize(texture(NormalTexture, TexCoord).xyz);
     
-    vec3 LightDir = Position - Light.Position;
-    float Distance = length(LightDir);
-
-    LightDir = normalize(LightDir);
-
     vec4 DiffuseColour;
     vec4 SpecularColour;
     vec4 AmbientColour = vec4(Light.Colour * Light.AmbientIntensity, 1);
 
-    float DiffuseFactor = dot(Normal, -LightDir);
+    float DiffuseFactor = dot(Normal, -Light.Direction);
     
     if (DiffuseFactor > 0) {
         DiffuseColour = vec4(Light.Colour * Light.DiffuseIntensity * DiffuseFactor, 1);
-        float SpecularFactor = dot(normalize(Cam.Position - Position), normalize(reflect(LightDir, Normal)));
+        float SpecularFactor = dot(normalize(Cam.Position - Position), normalize(reflect(Light.Direction, Normal)));
         
         if (SpecularFactor > 0) {
             SpecularFactor = pow(SpecularFactor, SpecularPower);
             SpecularColour = vec4(Light.Colour * SpecularFactor * SpecularIntensity, 1);
         }
     }
-    vec4 BaseColour = AmbientColour + DiffuseColour + SpecularColour;
-    float Atten = max(Attenuation.x * Distance * Distance + Attenuation.y * Distance + Attenuation.z, 1);
 
-    Colour = vec4(Albedo.xyz, 1) * BaseColour / Atten;
-    Colour += vec4(0.1);
-    }
+    Colour = vec4(Albedo.xyz, 1) * (AmbientColour + DiffuseColour + SpecularColour);
+}

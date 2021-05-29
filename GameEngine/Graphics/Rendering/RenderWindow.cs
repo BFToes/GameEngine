@@ -3,6 +3,7 @@ using OpenTK.Windowing.Desktop;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using System.Drawing;
+using Graphics.SceneObjects;
 namespace Graphics.Rendering
 {
     class RenderWindow : GameWindow
@@ -18,13 +19,8 @@ namespace Graphics.Rendering
             }
             
         }
-        public Action<float> Process;
-        public float Time;
         public RenderWindow(GameWindowSettings GWS, NativeWindowSettings NWS) : base(GWS, NWS)
         {
-            Scene = new Scene(Size.X, Size.Y);
-            Process = (delta) => Time += delta;
-
             VSync = VSyncMode.On;
         }
 
@@ -35,11 +31,11 @@ namespace Graphics.Rendering
         }
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            Process((float)e.Time);
+            Scene.Process((float)e.Time);
 
             Scene.Render();
 
-            SwapBuffers(); // swap out old buffer with new buffer
+            SwapBuffers(); 
         }
     }
 }

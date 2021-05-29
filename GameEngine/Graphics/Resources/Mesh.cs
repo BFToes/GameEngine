@@ -55,6 +55,12 @@ namespace Graphics.Resources
         /// a mesh that encompasses the whole screen using simple2D vertices
         /// </summary>
         public static Mesh<Simple2D> Screen = From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
+        
+        public static Mesh<Simple3D> Sphere = Construct("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
+
+        public static Mesh<Vertex3D> Cube = Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
+
+
         /// <summary>
         /// renders vertex parameters
         /// </summary>
