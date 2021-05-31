@@ -52,12 +52,12 @@ namespace Graphics.SceneObjects
         public ShaderProgram PostProcessProgram = ShaderProgram.ReadFrom(
             "Resources/Shaderscripts/Rendering/GeomDebug.vert", 
             "Resources/Shaderscripts/Rendering/GeomDebug.frag");
-
+        
         private GeometryBuffer GBuffer;
 
         private List<Occluder> OccluderObjects = new List<Occluder>();
         private List<IRenderable> Objects = new List<IRenderable>();
-        private List<Light> PointLightObjects = new List<Light>();
+        private List<Light> LightObjects = new List<Light>();
 
         private Vector2i size;
         public Vector2i Size
@@ -72,7 +72,7 @@ namespace Graphics.SceneObjects
             }
         }
 
-        public Action<float> Process = (delta) => { };
+        public Action<float> Process = delegate { };
 
         public Scene(int Width, int Height)
         {
@@ -88,7 +88,7 @@ namespace Graphics.SceneObjects
         /// renders objects inside this viewport and updates the viewport textures
         /// </summary>
         public void Render(int DrawTarget = 0)
-        {
+        { 
             GBuffer.Use();
 
             foreach (IRenderable RO in Objects) 
@@ -96,7 +96,7 @@ namespace Graphics.SceneObjects
 
             BeginLightPass(DrawTarget);
 
-            foreach (Light LO in PointLightObjects)
+            foreach (Light LO in LightObjects)
             {
                 LO.UseLight();
 
@@ -127,8 +127,8 @@ namespace Graphics.SceneObjects
             Light.AlbedoTexture = GBuffer.AlbedoTexture;
             Light.NormalTexture = GBuffer.NormalTexture;
             Light.PositionTexture = GBuffer.PositionTexture;
-            Light.SpecularIntensity = 0.4f;
-            Light.SpecularPower = 1;
+            Light.SpecularIntensity = 1.5f;
+            Light.SpecularPower = 5;
 
             // blending functions
             GL.BlendEquation(BlendEquationMode.FuncAdd);
@@ -145,12 +145,51 @@ namespace Graphics.SceneObjects
 
         #region Object Management
         // currently really stupid
-        public void Add(IRenderable item) => Objects.Add(item);
-        public void Remove(IRenderable item) => Objects.Remove(item);
-        public void Add(Light item) => PointLightObjects.Add(item);
-        public void Remove(Light item) => PointLightObjects.Remove(item);
-        public void Add(Occluder item) => OccluderObjects.Add(item);
-        public void Remove(Occluder item) => OccluderObjects.Remove(item);
+        public void Add(Entity Entity)
+        {
+            switch (Entity)
+            {
+                case Light LO: 
+                    LightObjects.Add(LO); 
+                    foreach (Entity E in Entity.GetChildren()) 
+                        Add(E); 
+                    break;
+                case IRenderable RO: 
+                    Objects.Add(RO); 
+                    foreach (Entity E in Entity.GetChildren()) 
+                        Add(E); 
+                    break;
+                case Occluder Occ: 
+                    OccluderObjects.Add(Occ); 
+                    foreach (Entity E in Entity.GetChildren()) 
+                        Add(E); 
+                    break;
+                default: throw new Exception($"Unrecognised Entity:{Entity}");
+            }
+
+        }
+        public void Remove(Entity Entity)
+        {
+            switch (Entity)
+            {
+                case Light LO: 
+                    LightObjects.Remove(LO); 
+                    foreach (Entity E in Entity.GetChildren()) 
+                        Remove(E); 
+                    break;
+                case IRenderable RO: 
+                    Objects.Remove(RO); 
+                    foreach (Entity E in Entity.GetChildren()) 
+                        Remove(E); 
+                    break;
+                case Occluder Occ: 
+                    OccluderObjects.Remove(Occ); 
+                    foreach (Entity E in Entity.GetChildren()) 
+                        Remove(E); 
+                    break;
+                default: throw new Exception($"Unrecognised Entity:{Entity}");
+            }
+        }
         #endregion
 
         private class GeometryBuffer : FrameBuffer

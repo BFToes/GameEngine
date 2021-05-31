@@ -8,54 +8,53 @@ using Graphics.Resources;
 using Graphics.Rendering;
 namespace Graphics.SceneObjects
 {
-    class Light_Point : Light
+    class Light_Pnt : SpatialEntity<AbstractTransform3D>, Light
     {
         #region Inherited Light Setup
-        private static readonly ShaderProgram shadowprogram = ShaderProgram.ReadFrom(
+        private static readonly ShaderProgram ShadowProgram = ShaderProgram.ReadFrom(
             "Resources/Shaderscripts/Rendering/Shadow.vert", 
             "Resources/Shaderscripts/Rendering/Shadow_Point.geom", 
             "Resources/Shaderscripts/Rendering/Shadow.frag");
-        private static readonly ShaderProgram lightprogram = ShaderProgram.ReadFrom(
+        private static readonly ShaderProgram LightProgram = ShaderProgram.ReadFrom(
             "Resources/Shaderscripts/Rendering/Light_Point.vert", 
             "Resources/Shaderscripts/Rendering/Light_Point.frag");
-        protected readonly UniformBlock lightblock = UniformBlock.For<PointLightData>(1);
+        protected readonly UniformBlock LightBlock = UniformBlock.For<PointLightData>(1);
 
-        public override ShaderProgram ShadowProgram => shadowprogram;
-        public override ShaderProgram LightProgram => lightprogram;
-        public override Mesh LightMesh => Mesh.Sphere;
-        protected override UniformBlock LightBlock => lightblock;
-        
-        
+        ShaderProgram Light.ShadowProgram => ShadowProgram;
+        ShaderProgram Light.LightProgram => LightProgram;
+        UniformBlock Light.LightBlock => LightBlock;
+        Mesh Light.LightMesh => Mesh.Sphere;
+
+        static Light_Pnt()
+        {
+            // because this is an inherited static constructor it will get called on first use of the object
+            Attenuation = new Vector3(0.1f, 0.1f, 0);
+            ShadowProgram.SetUniformBlock("CameraBlock", 0);
+            ShadowProgram.SetUniformBlock("LightBlock", 1);
+            LightProgram.SetUniformBlock("CameraBlock", 0);
+            LightProgram.SetUniformBlock("LightBlock", 1);
+
+            Light.SetNormalTexture += (Tex) => LightProgram.SetUniformSampler2D("NormalTexture", Tex);
+            Light.SetPositionTexture += (Tex) => LightProgram.SetUniformSampler2D("PositionTexture", Tex);
+            Light.SetAlbedoTexture += (Tex) => LightProgram.SetUniformSampler2D("AlbedoTexture", Tex);
+            Light.SetSpecularIntensity += (SI) => LightProgram.SetUniform("SpecularIntensity", SI);
+            Light.SetSpecularPower += (SP) => LightProgram.SetUniform("SpecularPower", SP);
+
+            LightProgram.SetUniformSampler2D("NormalTexture", Light.NormalTexture);
+            LightProgram.SetUniformSampler2D("PositionTexture", Light.PositionTexture);
+            LightProgram.SetUniformSampler2D("AlbedoTexture", Light.AlbedoTexture);
+            LightProgram.SetUniform("SpecularIntensity", Light.SpecularIntensity);
+            LightProgram.SetUniform("SpecularPower", Light.SpecularPower);
+        }
         private static Vector3 acurve;
         public static Vector3 Attenuation
         {
             get => acurve;
             set
             {
-                lightprogram.SetUniform("Attenuation", value);
+                LightProgram.SetUniform("Attenuation", value);
                 acurve = value;
             }
-        }
-
-
-        static Light_Point()
-        {
-            // this has a high chance of going wrong because its an inherited static class
-            // it means thats its called when first used this is really fucking annoying
-            // but it means that both scene lights, if theyre going to be used, must be
-            // initiated before scene is set
-            Attenuation = new Vector3(0.1f, 0.1f, 0);
-            shadowprogram.SetUniformBlock("CameraBlock", 0);
-            shadowprogram.SetUniformBlock("LightBlock", 1);
-            lightprogram.SetUniformBlock("CameraBlock", 0);
-            lightprogram.SetUniformBlock("LightBlock", 1);
-
-            SetNormalTexture += (Tex) => lightprogram.SetUniformSampler2D("NormalTexture", Tex);
-            SetPositionTexture += (Tex) => lightprogram.SetUniformSampler2D("PositionTexture", Tex);
-            SetAlbedoTexture += (Tex) => lightprogram.SetUniformSampler2D("AlbedoTexture", Tex);
-
-            SetSpecularIntensity += (SI) => lightprogram.SetUniform("SpecularIntensity", SI);
-            SetSpecularPower += (SP) => lightprogram.SetUniform("SpecularPower", SP);
         }
         #endregion
 
@@ -103,9 +102,7 @@ namespace Graphics.SceneObjects
         }
         #endregion
 
-        private Transform Transform = new Transform();
-
-        public Light_Point(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f)
+        public Light_Pnt(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f) : base(new Transform3D())
         {
             this.Position = Position;
             colour = Colour;
@@ -116,9 +113,9 @@ namespace Graphics.SceneObjects
             LightBlock.Set(new PointLightData(Transform.Matrix, Position, colour, aintensity, dintensity));
         }
 
-        public override void UseLight()
+        public void UseLight()
         {
-            base.UseLight();
+            Light.Use(this);
             ShadowProgram.SetUniform("LightPosition", Position);
         }
 
@@ -133,12 +130,12 @@ namespace Graphics.SceneObjects
             else 
                 throw new Exception("Light must degrade with distance so light curve exponent or linear component must be greater than 0");
         }
-        public override void Illuminate()
+        void Light.Illuminate()
         {
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Front);
-            
-            base.Illuminate();
+
+            Light.Illuminate(this);
 
             GL.Disable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);

@@ -7,7 +7,7 @@ using Graphics.Shaders;
 
 namespace Graphics.SceneObjects
 {
-    class Camera : TransformInvert
+    class Camera : SpatialEntity<InverseTransform3D>
     {
         public UniformBlock Block;
         public float fov { get; private set; }
@@ -23,9 +23,8 @@ namespace Graphics.SceneObjects
         /// <param name="Height"></param>
         /// <param name="DepthNear">must be greater than 0</param>
         /// <param name="DepthFar">larger values will render more objects</param>
-        public Camera(float FOV, float Width, float Height, float DepthNear, float DepthFar)
+        public Camera(float FOV, float Width, float Height, float DepthNear, float DepthFar) : base(new InverseTransform3D())
         {
-            
             nearZ = DepthNear; 
             farZ = DepthFar;
             fov = FOV / 180 * MathF.PI;
@@ -34,9 +33,11 @@ namespace Graphics.SceneObjects
                 ProjMat = Matrix4.CreatePerspectiveFieldOfView(fov, Width / Height, nearZ, farZ);
             else 
                 ProjMat = Matrix4.CreateOrthographic((int)Width, (int)Height, nearZ, farZ);
-
+            
+            Transform.SetTransform += SetBlock;
+            
             Block = UniformBlock.For<CameraData>(0);
-            Block.Set(new CameraData(ProjMat, this.Matrix, new Vector2(Width, Height))); // set data in uniform block
+            Block.Set(new CameraData(ProjMat, Transform.Matrix, new Vector2(Width, Height))); // set data in uniform block
             CameraData C = Block.Get<CameraData>();
         }
         public void Resize(Vector2i Size)
@@ -48,11 +49,10 @@ namespace Graphics.SceneObjects
             Block.Set(0, ProjMat);
             Block.Set(144, (Vector2)Size); // set data in uniform block
         }
-        protected override void Set(Vector3 Position, Vector3 Scale, Matrix3 RotMat)
+        private void SetBlock(Matrix4 Matrix)
         {
-            base.Set(Position, Scale, RotMat);
             Block.Set(64, Matrix); // set camera matrix in uniform block
-            Block.Set(128, Position); // set position in uniform block
+            Block.Set(128, Transform.Position); // set position in uniform block
         }
     }
 }

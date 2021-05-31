@@ -9,53 +9,57 @@ using Graphics.Rendering;
 
 namespace Graphics.SceneObjects
 {
-    public abstract class Light
+    public interface Light
     {
         #region Debug Fields
         private const bool SHOW_EDGE = false;
         #endregion
+        
+        #region Static Light Settings
+        private static int normaltexture;
+        private static int albedotexture;
+        private static int positiontexture;
+        private static float specularintensity;
+        private static float specularpower;
 
-        #region
-        protected static Action<int> SetNormalTexture = (Tex) => { };
-        protected static Action<int> SetAlbedoTexture = (Tex) => { };
-        protected static Action<int> SetPositionTexture = (Tex) => { };
+        protected static event Action<int> SetNormalTexture = (Tex) => { normaltexture = Tex; };
+        protected static event Action<int> SetAlbedoTexture = (Tex) => { albedotexture = Tex; };
+        protected static event Action<int> SetPositionTexture = (Tex) => { positiontexture = Tex; };
+        protected static event Action<float> SetSpecularIntensity = (intensity) => { specularintensity = intensity; };
+        protected static event Action<float> SetSpecularPower = (power) => { specularpower = power; };
         public static int NormalTexture
         {
-            get => throw new NotImplementedException();
+            get => normaltexture;
             set => SetNormalTexture(value);
         }
         public static int AlbedoTexture
         {
-            get => throw new NotImplementedException();
+            get => albedotexture;
             set => SetAlbedoTexture(value);
         }
         public static int PositionTexture
         {
-            get => throw new NotImplementedException();
+            get => positiontexture;
             set => SetPositionTexture(value);
         }
-
-        protected static Action<float> SetSpecularIntensity = (Tex) => { };
-        protected static Action<float> SetSpecularPower = (Tex) => { };
         public static float SpecularIntensity
         {
-            get => throw new NotImplementedException();
+            get => specularintensity;
             set => SetSpecularIntensity(value);
         }
         public static float SpecularPower
         {
-            get => throw new NotImplementedException();
+            get => specularpower;
             set => SetSpecularPower(value);
         }
         #endregion
 
-        public abstract ShaderProgram ShadowProgram { get; }
-        public abstract ShaderProgram LightProgram { get; }
-        public abstract Mesh LightMesh { get; }
+        public ShaderProgram ShadowProgram { get; }
+        public ShaderProgram LightProgram { get; }
+        public Mesh LightMesh { get; }
+        protected UniformBlock LightBlock { get; }
 
-        protected abstract UniformBlock LightBlock { get; }
-
-        public virtual void UseLight() 
+        protected static void Use(Light Light)
         {
             GL.Clear(ClearBufferMask.StencilBufferBit);
 
@@ -63,10 +67,10 @@ namespace Graphics.SceneObjects
             if (!SHOW_EDGE) GL.ColorMask(false, false, false, false);
             GL.Enable(EnableCap.DepthClamp);
 
-            LightBlock.Bind();
-            ShadowProgram.Use();
+            Light.LightBlock.Bind();
+            Light.ShadowProgram.Use();
         }
-        public virtual void Illuminate() 
+        protected static void Illuminate(Light Light)
         {
             GL.DepthMask(true);
             GL.ColorMask(true, true, true, true);
@@ -76,14 +80,15 @@ namespace Graphics.SceneObjects
             GL.Enable(EnableCap.Blend);
             GL.StencilFunc(StencilFunction.Equal, 0x0, 0xff);
 
-            LightProgram.Use();
-            LightMesh.Draw();
+            Light.LightProgram.Use();
+            Light.LightMesh.Draw();
 
             GL.Enable(EnableCap.DepthTest);
             GL.Disable(EnableCap.Blend);
             GL.StencilFunc(StencilFunction.Always, 0, 0xff);
-
         }
+        public void UseLight();
+        public void Illuminate();
     }
     
 }

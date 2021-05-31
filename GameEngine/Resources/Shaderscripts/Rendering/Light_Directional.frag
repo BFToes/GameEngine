@@ -33,7 +33,6 @@ void main(void)
     
     vec4 DiffuseColour;
     vec4 SpecularColour;
-    vec4 AmbientColour = vec4(Light.Colour * Light.AmbientIntensity, 1);
 
     float DiffuseFactor = dot(Normal, -Light.Direction);
     
@@ -47,5 +46,5 @@ void main(void)
         }
     }
 
-    Colour = vec4(Albedo.xyz, 1) * (AmbientColour + DiffuseColour + SpecularColour);
+    Colour = vec4(Albedo.xyz, 1) * (DiffuseColour + SpecularColour);
 }

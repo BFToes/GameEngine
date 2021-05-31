@@ -90,6 +90,10 @@ namespace Graphics.Shaders
             GL.GetNamedBufferSubData(UniformBuffer, (IntPtr)Offset, Marshal.SizeOf(typeof(T)), ref Data);
             return Data;
         }
+        /// <summary>
+        /// Gets the value stored in the uniform buffer.
+        /// </summary>
+        /// <returns></returns>
         public float[] Get(int Size)
         {
             float[] Data = new float[Size];

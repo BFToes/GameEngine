@@ -1,6 +1,6 @@
 ﻿#version 450 core
-const float Epsilon = 0.03125; // 0.03125 // 0.015625 // 0.0078125 // 0.00390625
-const mat4 Projection = mat4(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, -0.001953125, 0, 0, -0, -1, 1);
+const float Epsilon = 0.00390625; // 0.03125 // 0.015625 // 0.0078125 // 0.00390625
+
 layout (triangles_adjacency) in; 
 layout (triangle_strip, max_vertices = 18) out; 
 

@@ -1,5 +1,5 @@
 ﻿#version 450 core
-const float Epsilon = 0.03125; // 0.03125 // 0.015625 // 0.0078125 // 0.00390625
+const float Epsilon = 0.00390625; // 0.03125 // 0.015625 // 0.0078125 // 0.00390625
 
 layout (triangles_adjacency) in; 
 layout (triangle_strip, max_vertices = 18) out; 

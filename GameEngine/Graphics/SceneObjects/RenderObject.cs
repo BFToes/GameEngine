@@ -13,19 +13,21 @@ namespace Graphics.SceneObjects
     /// <summary>
     /// An Object that renders onto the screen.
     /// </summary>
-    abstract class RenderObject<Vertex> : IRenderable where Vertex : struct, IVertex
+    abstract class RenderObject<Vertex> : SpatialEntity<AbstractTransform3D>, IRenderable where Vertex : struct, IVertex
     {
         public ShaderProgram Material;
         public Mesh<Vertex> RenderMesh;
-        public ITransform Transform;
-        
-        public RenderObject(Mesh<Vertex> Mesh, string VertexShader = "Resources/shaderscripts/Default.vert", string FragmentShader = "Resources/shaderscripts/Default.frag")
+
+        public RenderObject(Mesh<Vertex> Mesh,
+            string VertexShader = "Resources/shaderscripts/Default.vert", 
+            string FragmentShader = "Resources/shaderscripts/Default.frag"
+            ) : base(new Transform3D())
         {
             Material = ShaderProgram.ReadFrom(VertexShader, FragmentShader);
-            Transform = new Transform();
             RenderMesh = Mesh;
 
-            Material.SetUpdatingUniform("Model", () => Transform.Matrix);
+
+            SetWorldMatrix += (WorldMatrix) => Material.SetUniform("Model", WorldMatrix);
             Material.SetUniformBlock("CameraBlock", 0); // 0 = Camera Block Binding Index
         }
       
