@@ -8,7 +8,13 @@ using OpenTK.Mathematics;
 
 namespace Graphics.SceneObjects
 {
-    class Occluder : SpatialEntity<AbstractTransform3D>
+    public interface IOccluder
+    {
+        public void Occlude(Light Light);
+    }
+
+
+    class Occluder : SpatialEntity<AbstractTransform3D>, IOccluder
     {
         private Mesh<Simple3D> OccMesh;
 

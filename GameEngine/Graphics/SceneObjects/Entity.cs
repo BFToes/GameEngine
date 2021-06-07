@@ -13,12 +13,12 @@ namespace Graphics.SceneObjects
         {
             Process(delta);
         }
-        public void Add(Entity Child)
+        public void AddChild(Entity Child)
         {
             Process += Child.OnProcess;
             Child.Parent = this;
         }
-        public void Remove(Entity Child)
+        public void RemoveChild(Entity Child)
         {
             Process -= Child.OnProcess;
             Child.Parent = null;
@@ -34,8 +34,9 @@ namespace Graphics.SceneObjects
 
     class SpatialEntity<TransformType> : Entity where TransformType : ITransform
     {
-        public event Action<Matrix4> SetWorldMatrix = (M) => { };
         private Matrix4 matrix = Matrix4.Identity;
+        private TransformType transform;
+        public event Action<Matrix4> SetWorldMatrix = delegate { };
         public Matrix4 WorldMatrix 
         { 
             get => matrix;
@@ -45,7 +46,7 @@ namespace Graphics.SceneObjects
                 SetWorldMatrix(value);
             }
         }
-        private TransformType transform;
+        
         public virtual TransformType Transform {
             get => transform;
             set { 
@@ -53,13 +54,13 @@ namespace Graphics.SceneObjects
                 {
                     if (Child is SpatialEntity<TransformType>)
                     {
-                        Transform.SetTransform -= ((SpatialEntity<TransformType>)Child).UpdateMatrix; // unsubscribe all children from old transform
-                        value.SetTransform += ((SpatialEntity<TransformType>)Child).UpdateMatrix; // subscribe all children to new transform
+                        Transform.Set_Transform -= ((SpatialEntity<TransformType>)Child).UpdateMatrix; // unsubscribe all children from old transform
+                        value.Set_Transform += ((SpatialEntity<TransformType>)Child).UpdateMatrix; // subscribe all children to new transform
                     }
                         
                 }
-                Transform.SetTransform -= UpdateMatrix; // unsubscribe self from old transform
-                value.SetTransform += UpdateMatrix; // subscribe self to new transform
+                Transform.Set_Transform -= UpdateMatrix; // unsubscribe self from old transform
+                value.Set_Transform += UpdateMatrix; // subscribe self to new transform
 
                 transform = value;
             }
@@ -68,17 +69,18 @@ namespace Graphics.SceneObjects
         public SpatialEntity(TransformType Transform)
         {
             transform = Transform;
-            this.Transform.SetTransform += UpdateMatrix;
+            this.Transform.Set_Transform += UpdateMatrix;
         }
+        
         public void Add(SpatialEntity<TransformType> Child)
         {
-            base.Add(Child);
-            Transform.SetTransform += Child.UpdateMatrix;
+            base.AddChild(Child);
+            Transform.Set_Transform += Child.UpdateMatrix;
         }
         public void Remove(SpatialEntity<TransformType> Child)
         {
-            base.Remove(Child);
-            Transform.SetTransform += Child.UpdateMatrix;
+            base.RemoveChild(Child);
+            Transform.Set_Transform += Child.UpdateMatrix;
         }
         private void UpdateMatrix(Matrix4 _)
         {

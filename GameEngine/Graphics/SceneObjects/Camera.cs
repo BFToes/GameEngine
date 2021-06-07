@@ -7,7 +7,7 @@ using Graphics.Shaders;
 
 namespace Graphics.SceneObjects
 {
-    class Camera : SpatialEntity<InverseTransform3D>
+    class Camera : SpatialEntity<AbstractTransform3D>
     {
         public UniformBlock Block;
         public float fov { get; private set; }
@@ -34,7 +34,7 @@ namespace Graphics.SceneObjects
             else 
                 ProjMat = Matrix4.CreateOrthographic((int)Width, (int)Height, nearZ, farZ);
             
-            Transform.SetTransform += SetBlock;
+            Transform.Set_Transform += SetBlock;
             
             Block = UniformBlock.For<CameraData>(0);
             Block.Set(new CameraData(ProjMat, Transform.Matrix, new Vector2(Width, Height))); // set data in uniform block

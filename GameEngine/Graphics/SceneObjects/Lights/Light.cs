@@ -10,11 +10,7 @@ using Graphics.Rendering;
 namespace Graphics.SceneObjects
 {
     public interface Light
-    {
-        #region Debug Fields
-        private const bool SHOW_EDGE = false;
-        #endregion
-        
+    {       
         #region Static Light Settings
         private static int normaltexture;
         private static int albedotexture;
@@ -56,10 +52,19 @@ namespace Graphics.SceneObjects
 
         public ShaderProgram ShadowProgram { get; }
         public ShaderProgram LightProgram { get; }
-        public Mesh LightMesh { get; }
         protected UniformBlock LightBlock { get; }
+        protected Mesh LightMesh { get; }
 
-        protected static void Use(Light Light)
+        public void UseLight();
+        public void Illuminate();
+    }
+    
+    public interface VolumeLight : Light
+    {
+        #region Debug Fields
+        private const bool SHOW_EDGE = false;
+        #endregion
+        protected static void Use(VolumeLight Light)
         {
             GL.Clear(ClearBufferMask.StencilBufferBit);
 
@@ -70,7 +75,7 @@ namespace Graphics.SceneObjects
             Light.LightBlock.Bind();
             Light.ShadowProgram.Use();
         }
-        protected static void Illuminate(Light Light)
+        protected static void Illuminate(VolumeLight Light)
         {
             GL.DepthMask(true);
             GL.ColorMask(true, true, true, true);
@@ -87,8 +92,5 @@ namespace Graphics.SceneObjects
             GL.Disable(EnableCap.Blend);
             GL.StencilFunc(StencilFunction.Always, 0, 0xff);
         }
-        public void UseLight();
-        public void Illuminate();
     }
-    
 }

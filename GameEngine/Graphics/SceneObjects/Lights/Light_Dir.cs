@@ -8,7 +8,7 @@ using Graphics.Resources;
 using Graphics.Rendering;
 namespace Graphics.SceneObjects
 {
-    class Light_Dir : Entity, Light // Entity
+    class Light_Dir : Entity, VolumeLight
     {
         #region inherited Light Setup
         private static readonly ShaderProgram shadowprogram = ShaderProgram.ReadFrom(
@@ -73,8 +73,8 @@ namespace Graphics.SceneObjects
             LightBlock.Set(new DirectionalLightData(Direction, Colour, AmbientIntensity, DiffuseIntensity));
         }
 
-        public void UseLight() => Light.Use(this);
+        public void UseLight() => VolumeLight.Use(this);
 
-        public void Illuminate() => Light.Illuminate(this);
+        public void Illuminate() => VolumeLight.Illuminate(this);
     }
 }

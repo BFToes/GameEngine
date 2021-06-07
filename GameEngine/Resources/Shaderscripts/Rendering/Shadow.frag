@@ -1,5 +1,6 @@
 ﻿#version 450 core
+out vec4 Colour;
 void main(void) 
 { 
-	gl_FragColor = vec4(0.1); // for testing
+	Colour = vec4(0.1); // for testing
 }

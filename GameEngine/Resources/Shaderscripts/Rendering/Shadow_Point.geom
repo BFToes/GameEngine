@@ -1,5 +1,5 @@
 ﻿#version 450 core
-const float Epsilon = 0.00390625; // 0.03125 // 0.015625 // 0.0078125 // 0.00390625
+const float Epsilon = 0.001953125; // 0.03125 // 0.015625 // 0.0078125 // 0.00390625
 
 layout (triangles_adjacency) in; 
 layout (triangle_strip, max_vertices = 18) out; 
@@ -25,16 +25,14 @@ layout(std140) uniform LightBlock {
 
 void EmitEdge( vec3 a, vec3 b ) {
   vec3 LightDir = normalize(a - Light.Position.xyz); 
-  vec3 Deviation = LightDir * Epsilon;
-  gl_Position = Cam.Projection * Cam.View * vec4(a + Deviation, 1);
+  gl_Position = Cam.Projection * Cam.View * vec4(a + LightDir * Epsilon, 1);
   EmitVertex();
   
   gl_Position = Cam.Projection * Cam.View * vec4(LightDir, 0);
   EmitVertex();
 
   LightDir = normalize(b - Light.Position.xyz); 
-  Deviation = LightDir * Epsilon;
-  gl_Position = Cam.Projection * Cam.View * vec4(b + Deviation, 1);
+  gl_Position = Cam.Projection * Cam.View * vec4(b + LightDir * Epsilon, 1);
   EmitVertex();
 
   gl_Position = Cam.Projection * Cam.View * vec4(LightDir, 0);
@@ -68,13 +66,13 @@ void main(void)
         }
 
         // render the front cap
-        gl_Position = Cam.Projection * Cam.View * vec4((VPos[0] + (normalize(VPos[0] - Light.Position)) * Epsilon), 1.0);
+        gl_Position = Cam.Projection * Cam.View * vec4(VPos[0] + normalize(VPos[0] - Light.Position) * Epsilon, 1.0);
         EmitVertex();
 
-        gl_Position = Cam.Projection * Cam.View * vec4((VPos[2] + (normalize(VPos[2] - Light.Position)) * Epsilon), 1.0);
+        gl_Position = Cam.Projection * Cam.View * vec4(VPos[2] + normalize(VPos[2] - Light.Position) * Epsilon, 1.0);
         EmitVertex();
 
-        gl_Position = Cam.Projection * Cam.View * vec4((VPos[4] + (normalize(VPos[4] - Light.Position)) * Epsilon), 1.0);
+        gl_Position = Cam.Projection * Cam.View * vec4(VPos[4] + normalize(VPos[4] - Light.Position) * Epsilon, 1.0);
         EmitVertex();
         EndPrimitive();
  

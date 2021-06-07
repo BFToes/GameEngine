@@ -8,7 +8,7 @@ using Graphics.Resources;
 using Graphics.Rendering;
 namespace Graphics.SceneObjects
 {
-    class Light_Pnt : SpatialEntity<AbstractTransform3D>, Light
+    class Light_Pnt : SpatialEntity<AbstractTransform3D>, VolumeLight
     {
         #region Inherited Light Setup
         private static readonly ShaderProgram ShadowProgram = ShaderProgram.ReadFrom(
@@ -115,7 +115,7 @@ namespace Graphics.SceneObjects
 
         public void UseLight()
         {
-            Light.Use(this);
+            VolumeLight.Use(this);
             ShadowProgram.SetUniform("LightPosition", Position);
         }
 
@@ -135,7 +135,7 @@ namespace Graphics.SceneObjects
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Front);
 
-            Light.Illuminate(this);
+            VolumeLight.Illuminate(this);
 
             GL.Disable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Back);

@@ -1,44 +1,46 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Collections.Generic;
-using Graphics.Shaders;
-using System.Drawing;
 using OpenTK.Mathematics;
 using Graphics.SceneObjects;
-using Graphics.Resources;
-using Graphics.Rendering;
-namespace Graphics.SceneObjects
+namespace Graphics.Rendering
 {
-    /* Volume Lighting
-     * https://ogldev.org/www/tutorial36/tutorial36.html
-     * ^
-     * newer OpenGL but more complicated and less explicit on what to do. still better than some.
-     * 
-     * Stencil shadows
-     * https://ogldev.org/www/tutorial40/tutorial40.html - maybe actually read it tho
-     * https://www.angelfire.com/games5/duktroa/RealTimeShadowTutorial.htm
-     * https://nehe.gamedev.net/tutorial/shadows/16010/
-     * https://www.gamedev.net/articles/programming/graphics/the-theory-of-stencil-shadow-volumes-r1873/
-     * 
-     * 
-     * TILED LIGHTING  ->       1. Geometry pass
-     *                          2. construct screenspace grid with fixed pixel/work group size
-     *                          3. find out the min/max depth of each tile.
-     *                          4. find which lights affect this tile by constructing a per tile frustrum
-     *                          5. switch over to calculate all lights that affect this tile
-     * 
-     * FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
-     *                          being rendered just a good thing to have. I can also add an axis aligned 
-     *                          bounding box around a mesh to optimise search.
+    /* FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
+     *                          being rendered. just a good thing to have. This applies to lights and camera
+     *                          I can also add an axis aligned bounding box around a mesh to optimise search.
     
-     * LIGHT OCTATREE ->        currently If I add 300+ lights ontop of each other, they all render seperately 
+     * LIGHT OCTATREE CHUNK ->  Currently If I add 300+ lights ontop of each other, they all render seperately 
      *                          which is slowing down the program alot. I can instead group lights by distance
      *                          and render it as One shader pass but with different parameters so its just as 
-     *                          bright. This could also be used to speed frustrum culling search time.
-     *   
-     * NEED TO SORT OUT OBJECT MANAGEMENT AND RELATIVE TRANSFORMS
+     *                          bright. This could also be used to speed frustrum culling search time. 
+     *                          
+     *                          This wont work for shadows unless I do soft shadows in a double pass with big 
+     *                          circle and little circle.
+     *                          
+     * ENTITY UN/LOADING ->     This is the idisposable problem. your lazy. this also leads to serialization. 
+     *                          we all know serialization is disusting. this should probably done after chunk 
+     *                          octatree system.
+     *                          
+     * SHADOW PROBLEM ->        Fix with tesselation??? i could also increase epsilon with distance away from 
+     *                          camera. the epsilon only needs to be small when the camera is nearby altern-
+     *                          atively i could change the matrix order and use eplsilon after transform. this
+     *                          would be more efficient but harder to understand.
+     *                          
+     * SSAO ->                  screen space ambient occlusion.
      * 
-     * IDISPOSABLE YOU PIECE OF UTTER SHIT.. 
+     * FXAA ->                  Antialiasing. TSAA??? whatever the fuck that is.
+     *                          
+     * MANAGE OBJECT SCOPE ->   alot of classes are public that dont need to be, I havent got a good code 
+     *                          interface. I want to be able to use the name space add objects and thats all 
+     *                          you can see. 
+     * 
+     * MULTI-THREADING ->       I have no clue how to implement this in a graphics environment. Apparently it
+     *                          works with OpenGL. 
+     * 
+     * IDISPOSABLE ->           YOU PIECE OF UTTER SHIT.. 
+     * 
+     * EMPTY DELEGATES ->       slight performance issue as each time its called it must call the empty instruction
+     *                          really isnt an issue.
      */
 
     /* Uniformblocks:
@@ -49,9 +51,6 @@ namespace Graphics.SceneObjects
     class Scene
     {
         public Camera Camera;
-        public ShaderProgram PostProcessProgram = ShaderProgram.ReadFrom(
-            "Resources/Shaderscripts/Rendering/GeomDebug.vert", 
-            "Resources/Shaderscripts/Rendering/GeomDebug.frag");
         
         private GeometryBuffer GBuffer;
 
@@ -79,9 +78,6 @@ namespace Graphics.SceneObjects
             size = new Vector2i(Width, Height);
             GBuffer = new GeometryBuffer(Width, Height);
             Camera = new Camera(50, Width, Height, 0.1f, 512);
-            PostProcessProgram.SetUniformSampler2D("ColourTexture", GBuffer.AlbedoTexture);
-            PostProcessProgram.SetUniformSampler2D("NormalTexture", GBuffer.NormalTexture);
-            PostProcessProgram.SetUniformSampler2D("PositionTexture", GBuffer.PositionTexture);
         }
 
         /// <summary>
@@ -112,13 +108,14 @@ namespace Graphics.SceneObjects
             GL.Enable(EnableCap.StencilTest);
             GL.Disable(EnableCap.CullFace);
 
-            // copies depth to render context
+            // copies depth to draw target
             GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, GBuffer);
             GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, DrawTarget);
             GL.BlitFramebuffer(0, 0, Size.X, Size.Y, 0, 0, Size.X, Size.Y, ClearBufferMask.DepthBufferBit, BlitFramebufferFilter.Nearest);
             
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, DrawTarget);
-            GL.ClearColor(0, 0, 0, 0); GL.Clear(ClearBufferMask.ColorBufferBit);
+            GL.ClearColor(0, 0, 0, 0);
+            GL.Clear(ClearBufferMask.ColorBufferBit);
         }
 
         public void Use()
@@ -143,8 +140,6 @@ namespace Graphics.SceneObjects
             GL.CullFace(CullFaceMode.Back);
         }
 
-        #region Object Management
-        // currently really stupid
         public void Add(Entity Entity)
         {
             switch (Entity)
@@ -190,14 +185,13 @@ namespace Graphics.SceneObjects
                 default: throw new Exception($"Unrecognised Entity:{Entity}");
             }
         }
-        #endregion
 
         private class GeometryBuffer : FrameBuffer
         {
-            public readonly int AlbedoTexture; // colour texture
-            public readonly int NormalTexture; // normal texture
+            public readonly int AlbedoTexture;   // colour texture
+            public readonly int NormalTexture;   // normal texture
             public readonly int PositionTexture; // position texture
-            public readonly int DepthBuffer; // depth buffer
+            public readonly int DepthBuffer;     // depth buffer
             public GeometryBuffer(int Width, int Height): base(Width, Height)
             {
                 // geometry-buffer textures

@@ -7,7 +7,7 @@ namespace Graphics
     public interface ITransform
     {
         public Matrix4 Matrix { get; }
-        public event Action<Matrix4> SetTransform;
+        public event Action<Matrix4> Set_Transform;
     }
     public abstract class AbstractTransform3D : ITransform
     {
@@ -16,10 +16,10 @@ namespace Graphics
         private Vector3 scale = Vector3.One;
         private Vector3 position = Vector3.Zero;
 
-        public event Action<Vector3> SetRotation = (R) => { };
-        public event Action<Vector3> SetPosition = (P) => { };
-        public event Action<Vector3> SetScale = (S) => { };
-        public event Action<Matrix4> SetTransform = (M) => { };
+        public event Action<Vector3> Set_Rotation = delegate{ };
+        public event Action<Vector3> Set_Position = delegate{ };
+        public event Action<Vector3> Set_Scale = delegate{ };
+        public event Action<Matrix4> Set_Transform = delegate{ };
 
         public Matrix4 Matrix { get; protected set; }
         public virtual Vector3 Rotation
@@ -27,8 +27,8 @@ namespace Graphics
             set
             {
                 rotation = value;
-                SetRotation(rotation);
-                SetTransform(Matrix);
+                Set_Rotation(rotation);
+                Set_Transform(Matrix);
             }
             get => rotation;
 
@@ -38,8 +38,8 @@ namespace Graphics
             set
             {
                 scale = value;
-                SetScale(scale);
-                SetTransform(Matrix);
+                Set_Scale(scale);
+                Set_Transform(Matrix);
             }
             get => scale;
         }
@@ -49,8 +49,8 @@ namespace Graphics
             {
                 position = value;
 
-                SetPosition(position);
-                SetTransform(Matrix);
+                Set_Position(position);
+                Set_Transform(Matrix);
             }
             get => position;
         }

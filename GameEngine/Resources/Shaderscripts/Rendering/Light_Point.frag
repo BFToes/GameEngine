@@ -35,26 +35,21 @@ void main(void)
     
     vec3 LightDir = Position - Light.Position;
     float Distance = length(LightDir);
-
     LightDir = normalize(LightDir);
 
-    vec4 DiffuseColour;
-    vec4 SpecularColour;
-    vec4 AmbientColour = vec4(Light.Colour * Light.AmbientIntensity, 1);
+    vec4 BaseColour = vec4(Light.Colour * Light.AmbientIntensity, 1); // ambient colour
 
     float DiffuseFactor = dot(Normal, -LightDir);
-    
     if (DiffuseFactor > 0) {
-        DiffuseColour = vec4(Light.Colour * Light.DiffuseIntensity * DiffuseFactor, 1);
-        float SpecularFactor = dot(normalize(Cam.Position - Position), normalize(reflect(LightDir, Normal)));
+        BaseColour += vec4(Light.Colour * Light.DiffuseIntensity * DiffuseFactor, 1); // diffuse colour
         
+        float SpecularFactor = dot(normalize(Cam.Position - Position), normalize(reflect(LightDir, Normal)));
         if (SpecularFactor > 0) {
             SpecularFactor = pow(SpecularFactor, SpecularPower);
-            SpecularColour = vec4(Light.Colour * SpecularFactor * SpecularIntensity, 1);
+            BaseColour += vec4(Light.Colour * SpecularFactor * SpecularIntensity, 1); // specular colour
         }
     }
-    vec4 BaseColour = AmbientColour + DiffuseColour + SpecularColour;
-    float Atten = max(Attenuation.x * Distance * Distance + Attenuation.y * Distance + Attenuation.z, 1);
 
+    float Atten = max(Attenuation.x * Distance * Distance + Attenuation.y * Distance + Attenuation.z, 1);
     Colour = vec4(Albedo.xyz, 1) * BaseColour / Atten;
 }

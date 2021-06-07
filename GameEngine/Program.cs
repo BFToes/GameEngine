@@ -62,28 +62,31 @@ namespace GameEngine
         public World() : base(800, 800)
         {
             Camera.Transform.Position = new Vector3(0, 2, 3);
+            Process += (delta) => Time += delta;
 
-            const int No = 4;
-            for (int y = 0; y < No; y++)
+            
+            for (int y = 0; y < Test.TotalObjects; y++)
             {
-                for (int x = 0; x < No; x++)
+                for (int x = 0; x < Test.TotalObjects; x++)
                 {
-                    var R = new Test(this);
-                    R.Transform.Position = new Vector3((x - (No - 1) / 2f) * 1, 0.01f, (y - (No - 1) / 2f) * 1);
-                    //Process += (delta) => R.Transform.Position = new Vector3(0, MathF.Sin(Time), 0);
+                    var R = new Test(x, y, this);
+                    Process += R.Process;
                 }
             }
-            var RO4 = new Floor(this);
-            var RL1 = new TestLight_Point(this, 0, 0, 0, 0.5f, 0.5f, 0);
-            var RL2 = new TestLight_Point(this, 0, 0, 0, 0, 0.5f, 0.5f);
-            var RL3 = new TestLight_Point(this, 0, 0, 0, 0.5f, 0, 0.5f);
-            var RL4 = new TestLight_Direction(this, 1.5f, -1, 0.5f, 0.1f, 0.1f, 0.1f);
 
-            Process += (delta) => Time += delta;
-            Process += (delta) => RL1.Position = new Vector3(MathF.Sin(Time) * 4, 3, MathF.Cos(Time) * 4);
-            Process += (delta) => RL2.Position = new Vector3(MathF.Sin(Time + 2 * MathF.PI / 3) * 6, 1, MathF.Cos(Time + 2 * MathF.PI / 3) * 6);
-            Process += (delta) => RL3.Position = new Vector3(MathF.Sin(Time + 4 * MathF.PI / 3) * 6, 1, MathF.Cos(Time + 4 * MathF.PI / 3) * 6);
-            Process += (delta) => RL4.Direction = new Vector3(MathF.Sin(Time * 2) * 4, -3, MathF.Cos(Time * 2) * 4);
+
+            for (float n = 0; n < 1; n += 1f / TestLight.TotalLights)
+            {
+                var L = new TestLight(this, n, n, 1 - n, n);
+                Process += L.Process;
+
+            }
+
+            var RO4 = new Floor(this);
+            
+            
+
+            //Process += (delta) => RL4.Direction = new Vector3(MathF.Sin(Time * 2), -1, MathF.Cos(Time * 2));
         }
     }
     class Floor : RenderObject<Vertex3D>
@@ -104,10 +107,16 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
+        public const int TotalObjects = 4;
+        public float x;
+        public float y;
         private Occluder occluder = new Occluder("Resources/Meshes/belly button.obj");
         private static Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
-        public Test(Scene Scene) : base(mesh)
+        public Test(float x, float y, Scene Scene) : base(mesh)
         {
+            this.x = x;
+            this.y = y;
+
             Add(occluder);
             Transform.Position = new Vector3();
             Transform.Scale = new Vector3(0.1f, 0.1f, 0.1f);
@@ -117,18 +126,30 @@ namespace GameEngine
             Material.SetUniform("World", Transform.Matrix);
             Scene.Add(this);
         }
+        public void Process(float delta)
+        {
+            Transform.Position = new Vector3(x - (TotalObjects - 1) / 2f, MathF.Sin((y + x) * 0.2f) + 0.01f, y - (TotalObjects - 1) / 2f);
+        }
     }
 
-    class TestLight_Point : Light_Pnt
+    class TestLight : Light_Pnt
     {
-        public TestLight_Point(Scene Scene, float Px = 0, float Py = 1, float Pz = 0, float r = 1, float g = 1, float b = 1) : base(new Vector3(Px, Py, Pz), new Vector3(r, g, b))
+        public const float Radius = 4;
+        public const int TotalLights = 3;
+        private float n;
+        public TestLight(Scene Scene, float n, float r = 1, float g = 1, float b = 1) : base(new Vector3(0, 0, 0), new Vector3(r, g, b))
         {
+            this.n = n;
             Scene.Add(this);
+        }
+        public void Process(float delta)
+        {
+            Position = new Vector3(MathF.Sin(2 * MathF.PI * n) * Radius, 3, MathF.Cos(2 * MathF.PI * n) * Radius);
         }
     }
     class TestLight_Direction : Light_Dir
     {
-        public TestLight_Direction(Scene Scene, float Dx = 0, float Dy = 1, float Dz = 0, float r = 1, float g = 1, float b = 1) : base(new Vector3(Dx, Dy, Dz), new Vector3(r, g, b))
+        public TestLight_Direction(Scene Scene, float Dx = 0, float Dy = -1, float Dz = 1, float r = 1, float g = 1, float b = 1) : base(new Vector3(Dx, Dy, Dz), new Vector3(r, g, b))
         {
             Scene.Add(this);
         }
