@@ -6,7 +6,7 @@ using OpenTK.Mathematics;
 using Graphics.Shaders;
 using Graphics.Resources;
 using Graphics.Rendering;
-namespace Graphics.SceneObjects
+namespace Graphics.Entities
 {
     class Light_Dir : Entity, VolumeLight
     {

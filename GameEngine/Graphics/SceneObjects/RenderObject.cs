@@ -3,7 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using Graphics.Shaders;
 using Graphics.Resources;
-namespace Graphics.SceneObjects
+namespace Graphics.Entities
 {
     interface IRenderable
     {
@@ -27,7 +27,7 @@ namespace Graphics.SceneObjects
             RenderMesh = Mesh;
 
 
-            SetWorldMatrix += (WorldMatrix) => Material.SetUniform("Model", WorldMatrix);
+            Set_WorldMatrix += (WorldMatrix) => Material.SetUniform("Model", WorldMatrix);
             Material.SetUniformBlock("CameraBlock", 0); // 0 = Camera Block Binding Index
         }
       

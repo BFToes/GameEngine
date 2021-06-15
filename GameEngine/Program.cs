@@ -6,7 +6,7 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using Graphics.Resources;
 using Graphics.Rendering;
-using Graphics.SceneObjects;
+using Graphics.Entities;
 namespace GameEngine
 {
     class Program
@@ -77,13 +77,13 @@ namespace GameEngine
 
             for (float n = 0; n < 1; n += 1f / TestLight.TotalLights)
             {
-                var L = new TestLight(this, n, n, 1 - n, n);
+                var L = new TestLight(this, n);
                 Process += L.Process;
-
             }
 
             var RO4 = new Floor(this);
-            
+
+            this.Add(new Light_Dir(new Vector3(0, -1, 1), new Vector3(0.2f)));
             
 
             //Process += (delta) => RL4.Direction = new Vector3(MathF.Sin(Time * 2), -1, MathF.Cos(Time * 2));
@@ -132,19 +132,23 @@ namespace GameEngine
         }
     }
 
-    class TestLight : Light_Pnt
+    class TestLight : RenderObject<Vertex3D>
     {
         public const float Radius = 4;
         public const int TotalLights = 3;
+        private Light_Pnt Light;
         private float n;
-        public TestLight(Scene Scene, float n, float r = 1, float g = 1, float b = 1) : base(new Vector3(0, 0, 0), new Vector3(r, g, b))
+        public TestLight(Scene Scene, float n) : base(Mesh.Cube)
         {
             this.n = n;
+            Light = new Light_Pnt(Vector3.Zero, Vector3.One);
+            Transform.Scale = new Vector3(0.1f);
+            this.Add(Light);
             Scene.Add(this);
         }
         public void Process(float delta)
         {
-            Position = new Vector3(MathF.Sin(2 * MathF.PI * n) * Radius, 3, MathF.Cos(2 * MathF.PI * n) * Radius);
+            Transform.Position = new Vector3(MathF.Sin(2 * MathF.PI * n) * Radius, 1, MathF.Cos(2 * MathF.PI * n) * Radius);
         }
     }
     class TestLight_Direction : Light_Dir

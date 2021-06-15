@@ -6,9 +6,9 @@ using OpenTK.Mathematics;
 using Graphics.Shaders;
 using Graphics.Resources;
 using Graphics.Rendering;
-namespace Graphics.SceneObjects
+namespace Graphics.Entities
 {
-    class Light_Pnt : SpatialEntity<AbstractTransform3D>, VolumeLight
+    class Light_Pnt : SpatialEntity<TransformAligned3D>, VolumeLight
     {
         #region Inherited Light Setup
         private static readonly ShaderProgram ShadowProgram = ShaderProgram.ReadFrom(
@@ -65,16 +65,6 @@ namespace Graphics.SceneObjects
         private float aintensity;
         private float dintensity;
 
-        public Vector3 Position
-        {
-            get => Transform.Position;
-            set
-            {
-                LightBlock.Set(80, value);
-                Transform.Position = value;
-                LightBlock.Set(0, Transform.Matrix);
-            }
-        }
         public Vector3 Colour
         {
             get => colour;
@@ -102,12 +92,14 @@ namespace Graphics.SceneObjects
         }
         #endregion
 
-        public Light_Pnt(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f) : base(new Transform3D())
+        public Light_Pnt(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f) : base(new TransformAligned3D())
         {
-            this.Position = Position;
-            colour = Colour;
-            aintensity = AmbientIntensity;
-            dintensity = DiffuseIntensity;
+            Set_WorldMatrix += (M) => LightBlock.Set(0, M);
+            Set_WorldMatrix += (M) => LightBlock.Set(80, WorldPosition);
+
+            Transform.Position = Position;
+            
+            colour = Colour; aintensity = AmbientIntensity; dintensity = DiffuseIntensity;
             Transform.Scale = new Vector3(CalcDistance(Colour, Attenuation, DiffuseIntensity));
 
             LightBlock.Set(new PointLightData(Transform.Matrix, Position, colour, aintensity, dintensity));
@@ -116,9 +108,9 @@ namespace Graphics.SceneObjects
         public void UseLight()
         {
             VolumeLight.Use(this);
-            ShadowProgram.SetUniform("LightPosition", Position);
-        }
 
+            var L = LightBlock.Get<PointLightData>();
+        }
         private static float CalcDistance(Vector3 Colour, Vector3 Curve, float DIntensity)
         {
             float MaxChannel = MathF.Max(MathF.Max(Colour.X, Colour.Y), Colour.Z);

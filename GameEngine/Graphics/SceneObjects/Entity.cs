@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using OpenTK.Mathematics;
 
-namespace Graphics.SceneObjects
+namespace Graphics.Entities
 {
     class Entity
     {
@@ -32,20 +32,27 @@ namespace Graphics.SceneObjects
         }
     }
 
-    class SpatialEntity<TransformType> : Entity where TransformType : ITransform
+    interface Spatial
+    {
+        public event Action<Matrix4> Set_WorldMatrix;
+        public Matrix4 WorldMatrix { get; }
+    }
+
+    class SpatialEntity<TransformType> : Entity, Spatial where TransformType : ITransform
     {
         private Matrix4 matrix = Matrix4.Identity;
         private TransformType transform;
-        public event Action<Matrix4> SetWorldMatrix = delegate { };
+        public event Action<Matrix4> Set_WorldMatrix = delegate { };
         public Matrix4 WorldMatrix 
         { 
             get => matrix;
             private set
             {
                 matrix = value;
-                SetWorldMatrix(value);
+                Set_WorldMatrix(value);
             }
         }
+        public Vector3 WorldPosition => new Vector3(WorldMatrix.Column3);
         
         public virtual TransformType Transform {
             get => transform;
@@ -72,19 +79,19 @@ namespace Graphics.SceneObjects
             this.Transform.Set_Transform += UpdateMatrix;
         }
         
-        public void Add(SpatialEntity<TransformType> Child)
+        public void Add<T>(SpatialEntity<T> Child) where T : ITransform
         {
             base.AddChild(Child);
             Transform.Set_Transform += Child.UpdateMatrix;
         }
-        public void Remove(SpatialEntity<TransformType> Child)
+        public void Remove<T>(SpatialEntity<T> Child) where T : ITransform
         {
             base.RemoveChild(Child);
             Transform.Set_Transform += Child.UpdateMatrix;
         }
         private void UpdateMatrix(Matrix4 _)
         {
-            if (Parent != null) WorldMatrix = ((SpatialEntity<TransformType>)Parent).WorldMatrix * Transform.Matrix;
+            if (Parent != null)  WorldMatrix = ((Spatial)Parent).WorldMatrix * Transform.Matrix;
             else WorldMatrix = Transform.Matrix;
         }
     }

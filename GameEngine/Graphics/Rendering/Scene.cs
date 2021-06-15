@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using OpenTK.Mathematics;
-using Graphics.SceneObjects;
+using Graphics.Entities;
 namespace Graphics.Rendering
 {
     /* FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
@@ -203,7 +203,7 @@ namespace Graphics.Rendering
                 // this frame buffer draws to multiple textures at once
                 GL.DrawBuffers(3, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 });
 
-                RefreshColour = new Color4(0, 0, 0, 0);
+                RefreshColour = Color4.Blue;//new Color4(0, 0, 0, 0);
             }
 
             public override void Use()

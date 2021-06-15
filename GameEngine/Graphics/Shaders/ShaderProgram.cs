@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ListExtensions;
-
 using Graphics.Resources;
 namespace Graphics.Shaders
 {
@@ -16,10 +15,7 @@ namespace Graphics.Shaders
         private readonly Dictionary<string, int> UniformLocation; // uniform lookup
         private readonly Dictionary<string, int> UniformBlockLocation; // uniform block lookup
         private Dictionary<string, Func<dynamic>> UpdatingUniforms; // uniform updater functions
-        // texture unit management
-        private int[] ProgTex = new int[32].Fill(-1); // texture unit
-        private int[] TexUseCount = new int[32]; // number of times texture used
-        private static int[] TextureUnits = new int[32]; // bound texture units
+
         
         #region Static Constructors
         public static ShaderProgram From(string vertexcode, string geometrycode, string fragmentcode)
@@ -191,7 +187,10 @@ namespace Graphics.Shaders
         public void SetUniform(string Name, IEnumerable<Matrix4> ParamArray) { if (UniformLocation.TryGetValue(Name, out int Location)) GL.ProgramUniformMatrix4(Handle, Location, ParamArray.Count(), false, ParamArray.SelectMany((M) => new float[] { M.M11, M.M12, M.M13, M.M14, M.M21, M.M22, M.M23, M.M24, M.M31, M.M32, M.M33, M.M34, M.M41, M.M42, M.M43, M.M44 }).ToArray()); }
         #endregion
         #region Sampler Uniforms
-
+        // texture unit management
+        private int[] ProgTex = new int[32].Fill(-1); // texture unit
+        private int[] TexUseCount = new int[32]; // number of times texture used
+        private static int[] TextureUnits = new int[32]; // bound texture units
         /// <summary>
         /// sets The uniform 'Name' to the texture found at 'TexPath'
         /// </summary>
@@ -206,7 +205,7 @@ namespace Graphics.Shaders
         /// </summary>
         public void SetUniformSampler2D(string Name, int Tex)
         {
-            if (!UniformLocation.TryGetValue(Name, out int Location)) return;
+            if (!UniformLocation.TryGetValue(Name, out int Location)) return; // doesnt throw error cos compiler can remove textures
             UnAssignsTextureUnit(Name, Location);
             AssignTextureUnit(Tex, out int Unit);
             GL.ProgramUniform1(Handle, Location, Unit);
@@ -216,12 +215,13 @@ namespace Graphics.Shaders
         /// If texture not used for this unit, allows it to be re assigned.
         /// </summary>
         /// <param name="Name">the name of the uniform</param>
-        /// <param name="Index">Index of texture thats being unassigned</param>
-        private void UnAssignsTextureUnit(string Name, int Index)
+        /// <param name="Location">Index of texture thats being unassigned</param>
+        private void UnAssignsTextureUnit(string Name, int Location)
         {
-            GL.GetUniform(Handle, Index, out int Unit); // read uniform
-            if (TexUseCount[Unit]-- == 0) // deincrement UnitUseCount, if Texture no longer in use
-                ProgTex[Unit] = -1; // remove texture from program textures
+            GL.GetUniform(Handle, Location, out int Unit); // read uniform
+            if (--TexUseCount[Unit] == 0)// deincrement UnitUseCount
+                ProgTex[Unit] = -1; // if Texture no longer in use, remove texture from program textures
+            
         }
 
         /// <summary>
@@ -250,12 +250,11 @@ namespace Graphics.Shaders
         /// <summary>
         /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
         /// </summary>
-        /// <param name="TexStartIndex">For optimisation, if texture shared across multiple objects can skip reloading Texture Unit</param>
         public void Use()
         {
             GL.UseProgram(Handle); // tell openGL to use this object
 
-            for(int Unit = 0; TexUseCount[Unit] != 0; Unit++)
+            for(int Unit = 0; Unit < 32; Unit++)
             {
                 int TexID = ProgTex[Unit];
                 if (TextureUnits[Unit] != TexID) // if not bound
@@ -332,7 +331,6 @@ namespace Graphics.Shaders
         /// creates a new shader in OpenGL
         /// </summary>
         /// <param name="Type">shader Type</param>
-        /// <param name="path">the path to the shader</param>
         /// <returns>Shader ID</returns>
         private int LoadShader(ShaderType Type, string code)
         {

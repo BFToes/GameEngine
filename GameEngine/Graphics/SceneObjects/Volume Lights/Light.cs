@@ -7,7 +7,7 @@ using Graphics.Shaders;
 using Graphics.Resources;
 using Graphics.Rendering;
 
-namespace Graphics.SceneObjects
+namespace Graphics.Entities
 {
     public interface Light
     {       
@@ -67,13 +67,14 @@ namespace Graphics.SceneObjects
         protected static void Use(VolumeLight Light)
         {
             GL.Clear(ClearBufferMask.StencilBufferBit);
-
+            
             GL.DepthMask(false);
             if (!SHOW_EDGE) GL.ColorMask(false, false, false, false);
             GL.Enable(EnableCap.DepthClamp);
 
             Light.LightBlock.Bind();
             Light.ShadowProgram.Use();
+
         }
         protected static void Illuminate(VolumeLight Light)
         {

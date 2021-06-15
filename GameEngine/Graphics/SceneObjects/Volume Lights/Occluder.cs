@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Graphics.Resources;
 using OpenTK.Graphics.OpenGL4;
-using Graphics.Shaders;
-using OpenTK.Mathematics;
 
-namespace Graphics.SceneObjects
+namespace Graphics.Entities
 {
     public interface IOccluder
     {
@@ -21,8 +19,8 @@ namespace Graphics.SceneObjects
         public Occluder(string path) : base(new Transform3D())
         {
             OccMesh = Mesh.Construct(path, 
-                (p, n, t) => new Simple3D(p), // simple3D only stores positional data
-                PrimitiveType.TrianglesAdjacency); // all occluders must use Triangle Adjacency
+                (p, n, t) => new Simple3D(p), // simple3D only stores positional data, some shadows require normal data
+                PrimitiveType.TrianglesAdjacency); // volume shadows require triangle adjacency
         }
 
         public void Occlude(Light Light)

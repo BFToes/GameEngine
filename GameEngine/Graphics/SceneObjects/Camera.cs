@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using Graphics.Shaders;
 
-namespace Graphics.SceneObjects
+namespace Graphics.Entities
 {
     class Camera : SpatialEntity<AbstractTransform3D>
     {

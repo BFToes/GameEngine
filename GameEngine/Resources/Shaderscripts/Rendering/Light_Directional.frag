@@ -31,20 +31,18 @@ void main(void)
     vec4 Albedo = texture(AlbedoTexture, TexCoord);
     vec3 Normal = normalize(texture(NormalTexture, TexCoord).xyz);
     
-    vec4 DiffuseColour;
-    vec4 SpecularColour;
-
+    vec4 BaseColour = vec4(0);
     float DiffuseFactor = dot(Normal, -Light.Direction);
     
     if (DiffuseFactor > 0) {
-        DiffuseColour = vec4(Light.Colour * Light.DiffuseIntensity * DiffuseFactor, 1);
+        BaseColour = vec4(Light.Colour * Light.DiffuseIntensity * DiffuseFactor, 1);
         float SpecularFactor = dot(normalize(Cam.Position - Position), normalize(reflect(Light.Direction, Normal)));
         
         if (SpecularFactor > 0) {
             SpecularFactor = pow(SpecularFactor, SpecularPower);
-            SpecularColour = vec4(Light.Colour * SpecularFactor * SpecularIntensity, 1);
+            BaseColour += vec4(Light.Colour * SpecularFactor * SpecularIntensity, 1);
         }
     }
 
-    Colour = vec4(Albedo.xyz, 1) * (DiffuseColour + SpecularColour);
+    Colour = vec4(Albedo.xyz, 1) * BaseColour;
 }

@@ -4,7 +4,6 @@ using System;
 
 namespace Graphics
 {
-    [Obsolete]
     public abstract class AbstractTransform2D : ITransform
     {
         protected Matrix2 RotMatrix = Matrix2.Identity;
