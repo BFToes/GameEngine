@@ -70,6 +70,7 @@ namespace Graphics.Entities
             
             GL.DepthMask(false);
             if (!SHOW_EDGE) GL.ColorMask(false, false, false, false);
+            GL.Enable(EnableCap.PolygonOffsetFill);
             GL.Enable(EnableCap.DepthClamp);
 
             Light.LightBlock.Bind();
@@ -81,11 +82,12 @@ namespace Graphics.Entities
             GL.DepthMask(true);
             GL.ColorMask(true, true, true, true);
             GL.Disable(EnableCap.DepthClamp);
+            GL.Disable(EnableCap.PolygonOffsetFill);
 
             GL.Disable(EnableCap.DepthTest);
             GL.Enable(EnableCap.Blend);
             GL.StencilFunc(StencilFunction.Equal, 0x0, 0xff);
-
+            
             Light.LightProgram.Use();
             Light.LightMesh.Draw();
 

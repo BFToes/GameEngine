@@ -23,7 +23,7 @@ layout(std140) uniform LightBlock {
     float DiffuseIntensity;
 } Light;
 
-void EmitEdge( vec3 a, vec3 b ) {
+void EmitEdge(vec3 a, vec3 b) {
   vec3 LightDir = normalize(a - Light.Position.xyz); 
   gl_Position = Cam.Projection * Cam.View * vec4(a + LightDir * Epsilon, 1);
   EmitVertex();
@@ -39,31 +39,29 @@ void EmitEdge( vec3 a, vec3 b ) {
   EmitVertex();
   EndPrimitive();
 }
+
+bool FacesLight(vec3 P1, vec3 P2, vec3 P3)
+{
+  vec3 N = cross(P2 - P1, P3 - P1);
+  return dot(N, Light.Position.xyz - P1) > 0 || dot(N, Light.Position.xyz - P2) > 0 || dot(N, Light.Position.xyz - P3) > 0; 
+}
+
 void main(void)
 {
-	vec3 e1 = VPos[2] - VPos[0];
-    vec3 e2 = VPos[4] - VPos[0];
-    vec3 e3 = VPos[1] - VPos[0];
-    vec3 e4 = VPos[3] - VPos[2];
-    vec3 e5 = VPos[4] - VPos[2];
-    vec3 e6 = VPos[5] - VPos[0];
-
     vec3 LightDir = normalize(Light.Position - VPos[0]);
 
     // Handle only light facing triangles
-    if (dot(normalize(cross(e1,e2)), LightDir) > 0) {
+    if (FacesLight(VPos[0], VPos[2], VPos[4])) {
 
-        if (dot(cross(e3,e1), LightDir) <= 0) {
+        if (!FacesLight(VPos[0], VPos[1], VPos[2]))
             EmitEdge(VPos[0], VPos[2]);
-        }
-
-        if (dot(cross(e4,e5), Light.Position - VPos[2]) <= 0) {
+        
+        if (!FacesLight(VPos[2], VPos[3], VPos[4]))
             EmitEdge(VPos[2], VPos[4]);
-        }
-
-        if (dot(cross(e2,e6), Light.Position - VPos[4]) <= 0) {
+        
+        if (!FacesLight(VPos[4], VPos[5], VPos[0]))
             EmitEdge(VPos[4], VPos[0]);
-        }
+        
 
         // render the front cap
         gl_Position = Cam.Projection * Cam.View * vec4(VPos[0] + normalize(VPos[0] - Light.Position) * Epsilon, 1.0);
@@ -77,13 +75,13 @@ void main(void)
         EndPrimitive();
  
         // render the back cap
-        gl_Position = Cam.Projection * Cam.View * vec4(VPos[0] - Light.Position, 0.0);
+        gl_Position = Cam.Projection * Cam.View * vec4(VPos[0] - Light.Position, 0);
         EmitVertex();
 
-        gl_Position = Cam.Projection * Cam.View * vec4(VPos[4] - Light.Position, 0.0);
+        gl_Position = Cam.Projection * Cam.View * vec4(VPos[4] - Light.Position, 0);
         EmitVertex();
 
-        gl_Position = Cam.Projection * Cam.View * vec4(VPos[2] - Light.Position, 0.0);
+        gl_Position = Cam.Projection * Cam.View * vec4(VPos[2] - Light.Position, 0);
         EmitVertex();
         EndPrimitive();
     }

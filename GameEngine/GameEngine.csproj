@@ -34,7 +34,7 @@
     <None Update="Resources\Shaderscripts\Bilinear Warp\BilinearW.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Dir Light.frag">
+    <None Update="Resources\Shaderscripts\SolidColour.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Rendering\Light_Point.vert">

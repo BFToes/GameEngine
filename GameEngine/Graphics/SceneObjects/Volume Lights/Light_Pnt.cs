@@ -28,7 +28,7 @@ namespace Graphics.Entities
         static Light_Pnt()
         {
             // because this is an inherited static constructor it will get called on first use of the object
-            Attenuation = new Vector3(0.1f, 0.1f, 0);
+            Attenuation = new Vector3(0.01f, 0.0f, 0);
             ShadowProgram.SetUniformBlock("CameraBlock", 0);
             ShadowProgram.SetUniformBlock("LightBlock", 1);
             LightProgram.SetUniformBlock("CameraBlock", 0);
@@ -72,55 +72,59 @@ namespace Graphics.Entities
             {
                 colour = value;
                 LightBlock.Set(0, value);
-                Transform.Scale = new Vector3(CalcDistance(colour, Attenuation, dintensity));
+                LightBlock.Set(92, CalcIntensity(colour, Attenuation, Transform.Scale));
             }
         }
-        public float AmbientIntensity
+        public float AmbientIntensity // might delete
         {
             get => aintensity;
-            set => LightBlock.Set(16, value);
+            set => LightBlock.Set(76, aintensity = value);
         }
         public float DiffuseIntensity
         {
             get => dintensity;
-            set
+            set 
             {
                 dintensity = value;
-                LightBlock.Set(28, value);
-                Transform.Scale = new Vector3(CalcDistance(colour, Attenuation, dintensity));
+                // setting Lightblock unneccessary as its set when transform is changed
+                Transform.Scale = CalcScale(Colour, Attenuation, value);
             }
         }
         #endregion
 
-        public Light_Pnt(Vector3 Position, Vector3 Colour, float DiffuseIntensity = 1f, float AmbientIntensity = 0.2f) : base(new TransformAligned3D())
+        public Light_Pnt(Vector3 Position, Vector3 Colour, float AmbientIntensity = 0.2f, float DiffuseIntensity = 8f) : base(new TransformAligned3D())
         {
+            colour = Colour; 
+            Transform.Position = Position;
+            dintensity = CalcIntensity(Colour, Attenuation, Transform.Scale);
+            LightBlock.Set(new PointLightData(Transform.Matrix, Position, colour, aintensity, dintensity));
+
             Set_WorldMatrix += (M) => LightBlock.Set(0, M);
             Set_WorldMatrix += (M) => LightBlock.Set(80, WorldPosition);
-
-            Transform.Position = Position;
-            
-            colour = Colour; aintensity = AmbientIntensity; dintensity = DiffuseIntensity;
-            Transform.Scale = new Vector3(CalcDistance(Colour, Attenuation, DiffuseIntensity));
-
-            LightBlock.Set(new PointLightData(Transform.Matrix, Position, colour, aintensity, dintensity));
+            Set_WorldMatrix += (M) => LightBlock.Set(92, CalcIntensity(Colour, Attenuation, M.ExtractScale()));
         }
+        
+        private static float CalcIntensity(Vector3 Color, Vector3 Curve, Vector3 Scale)
+        {
+            float C = MathF.Max(MathF.Max(Color.X, Color.Y), Color.Z);
+            float S = MathF.Max(MathF.Max(Scale.X, Scale.Y), Scale.Z);
 
+            return (Curve.X * S * S + Curve.Y * S + Curve.Z) / Precision;
+        }
+        private static Vector3 CalcScale(Vector3 Color, Vector3 Curve, float Intensity)
+        {
+            float MaxChannel = MathF.Max(MathF.Max(Color.X, Color.Y), Color.Z);
+            if (Curve.X == 0) 
+                return new Vector3((Precision - Curve.Z) / Curve.Y); // linear
+            float discrim = Curve.Y * Curve.Y - 4 * Curve.X * (Curve.Z - Precision * MaxChannel * Intensity);
+            if (discrim >= 0) 
+                return new Vector3((-Curve.Y + MathF.Sqrt(discrim)) / 2 / Curve.X); // quadratic
+            else
+                throw new Exception("Light attenuation equation unsolveable. try changing the values to actually cross the x axis");
+        }
         public void UseLight()
         {
             VolumeLight.Use(this);
-
-            var L = LightBlock.Get<PointLightData>();
-        }
-        private static float CalcDistance(Vector3 Colour, Vector3 Curve, float DIntensity)
-        {
-            float MaxChannel = MathF.Max(MathF.Max(Colour.X, Colour.Y), Colour.Z);
-            if (Curve.X == 0) 
-                return (Precision - Curve.Z) / Curve.Y; // linear
-            float discrim = Curve.Y * Curve.Y - 4 * Curve.X * (Curve.Z - Precision * MaxChannel * DIntensity);
-            if (discrim >= 0) 
-                return (-Curve.Y + MathF.Sqrt(discrim)) / 2 / Curve.X; // quadratic
-            else 
-                throw new Exception("Light must degrade with distance so light curve exponent or linear component must be greater than 0");
         }
         void Light.Illuminate()
         {

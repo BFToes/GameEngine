@@ -1,12 +1,12 @@
-﻿using OpenTK.Mathematics;
-using OpenTK.Windowing.Desktop;
-using System;
-using OpenTK.Graphics.OpenGL4;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using Graphics.Resources;
+﻿using Graphics.Entities;
 using Graphics.Rendering;
-using Graphics.Entities;
+using Graphics.Resources;
+using OpenTK.Graphics.OpenGL4;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
 namespace GameEngine
 {
     class Program
@@ -65,28 +65,18 @@ namespace GameEngine
             Process += (delta) => Time += delta;
 
             
-            for (int y = 0; y < Test.TotalObjects; y++)
+            for (int y = 0; y < Test.SquareLength; y++)
             {
-                for (int x = 0; x < Test.TotalObjects; x++)
+                for (int x = 0; x < Test.SquareLength; x++)
                 {
                     var R = new Test(x, y, this);
-                    Process += R.Process;
+                    Process += R.OnProcess;
                 }
             }
 
 
-            for (float n = 0; n < 1; n += 1f / TestLight.TotalLights)
-            {
-                var L = new TestLight(this, n);
-                Process += L.Process;
-            }
-
             var RO4 = new Floor(this);
-
-            this.Add(new Light_Dir(new Vector3(0, -1, 1), new Vector3(0.2f)));
-            
-
-            //Process += (delta) => RL4.Direction = new Vector3(MathF.Sin(Time * 2), -1, MathF.Cos(Time * 2));
+            this.Add(new Light_Dir(new Vector3(0, -1, -1), new Vector3(0.2f)));
         }
     }
     class Floor : RenderObject<Vertex3D>
@@ -107,11 +97,12 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
-        public const int TotalObjects = 4;
+        public const int SquareLength = 1;
         public float x;
         public float y;
         private Occluder occluder = new Occluder("Resources/Meshes/belly button.obj");
         private static Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
+        
         public Test(float x, float y, Scene Scene) : base(mesh)
         {
             this.x = x;
@@ -119,43 +110,56 @@ namespace GameEngine
 
             Add(occluder);
             Transform.Position = new Vector3();
-            Transform.Scale = new Vector3(0.1f, 0.1f, 0.1f);
+            Transform.Scale = new Vector3(1f, 1f, 1f);
 
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUniform("World", Transform.Matrix);
+
+            for (int n = 0; n < TestLight.TotalLights; n++)
+            {
+                var L = new TestLight(Scene, n);
+                Add(L);
+            }
+
             Scene.Add(this);
         }
-        public void Process(float delta)
+        public override void OnProcess(float delta)
         {
-            Transform.Position = new Vector3(x - (TotalObjects - 1) / 2f, MathF.Sin((y + x) * 0.2f) + 0.01f, y - (TotalObjects - 1) / 2f);
+            Transform.Position = new Vector3(x - (SquareLength - 1) / 2f, MathF.Sin((y + x) * 0.2f) + 0.01f, y - (SquareLength - 1) / 2f);
+            base.OnProcess(delta);
         }
     }
 
     class TestLight : RenderObject<Vertex3D>
     {
-        public const float Radius = 4;
+        public const float Radius = 3;
         public const int TotalLights = 3;
         private Light_Pnt Light;
-        private float n;
-        public TestLight(Scene Scene, float n) : base(Mesh.Cube)
+        private float time;
+        private float Floatn;
+        private static Color4[] Colours = new Color4[] { Color4.Red, Color4.Lime, Color4.Blue, Color4.Yellow, Color4.Cyan, Color4.Magenta };
+        public TestLight(Scene Scene, int n) : base(Mesh.Cube,
+            "Resources/shaderscripts/Default.vert",
+            "Resources/shaderscripts/SolidColour.frag")
         {
-            this.n = n;
-            Light = new Light_Pnt(Vector3.Zero, Vector3.One);
-            Transform.Scale = new Vector3(0.1f);
+            Vector3 C = new Vector3(Colours[n].R, Colours[n].G, Colours[n].B);
+
+            Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
+            Material.SetUniform("DiffuseColor", C);
+            this.Transform.Scale = new Vector3(0.1f);
+            Light = new Light_Pnt(Vector3.Zero, C);
+            Light.DiffuseIntensity = 25;
+
+            this.Floatn = (float)n / TotalLights;
             this.Add(Light);
             Scene.Add(this);
         }
-        public void Process(float delta)
-        {
-            Transform.Position = new Vector3(MathF.Sin(2 * MathF.PI * n) * Radius, 1, MathF.Cos(2 * MathF.PI * n) * Radius);
-        }
-    }
-    class TestLight_Direction : Light_Dir
-    {
-        public TestLight_Direction(Scene Scene, float Dx = 0, float Dy = -1, float Dz = 1, float r = 1, float g = 1, float b = 1) : base(new Vector3(Dx, Dy, Dz), new Vector3(r, g, b))
-        {
-            Scene.Add(this);
+        public override void OnProcess(float delta)
+        { 
+            time += delta;
+            Transform.Position = new Vector3(MathF.Sin(2 * MathF.PI * Floatn + time) * Radius, 5.5f, MathF.Cos(2 * MathF.PI * Floatn + time) * Radius);
+            base.OnProcess(delta);
         }
     }
 }

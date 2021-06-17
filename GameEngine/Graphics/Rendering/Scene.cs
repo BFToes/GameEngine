@@ -5,7 +5,13 @@ using OpenTK.Mathematics;
 using Graphics.Entities;
 namespace Graphics.Rendering
 {
-    /* FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
+    /* TILED DEFERRED ->        Its back baby. I am an indecisive piece of shit. This would meant tearing out
+     *                          large chunks of whats already been implemented. but basically split screen into
+     *                          little tiles. create view frustrum for that tile to camera, do some fancy search 
+     *                          or bruteforce to check which lights project onto each tile. then forward render
+     *                          with the smaller selection of lights. allows for better control 
+     * 
+     * FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
      *                          being rendered. just a good thing to have. This applies to lights and camera
      *                          I can also add an axis aligned bounding box around a mesh to optimise search.
     
@@ -24,7 +30,10 @@ namespace Graphics.Rendering
      * SHADOW PROBLEM ->        Fix with tesselation??? i could also increase epsilon with distance away from 
      *                          camera. the epsilon only needs to be small when the camera is nearby altern-
      *                          atively i could change the matrix order and use eplsilon after transform. this
-     *                          would be more efficient but harder to understand.
+     *                          would be more efficient but harder to understand. alright that wasnt the 
+     *                          problem. fuck knows what is. It looks like z fighting with the floor plain. Ive
+     *                          checked it doesnt only happen to the floor it happens to all objects in the scene
+     *                          but is effected by the normal of the plane
      *                          
      * SSAO ->                  screen space ambient occlusion.
      * 
@@ -77,7 +86,7 @@ namespace Graphics.Rendering
         {
             size = new Vector2i(Width, Height);
             GBuffer = new GeometryBuffer(Width, Height);
-            Camera = new Camera(50, Width, Height, 0.1f, 512);
+            Camera = new Camera(50, Width, Height, 0.125f, 512);
         }
 
         /// <summary>
@@ -124,8 +133,8 @@ namespace Graphics.Rendering
             Light.AlbedoTexture = GBuffer.AlbedoTexture;
             Light.NormalTexture = GBuffer.NormalTexture;
             Light.PositionTexture = GBuffer.PositionTexture;
-            Light.SpecularIntensity = 1.5f;
-            Light.SpecularPower = 5;
+            Light.SpecularIntensity = 0f;
+            Light.SpecularPower = 2;
 
             // blending functions
             GL.BlendEquation(BlendEquationMode.FuncAdd);
@@ -138,6 +147,9 @@ namespace Graphics.Rendering
 
             // cullface functions
             GL.CullFace(CullFaceMode.Back);
+
+            // polygon fix
+            GL.PolygonOffset(0.1f, 1f);
         }
 
         public void Add(Entity Entity)
@@ -198,12 +210,12 @@ namespace Graphics.Rendering
                 PositionTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment0, Width, Height);
                 NormalTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment1, Width, Height);
                 AlbedoTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment2, Width, Height);
-                DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent24, FramebufferAttachment.DepthAttachment, Width, Height);
+                DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent32, FramebufferAttachment.DepthAttachment, Width, Height);
 
                 // this frame buffer draws to multiple textures at once
                 GL.DrawBuffers(3, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 });
 
-                RefreshColour = Color4.Blue;//new Color4(0, 0, 0, 0);
+                RefreshColour = new Color4(0, 0, 0, 0);
             }
 
             public override void Use()

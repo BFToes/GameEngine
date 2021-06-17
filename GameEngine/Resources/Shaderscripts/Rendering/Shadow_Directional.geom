@@ -36,32 +36,29 @@ void EmitEdge( vec3 a, vec3 b, vec3 Dir, vec3 Dev) {
   EmitVertex();
   EndPrimitive();
 }
+
+bool FacesLight(vec3 P1, vec3 P2, vec3 P3, vec3 LightDir)
+{
+  return dot(cross(P2 - P1, P3 - P1), LightDir) > 0; 
+}
+
 void main(void)
 {
-	vec3 e1 = VPos[2] - VPos[0];
-    vec3 e2 = VPos[4] - VPos[0];
-    vec3 e3 = VPos[1] - VPos[0];
-    vec3 e4 = VPos[3] - VPos[2];
-    vec3 e5 = VPos[4] - VPos[2];
-    vec3 e6 = VPos[5] - VPos[0];
-
     vec3 LightDir = normalize(Light.Direction);
     vec3 Deviation = LightDir * Epsilon;
 
     // Handle only light facing triangles
-    if (dot(normalize(cross(e1,e2)), LightDir) > 0) {
+    if (FacesLight(VPos[0], VPos[2], VPos[4], LightDir)) {
 
-        if (dot(cross(e3,e1), LightDir) <= 0) {
+        if (!FacesLight(VPos[0], VPos[1], VPos[2], LightDir))
             EmitEdge(VPos[0], VPos[2], LightDir, Deviation);
-        }
-
-        if (dot(cross(e4,e5), LightDir) <= 0) {
+        
+        if (!FacesLight(VPos[2], VPos[3], VPos[4], LightDir))
             EmitEdge(VPos[2], VPos[4], LightDir, Deviation);
-        }
-
-        if (dot(cross(e2,e6), LightDir) <= 0) {
+        
+        if (!FacesLight(VPos[4], VPos[5], VPos[0], LightDir))
             EmitEdge(VPos[4], VPos[0], LightDir, Deviation);
-        }
+        
 
         // render the front cap
         gl_Position = Cam.Projection * Cam.View * vec4((VPos[0] + Deviation), 1.0);

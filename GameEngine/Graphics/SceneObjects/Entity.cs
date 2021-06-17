@@ -16,13 +16,17 @@ namespace Graphics.Entities
         public void AddChild(Entity Child)
         {
             Process += Child.OnProcess;
-            Child.Parent = this;
+            Child.OnAdded(this);
         }
         public void RemoveChild(Entity Child)
         {
             Process -= Child.OnProcess;
-            Child.Parent = null;
+            Child.OnRemoved(this);
         }
+        protected virtual void OnAdded(Entity Parent) => this.Parent = Parent;
+        protected virtual void OnRemoved(Entity Parent) => this.Parent = null;
+
+
         public int GetChildrenCount() => Process.GetInvocationList().Length - 1;
         public IEnumerable<Entity> GetChildren()
         {
@@ -52,25 +56,10 @@ namespace Graphics.Entities
                 Set_WorldMatrix(value);
             }
         }
-        public Vector3 WorldPosition => new Vector3(WorldMatrix.Column3);
+        public Vector3 WorldPosition => new Vector3(WorldMatrix.Row3);
         
         public virtual TransformType Transform {
             get => transform;
-            set { 
-                foreach (Entity Child in GetChildren()) 
-                {
-                    if (Child is SpatialEntity<TransformType>)
-                    {
-                        Transform.Set_Transform -= ((SpatialEntity<TransformType>)Child).UpdateMatrix; // unsubscribe all children from old transform
-                        value.Set_Transform += ((SpatialEntity<TransformType>)Child).UpdateMatrix; // subscribe all children to new transform
-                    }
-                        
-                }
-                Transform.Set_Transform -= UpdateMatrix; // unsubscribe self from old transform
-                value.Set_Transform += UpdateMatrix; // subscribe self to new transform
-
-                transform = value;
-            }
         }
 
         public SpatialEntity(TransformType Transform)
@@ -79,19 +68,20 @@ namespace Graphics.Entities
             this.Transform.Set_Transform += UpdateMatrix;
         }
         
-        public void Add<T>(SpatialEntity<T> Child) where T : ITransform
+        public virtual void Add<T>(SpatialEntity<T> Child) where T : ITransform
         {
             base.AddChild(Child);
-            Transform.Set_Transform += Child.UpdateMatrix;
+            Set_WorldMatrix += Child.UpdateMatrix;
+            Child.WorldMatrix = Child.Transform.Matrix * this.WorldMatrix;
         }
-        public void Remove<T>(SpatialEntity<T> Child) where T : ITransform
+        public virtual void Remove<T>(SpatialEntity<T> Child) where T : ITransform
         {
             base.RemoveChild(Child);
-            Transform.Set_Transform += Child.UpdateMatrix;
+            Set_WorldMatrix += Child.UpdateMatrix;
         }
         private void UpdateMatrix(Matrix4 _)
         {
-            if (Parent != null)  WorldMatrix = ((Spatial)Parent).WorldMatrix * Transform.Matrix;
+            if (Parent != null)  WorldMatrix = Transform.Matrix * ((Spatial)Parent).WorldMatrix;
             else WorldMatrix = Transform.Matrix;
         }
     }
