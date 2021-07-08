@@ -11,64 +11,62 @@ namespace Graphics.Resources
 {
 
 
-    /* Can Change This to behave more like texture manager
-     * would be better if meshes loaded from the same file were using the same mesh
-     * + complications with vertex because -> mesh loaded with different vertex types should be stored seperately
-     * + Meshes of certain types shouldnt be loaded with wrong vertex
-     * 
-     * 
+    /* MESH SKELETAL ANIM ->    like squish w armatures an stuff? ASIMP is a word? opgdev has a tutorial
+     * MESH NORMALIZATION ->    for bounding box on frustrum culling
+     * MESH SIMPLIFICATION ->   for occluder objects.edge colapse algorithm.
+     * MESH MANAGEMENT ->       like with sampler2Ds and it would be good to like idk merge that kinda resource
+     *                          management. hard to know if this is a good idea.
      */
     public abstract class Mesh
     {
         public int VertexCount { get; private set; }
         protected int VAO; // vertex array
         protected int VBO; // vertex buffer
+
         #region static Constructors
         /// <summary>
         /// creates mesh from vertex data
         /// </summary>
-        public static Mesh<Vert> From<Vert>(Vert[] Data, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
+        public static Mesh<Vert> From<Vert>(Vert[] Data, PrimitiveType Type = PrimitiveType.Triangles) where Vert : struct, IVertex
         {
-            Mesh<Vert> M = new Mesh<Vert>(Type, Mode);
-            GL.NamedBufferData(M.VBO, new Vert().SizeInBytes * Data.Length, Data, BufferUsageHint.StaticDraw);
+            Mesh<Vert> M = new Mesh<Vert>(Type); // empty mesh of type vert
+            GL.NamedBufferData(M.VBO, new Vert().SizeInBytes * Data.Length, Data, BufferUsageHint.StaticDraw); // add data
             M.VertexCount = Data.Length;
             return M;
         }
         /// <summary>
         /// creates mesh from float array
         /// </summary>
-        public static Mesh<Vert> From<Vert>(float[] Data, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
+        public static Mesh<Vert> From<Vert>(float[] Data, PrimitiveType Type = PrimitiveType.Triangles) where Vert : struct, IVertex
         {
-            Mesh<Vert> M = new Mesh<Vert>(Type, Mode);
-            GL.NamedBufferData(M.VBO, 4 * Data.Length, Data, BufferUsageHint.StaticDraw);
+            Mesh<Vert> M = new Mesh<Vert>(Type); // empty mesh of type vert
+            GL.NamedBufferData(M.VBO, 4 * Data.Length, Data, BufferUsageHint.StaticDraw); // add data
             M.VertexCount = Data.Length * 4 / new Vert().SizeInBytes; // number of floats / (SizeInBytes / 4 = size in floats)
             return M;
         }
         /// <summary>
         /// creates mesh from file
         /// </summary>
-        public static Mesh<Vert> Construct<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> Builder, PrimitiveType Type = PrimitiveType.Triangles, PolygonMode Mode = PolygonMode.Fill) where Vert : struct, IVertex
-            => From(LoadObj(path, Builder, Type), Type, Mode);
+        public static Mesh<Vert> Construct<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexBuilder, 
+            PrimitiveType Type = PrimitiveType.Triangles, bool Normalize = false, float Simplify = 0)
+            where Vert : struct, IVertex
+            => From(LoadObj(path, VertexBuilder, Type), Type);
         #endregion
-        
-        /// <summary>
-        /// a mesh that encompasses the whole screen using simple2D vertices
-        /// </summary>
+
+        #region Preset Meshes
         public static Mesh<Simple2D> Screen = From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
-        
         public static Mesh<Simple3D> Sphere = Construct("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
-
         public static Mesh<Vertex3D> Cube = Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
-
+        #endregion
 
         /// <summary>
         /// renders vertex parameters
         /// </summary>
-        public abstract void Draw();
+        public abstract void Draw(PolygonMode RenderMode = PolygonMode.Fill);
         /// <summary>
         /// binds and set parameters without rendering vertex array
         /// </summary>
-        public abstract void Use();
+        public abstract void Use(PolygonMode RenderMode = PolygonMode.Fill);
 
         private static Vert[] LoadObj<Vert>(string path, Func<Vector3, Vector3, Vector2, Vert> VertexPacker, PrimitiveType Primitive)
         {
@@ -195,29 +193,30 @@ namespace Graphics.Resources
 
         }
 
+
+
     }
 
     public class Mesh<Vertex> : Mesh where Vertex : struct, IVertex
     {
-        public PrimitiveType RenderType;
-        public PolygonMode RenderMode;
+        protected PrimitiveType RenderType;
 
-        public Mesh(PrimitiveType Type, PolygonMode Mode)
+
+        public Mesh(PrimitiveType Type)
         {
             RenderType = Type;
-            RenderMode = Mode;
             
             VAO = GL.GenVertexArray(); GL.BindVertexArray(VAO);
             VBO = GL.GenBuffer(); GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
 
-            // add vertex attributes in openGl and Material
+            // add vertex attributes in openGl
             int Location = 0, ByteOffset = 0;
             foreach (FieldInfo Field in new Vertex().GetType().GetFields())
             {
-
+                //Console.WriteLine($"Name: {Field.Name} Type: {Field.FieldType}");
                 switch (Field.FieldType.Name)
                 {
-                    case "Float": LoadBufferAttribute<float>(ref Location, ref ByteOffset); break; // untested
+                    case "Float": LoadBufferAttribute<float>(ref Location, ref ByteOffset); break;
                     case "Vector2": LoadBufferAttribute<Vector2>(ref Location, ref ByteOffset); break;
                     case "Vector3": LoadBufferAttribute<Vector3>(ref Location, ref ByteOffset); break;
                     case "Vector4": LoadBufferAttribute<Vector4>(ref Location, ref ByteOffset); break;
@@ -230,7 +229,7 @@ namespace Graphics.Resources
                     case "Matrix2": LoadBufferAttribute<Matrix2>(ref Location, ref ByteOffset); break;
                     case "Matrix3": LoadBufferAttribute<Matrix3>(ref Location, ref ByteOffset); break;
                     case "Matrix4": LoadBufferAttribute<Matrix4>(ref Location, ref ByteOffset); break;
-                    default: throw new Exception(Field.FieldType.ToString());
+                    default: throw new NotImplementedException(Field.FieldType.ToString());
                 }
             }
             GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, new Vertex().SizeInBytes);
@@ -239,7 +238,7 @@ namespace Graphics.Resources
         /// <summary>
         /// bind, set parameters and render
         /// </summary>
-        public override void Draw()
+        public override void Draw(PolygonMode RenderMode = PolygonMode.Fill)
         {
             GL.BindVertexArray(VAO); // use this object's mesh
             GL.PolygonMode(MaterialFace.FrontAndBack, RenderMode); // use this programs rendering modes
@@ -248,7 +247,7 @@ namespace Graphics.Resources
         /// <summary>
         /// bind and set parameters
         /// </summary>
-        public override void Use()
+        public override void Use(PolygonMode RenderMode = PolygonMode.Fill)
         {
             GL.BindVertexArray(VAO); // use this object's mesh
             GL.PolygonMode(MaterialFace.FrontAndBack, RenderMode); // use this programs rendering modes

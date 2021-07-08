@@ -8,22 +8,22 @@ using Graphics.Resources;
 using Graphics.Rendering;
 namespace Graphics.Entities
 {
-    class Light_Dir : Entity, VolumeLight
+    class Light_Dir : Entity, IVolumeLight
     {
         #region inherited Light Setup
         private static readonly ShaderProgram shadowprogram = ShaderProgram.ReadFrom(
-            "Resources/Shaderscripts/Rendering/Shadow.vert", 
-            "Resources/Shaderscripts/Rendering/Shadow_Directional.geom", 
-            "Resources/Shaderscripts/Rendering/Shadow.frag");
+            "Resources/Shaderscripts/Rendering/Shadow/Shadow.vert",
+            "Resources/Shaderscripts/Rendering/Shadow/Shadow_Directional.geom",
+            "Resources/Shaderscripts/Rendering/Shadow/Shadow.frag");
         private static readonly ShaderProgram lightprogram = ShaderProgram.ReadFrom(
-            "Resources/Shaderscripts/Rendering/Light_Directional.vert", 
-            "Resources/Shaderscripts/Rendering/Light_Directional.frag");
+            "Resources/Shaderscripts/Rendering/Light/Light_Directional.vert",
+            "Resources/Shaderscripts/Rendering/Light/Light_Directional.frag");
         private readonly UniformBlock LightBlock = UniformBlock.For<DirectionalLightData>(1);
 
-        ShaderProgram Light.ShadowProgram => shadowprogram;
-        ShaderProgram Light.LightProgram => lightprogram;
-        UniformBlock Light.LightBlock => LightBlock;
-        Mesh Light.LightMesh => Mesh.Screen;
+        ShaderProgram ILight.ShadowProgram => shadowprogram;
+        ShaderProgram ILight.LightProgram => lightprogram;
+        UniformBlock ILight.LightBlock => LightBlock;
+        Mesh ILight.LightMesh => Mesh.Screen;
 
         static Light_Dir()
         {
@@ -32,12 +32,12 @@ namespace Graphics.Entities
             lightprogram.SetUniformBlock("CameraBlock", 0);
             lightprogram.SetUniformBlock("LightBlock", 1);
 
-            Light.SetAlbedoTexture += (Tex) => lightprogram.SetUniformSampler2D("AlbedoTexture", Tex);
-            Light.SetNormalTexture += (Tex) => lightprogram.SetUniformSampler2D("NormalTexture", Tex);
-            Light.SetPositionTexture += (Tex) => lightprogram.SetUniformSampler2D("PositionTexture", Tex);
+            ILight.SetAlbedoTexture += (Tex) => lightprogram.SetUniformSampler("AlbedoTexture", Tex);
+            ILight.SetNormalTexture += (Tex) => lightprogram.SetUniformSampler("NormalTexture", Tex);
+            ILight.SetPositionTexture += (Tex) => lightprogram.SetUniformSampler("PositionTexture", Tex);
 
-            Light.SetSpecularIntensity += (SI) => lightprogram.SetUniform("SpecularIntensity", SI);
-            Light.SetSpecularPower += (SP) => lightprogram.SetUniform("SpecularPower", SP);
+            ILight.SetSpecularIntensity += (SI) => lightprogram.SetUniform("SpecularIntensity", SI);
+            ILight.SetSpecularPower += (SP) => lightprogram.SetUniform("SpecularPower", SP);
         }
         #endregion
 
@@ -73,8 +73,8 @@ namespace Graphics.Entities
             LightBlock.Set(new DirectionalLightData(Direction, Colour, AmbientIntensity, DiffuseIntensity));
         }
 
-        public void UseLight() => VolumeLight.Use(this);
+        public void UseLight() => IVolumeLight.Use(this);
 
-        public void Illuminate() => VolumeLight.Illuminate(this);
+        public void Illuminate() => IVolumeLight.Illuminate(this);
     }
 }

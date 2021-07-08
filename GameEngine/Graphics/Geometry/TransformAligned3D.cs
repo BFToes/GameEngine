@@ -26,6 +26,11 @@ namespace Graphics
             }
             get => base.Position;
         }
+        public override Vector3 Rotation
+        { 
+            get => throw new Exception("Axis Aligned means no rotation dumbass");
+            set => throw new Exception("Axis Aligned means no rotation dumbass");
+        } // pretend this isnt here
 
         public TransformAligned3D() => Matrix = Matrix4.Identity;
         private static Matrix4 CalcMatrix(Vector3 Position, Vector3 Scale, Matrix3 RotMat)

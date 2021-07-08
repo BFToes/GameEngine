@@ -9,9 +9,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.6.4" />
-    <PackageReference Include="OpenTK.GLControl" Version="3.1.0" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
 
@@ -34,31 +37,34 @@
     <None Update="Resources\Shaderscripts\Bilinear Warp\BilinearW.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\Shaderscripts\Rendering\Light\Light_Debug.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Resources\Shaderscripts\SolidColour.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Light_Point.vert">
+    <None Update="Resources\Shaderscripts\Rendering\Light\Light_Point.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Light_Directional.frag">
+    <None Update="Resources\Shaderscripts\Rendering\Light\Light_Directional.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow.vert">
+    <None Update="Resources\Shaderscripts\Rendering\Shadow\Shadow.vert">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow_Directional.geom">
+    <None Update="Resources\Shaderscripts\Rendering\Shadow\Shadow_Directional.geom">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow.frag">
+    <None Update="Resources\Shaderscripts\Rendering\Shadow\Shadow.frag">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Shadow_Point.geom">
+    <None Update="Resources\Shaderscripts\Rendering\Shadow\Shadow_Point.geom">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Light_Point.frag">
+    <None Update="Resources\Shaderscripts\Rendering\Light\Light_Point.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\Shaderscripts\Rendering\Light_Directional.vert">
+    <None Update="Resources\Shaderscripts\Rendering\Light\Light_Directional.vert">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Shaderscripts\Default.vert">

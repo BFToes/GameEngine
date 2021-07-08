@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
+﻿using Graphics.Resources;
 using Graphics.Shaders;
-using Graphics.Resources;
-using Graphics.Rendering;
+using OpenTK.Graphics.OpenGL4;
+using System;
 
 namespace Graphics.Entities
 {
-    public interface Light
+    public interface ILight
     {       
         #region Static Light Settings
         private static int normaltexture;
@@ -59,17 +55,18 @@ namespace Graphics.Entities
         public void Illuminate();
     }
     
-    public interface VolumeLight : Light
+    public interface IVolumeLight : ILight
     {
         #region Debug Fields
-        private const bool SHOW_EDGE = false;
+        protected const bool DEBUG_SHOW_SHADOW_VOLUME = false;
+        protected const bool DEBUG_SHOW_LIGHT_MESH = false;
         #endregion
-        protected static void Use(VolumeLight Light)
+        protected static void Use(IVolumeLight Light)
         {
             GL.Clear(ClearBufferMask.StencilBufferBit);
             
             GL.DepthMask(false);
-            if (!SHOW_EDGE) GL.ColorMask(false, false, false, false);
+            if (!DEBUG_SHOW_SHADOW_VOLUME) GL.ColorMask(false, false, false, false);
             GL.Enable(EnableCap.PolygonOffsetFill);
             GL.Enable(EnableCap.DepthClamp);
 
@@ -77,7 +74,7 @@ namespace Graphics.Entities
             Light.ShadowProgram.Use();
 
         }
-        protected static void Illuminate(VolumeLight Light)
+        protected static void Illuminate(IVolumeLight Light)
         {
             GL.DepthMask(true);
             GL.ColorMask(true, true, true, true);
@@ -94,6 +91,8 @@ namespace Graphics.Entities
             GL.Enable(EnableCap.DepthTest);
             GL.Disable(EnableCap.Blend);
             GL.StencilFunc(StencilFunction.Always, 0, 0xff);
+
+
         }
     }
 }

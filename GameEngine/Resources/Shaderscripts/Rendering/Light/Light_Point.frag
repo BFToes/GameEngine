@@ -18,11 +18,11 @@ layout(std140) uniform CameraBlock {
 // global
 uniform float SpecularPower;
 uniform float SpecularIntensity;
-uniform vec3 Attenuation;
 
 uniform sampler2D PositionTexture;
 uniform sampler2D AlbedoTexture;
 uniform sampler2D NormalTexture;
+uniform sampler1D Attenuation;
 
 out vec4 Colour;
 
@@ -50,6 +50,6 @@ void main(void)
         }
     }
 
-    float Atten = max(Attenuation.x * Distance * Distance + Attenuation.y * Distance + Attenuation.z, 1);
-    Colour = vec4(Albedo.xyz, 1) * BaseColour / Atten;
+    float Atten = texture(Attenuation, Distance / Light.Model[0][0]).r;
+    Colour = vec4(Albedo.xyz, 1) * BaseColour * Atten;
 }

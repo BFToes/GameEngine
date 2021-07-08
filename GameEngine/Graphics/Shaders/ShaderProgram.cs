@@ -10,6 +10,8 @@ namespace Graphics.Shaders
 {
     public class ShaderProgram
     {
+        private const int MaxUnits = 32;
+
         public readonly int Handle;
         // uniform management
         private readonly Dictionary<string, int> UniformLocation; // uniform lookup
@@ -95,7 +97,7 @@ namespace Graphics.Shaders
                 int Location = GL.GetUniformLocation(Handle, Name);
 
                 if (Type == ActiveUniformType.Sampler2D)  // for each uniform sampler2D add default texture to unit
-                    AssignTextureUnit(TextureManager.Texture("Resources/Textures/Missing.png"), out _);
+                    AssignTextureUnit(TextureManager.Sampler("Resources/Textures/Missing.png"), out _);
                 
                 if (!Name.Contains(".")) 
                     UniformLocation[Name] = Location; // add location lookup
@@ -134,6 +136,7 @@ namespace Graphics.Shaders
             else
                 Console.WriteLine($"Failed to set Uniform block '{Name}'");
         }
+
         #endregion
         #region Single Uniforms
             // int & bool
@@ -188,42 +191,39 @@ namespace Graphics.Shaders
         #endregion
         #region Sampler Uniforms
         // texture unit management
-        private int[] ProgTex = new int[32].Fill(-1); // texture unit
-        private int[] TexUseCount = new int[32]; // number of times texture used
-        private static int[] TextureUnits = new int[32]; // bound texture units
+        private int[] ProgTex = new int[MaxUnits].Fill(-1); // texture unit
+        private int[] SamplerUseCount = new int[MaxUnits]; // number of times texture used
+        private static int[] SamplerUnits = new int[MaxUnits]; // bound texture units
         /// <summary>
         /// sets The uniform 'Name' to the texture found at 'TexPath'
         /// </summary>
         public void SetUniformSampler2D(string Name, string TexPath)
         {
-            int Tex = TextureManager.Texture(TexPath);
-            SetUniformSampler2D(Name, Tex);
+            int Tex = TextureManager.Sampler(TexPath);
+            SetUniformSampler(Name, Tex);
         }
-
         /// <summary>
-        /// sets the uniform 'Name' to the Texture ID 'Tex'
+        /// sets the Uniform 'Name' to the Sampler 'ID'
         /// </summary>
-        public void SetUniformSampler2D(string Name, int Tex)
+        public void SetUniformSampler(string Name, int ID)
         {
             if (!UniformLocation.TryGetValue(Name, out int Location)) return; // doesnt throw error cos compiler can remove textures
-            UnAssignsTextureUnit(Name, Location);
-            AssignTextureUnit(Tex, out int Unit);
+            UnAssignsTextureUnit(Location);
+            AssignTextureUnit(ID, out int Unit);
             GL.ProgramUniform1(Handle, Location, Unit);
         }
-
         /// <summary>
         /// If texture not used for this unit, allows it to be re assigned.
         /// </summary>
         /// <param name="Name">the name of the uniform</param>
         /// <param name="Location">Index of texture thats being unassigned</param>
-        private void UnAssignsTextureUnit(string Name, int Location)
+        private void UnAssignsTextureUnit(int Location)
         {
             GL.GetUniform(Handle, Location, out int Unit); // read uniform
-            if (--TexUseCount[Unit] == 0)// deincrement UnitUseCount
+            if (--SamplerUseCount[Unit] == 0)// deincrement UnitUseCount
                 ProgTex[Unit] = -1; // if Texture no longer in use, remove texture from program textures
             
         }
-
         /// <summary>
         /// assigns Texture to unit only if not already assigned to previous unit.
         /// </summary>
@@ -234,15 +234,15 @@ namespace Graphics.Shaders
             Unit = -1;
             if (ProgTex.Contains(Tex)) // if texture already in program textures
             {
-                while (ProgTex[++Unit] != Tex) ; // linear search for program texture
+                while (ProgTex[++Unit] != Tex); // linear search for program texture
             }
             else // if texture is not already in program textures
             {
-                while (TexUseCount[++Unit] != 0) ; // linear search for unused program texture
+                while (SamplerUseCount[++Unit] != 0) ; // linear search for unused program texture
                 ProgTex[Unit] = Tex;
             }
 
-            TexUseCount[Unit]++;
+            SamplerUseCount[Unit]++;
         }
         #endregion
         #endregion
@@ -254,10 +254,10 @@ namespace Graphics.Shaders
         {
             GL.UseProgram(Handle); // tell openGL to use this object
 
-            for(int Unit = 0; Unit < 32; Unit++)
+            for(int Unit = 0; Unit < MaxUnits; Unit++)
             {
                 int TexID = ProgTex[Unit];
-                if (TextureUnits[Unit] != TexID) // if not bound
+                if (SamplerUnits[Unit] != TexID) // if not bound
                 {
                     GL.BindTextureUnit(Unit, TexID); // bind texture into unit
                     ProgTex[Unit] = TexID;
@@ -283,27 +283,40 @@ namespace Graphics.Shaders
                 int Location = GL.GetUniformLocation(Handle, Name);
                 if (Location != -1)
                 {
-                    if (UniformType  == ActiveUniformType.Sampler2D)
+                    switch (UniformType)
                     {
-                        GL.GetUniform(Handle, Location, out int Unit); // for some reason this fucked up and set i to 0 when it couldnt read the value??? which did an infinite loop
-                        Console.WriteLine($"Uniform - {i}: {Location} = {UniformType} {Name} in {Unit} -> Texture {ProgTex[Unit]}");
-                    }
-                    else
-                    {
-                        float[] Data;
-                        switch (UniformType)
-                        {
-                            case ActiveUniformType.Float: Data = new float[1].Fill(-1); break;
-                            case ActiveUniformType.FloatVec2: Data = new float[2].Fill(-1); break;
-                            case ActiveUniformType.FloatVec3: Data = new float[3].Fill(-1); break;
-                            case ActiveUniformType.FloatVec4: Data = new float[4].Fill(-1); break;
-                            default: Data = new float[16]; break;
-                        }
+                        // float stuff
+                        case ActiveUniformType.Float:       FloatPrint(i, Location, Name, UniformType, 1); break;
+                        case ActiveUniformType.FloatVec2:   FloatPrint(i, Location, Name, UniformType, 2); break;
+                        case ActiveUniformType.FloatVec3:   FloatPrint(i, Location, Name, UniformType, 3); break;
+                        case ActiveUniformType.FloatVec4:   FloatPrint(i, Location, Name, UniformType, 4); break;
                         
-                        GL.GetUniform(Handle, Location, Data);
-                        Console.Write($"Uniform - {i}: {Location} = {UniformType} {Name} -> ");
-                        Data.Select((f) => { Console.Write($"{f}, "); return f; }).ToArray(); 
-                        Console.Write("\n");
+                        case ActiveUniformType.FloatMat2:   FloatPrint(i, Location, Name, UniformType, 4); break;
+                        case ActiveUniformType.FloatMat2x3: FloatPrint(i, Location, Name, UniformType, 6); break;
+                        case ActiveUniformType.FloatMat2x4: FloatPrint(i, Location, Name, UniformType, 8); break;
+                        
+                        case ActiveUniformType.FloatMat3:   FloatPrint(i, Location, Name, UniformType, 9); break;
+                        case ActiveUniformType.FloatMat3x4: FloatPrint(i, Location, Name, UniformType, 12); break;
+                        case ActiveUniformType.FloatMat3x2: FloatPrint(i, Location, Name, UniformType, 6); break;
+                        
+                        case ActiveUniformType.FloatMat4:   FloatPrint(i, Location, Name, UniformType, 16); break;
+                        case ActiveUniformType.FloatMat4x2: FloatPrint(i, Location, Name, UniformType, 8); break;
+                        case ActiveUniformType.FloatMat4x3: FloatPrint(i, Location, Name, UniformType, 12); break;
+                        
+                            //samplers
+                        case ActiveUniformType.Sampler1D:               SamplerPrint(i, Location, Name, UniformType); break;
+                        case ActiveUniformType.Sampler1DArray:          SamplerPrint(i, Location, Name, UniformType); break;
+                        case ActiveUniformType.Sampler1DArrayShadow:    SamplerPrint(i, Location, Name, UniformType); break;
+                        case ActiveUniformType.Sampler1DShadow:         SamplerPrint(i, Location, Name, UniformType); break;
+
+                        case ActiveUniformType.Sampler2D:               SamplerPrint(i, Location, Name, UniformType); break;
+                        case ActiveUniformType.Sampler2DArray:          SamplerPrint(i, Location, Name, UniformType); break;
+                        case ActiveUniformType.Sampler2DArrayShadow:    SamplerPrint(i, Location, Name, UniformType); break;
+                        case ActiveUniformType.Sampler2DShadow:         SamplerPrint(i, Location, Name, UniformType); break;
+                        
+                        case ActiveUniformType.Sampler3D:               SamplerPrint(i, Location, Name, UniformType); break;
+
+                        default: throw new Exception("Go write more debuggy stuff");
                     }
                     
                 }
@@ -326,7 +339,19 @@ namespace Graphics.Shaders
 
 
         }
-
+        private void SamplerPrint(int i, int Location, string Name, ActiveUniformType UniformType)
+        {
+            GL.GetUniform(Handle, Location, out int Unit); // for some reason this fucked up and set i to 0 when it couldnt read the value??? which did an infinite loop
+            Console.WriteLine($"Uniform - {i}: {Location} = {UniformType} {Name} in {Unit} -> Texture {ProgTex[Unit]}");
+        }
+        private void FloatPrint(int i, int Location, string Name, ActiveUniformType UniformType, int DataLength)
+        {
+            float[] Data = new float[DataLength].Fill(-1);
+            GL.GetUniform(Handle, Location, Data);
+            Console.Write($"Uniform - {i}: {Location} = {UniformType} {Name} -> ");
+            Data.Select((f) => { Console.Write($"{f}, "); return f; }).ToArray();
+            Console.Write("\n");
+        }
         /// <summary>
         /// creates a new shader in OpenGL
         /// </summary>

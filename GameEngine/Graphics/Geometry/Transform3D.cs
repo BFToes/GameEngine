@@ -8,6 +8,7 @@ namespace Graphics
     {
         public Matrix4 Matrix { get; }
         public event Action<Matrix4> Set_Transform;
+        public void Extract(Matrix4 Matrix);
     }
     public abstract class AbstractTransform3D : ITransform
     {
@@ -53,6 +54,15 @@ namespace Graphics
                 Set_Transform(Matrix);
             }
             get => position;
+        }
+
+        public virtual void Extract(Matrix4 Matrix)
+        {
+            scale = Matrix.ExtractScale();
+            position = Matrix.ExtractTranslation();
+            Quaternion Q = Matrix.ExtractRotation();
+            rotation = Q.ToEulerAngles();
+            RotMatrix = Matrix3.CreateFromQuaternion(Q);
         }
     }
     public class Transform3D : AbstractTransform3D
@@ -155,6 +165,10 @@ namespace Graphics
             Tmat.M12 = Scale.Y * RotMat.M12; Tmat.M22 = Scale.Y * RotMat.M22; Tmat.M32 = Scale.Y * RotMat.M32; Tmat.M42 = Position.Y;
             Tmat.M13 = Scale.Z * RotMat.M13; Tmat.M23 = Scale.Z * RotMat.M23; Tmat.M33 = Scale.Z * RotMat.M33; Tmat.M43 = Position.Z;
             return Tmat.Inverted();
+        }
+        public override void Extract(Matrix4 Matrix)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -4,6 +4,7 @@ using System;
 
 namespace Graphics
 {
+    [Obsolete]
     public abstract class AbstractTransform2D : ITransform
     {
         protected Matrix2 RotMatrix = Matrix2.Identity;
@@ -61,7 +62,10 @@ namespace Graphics
                 Set_Transform(Matrix);
             }
         }
+
+        public abstract void Extract(Matrix4 Matrix);
     }
+    [Obsolete]
     public class Transform2D : AbstractTransform2D
     {
         public override float Rotation
@@ -117,7 +121,13 @@ namespace Graphics
         {
             throw new NotImplementedException("2D Matrix Calculation");
         }
+
+        public override void Extract(Matrix4 Matrix)
+        {
+            throw new NotImplementedException();
+        }
     }
+    [Obsolete]
     public class InverseTransform2D : AbstractTransform2D
     {
         public override float Rotation
@@ -174,6 +184,11 @@ namespace Graphics
             Matrix4 Tmat = Matrix4.Identity;
             throw new NotImplementedException("2D Matrix Calculation");
             return Tmat.Inverted();
+        }
+
+        public override void Extract(Matrix4 Matrix)
+        {
+            throw new NotImplementedException();
         }
     }
 }

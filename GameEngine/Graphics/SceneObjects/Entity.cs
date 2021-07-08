@@ -36,35 +36,38 @@ namespace Graphics.Entities
         }
     }
 
-    interface Spatial
+    interface ISpatial
     {
         public event Action<Matrix4> Set_WorldMatrix;
         public Matrix4 WorldMatrix { get; }
     }
 
-    class SpatialEntity<TransformType> : Entity, Spatial where TransformType : ITransform
+    class SpatialEntity<TransformType> : Entity, ISpatial where TransformType : ITransform
     {
-        private Matrix4 matrix = Matrix4.Identity;
-        private TransformType transform;
+        private Matrix4 BaseMatrix = Matrix4.Identity; 
         public event Action<Matrix4> Set_WorldMatrix = delegate { };
         public Matrix4 WorldMatrix 
         { 
-            get => matrix;
-            private set
-            {
-                matrix = value;
-                Set_WorldMatrix(value);
-            }
+            get => BaseMatrix; 
+            private set 
+            { 
+                BaseMatrix = value; 
+                Set_WorldMatrix(value); 
+            } 
         }
-        public Vector3 WorldPosition => new Vector3(WorldMatrix.Row3);
-        
-        public virtual TransformType Transform {
-            get => transform;
+        public Vector3 WorldPosition 
+        { 
+            get => new Vector3(WorldMatrix.Row3); 
+        }
+        public TransformType Transform 
+        { 
+            get; 
+            private set; 
         }
 
         public SpatialEntity(TransformType Transform)
         {
-            transform = Transform;
+            this.Transform = Transform;
             this.Transform.Set_Transform += UpdateMatrix;
         }
         
@@ -78,16 +81,12 @@ namespace Graphics.Entities
         {
             base.RemoveChild(Child);
             Set_WorldMatrix += Child.UpdateMatrix;
+            Child.Transform.Extract(WorldMatrix);
         }
         private void UpdateMatrix(Matrix4 _)
         {
-            if (Parent != null)  WorldMatrix = Transform.Matrix * ((Spatial)Parent).WorldMatrix;
+            if (Parent != null)  WorldMatrix = Transform.Matrix * ((ISpatial)Parent).WorldMatrix;
             else WorldMatrix = Transform.Matrix;
         }
     }
-
-
-
-
-
 }

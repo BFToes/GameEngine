@@ -3,53 +3,45 @@ using System;
 using System.Collections.Generic;
 using OpenTK.Mathematics;
 using Graphics.Entities;
+using Graphics.Resources;
+
 namespace Graphics.Rendering
 {
-    /* TILED DEFERRED ->        Its back baby. I am an indecisive piece of shit. This would meant tearing out
-     *                          large chunks of whats already been implemented. but basically split screen into
-     *                          little tiles. create view frustrum for that tile to camera, do some fancy search 
-     *                          or bruteforce to check which lights project onto each tile. then forward render
-     *                          with the smaller selection of lights. allows for better control 
+    /*
+     * ### MESHES:
+     * MESH SKELETAL ANIM ->    like squish w armatures an stuff? ASIMP is a word? opgdev has a tutorial
+     * MESH NORMALIZATION ->    for bounding box on frustrum culling
+     * MESH SIMPLIFICATION ->   for occluder objects. edge colapse algorithm.
+     * MESH MANAGEMENT ->       like with sampler2Ds and it would be good to like idk merge that kinda resource 
+     *                          management. hard to know if this is a good idea.
+     *
+     * REDO SHADERPROGRAM ->    currently the sampler units dont pack very wells
+     *
+     *
+     * ### LIGHTS:
+     * SSAO ->                  screen space ambient occlusion. yh fuck it why not.
      * 
+     * 
+     * ### OPITIMISATIONS:
      * FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
      *                          being rendered. just a good thing to have. This applies to lights and camera
      *                          I can also add an axis aligned bounding box around a mesh to optimise search.
-    
-     * LIGHT OCTATREE CHUNK ->  Currently If I add 300+ lights ontop of each other, they all render seperately 
-     *                          which is slowing down the program alot. I can instead group lights by distance
-     *                          and render it as One shader pass but with different parameters so its just as 
-     *                          bright. This could also be used to speed frustrum culling search time. 
-     *                          
-     *                          This wont work for shadows unless I do soft shadows in a double pass with big 
-     *                          circle and little circle.
-     *                          
-     * ENTITY UN/LOADING ->     This is the idisposable problem. your lazy. this also leads to serialization. 
+     *                          Starting to become very necessary.          
+     * OBJECT CHUNK SYSTEM ->   Octa tree of objects for faster frustrum culling and tesselation for far away
+     *                          objects. can also use it for transparency and depth sorting. more importantly
+     *                          it can be used for light "Frustrum" culling(it will almost never be a frustrum
+     *                          more likely its gonna be a cube)
+     * ENTITY UN/LOADING ->     This is the idisposable problem. you're lazy. this also leads to serialization. 
      *                          we all know serialization is disusting. this should probably done after chunk 
      *                          octatree system.
      *                          
-     * SHADOW PROBLEM ->        Fix with tesselation??? i could also increase epsilon with distance away from 
-     *                          camera. the epsilon only needs to be small when the camera is nearby altern-
-     *                          atively i could change the matrix order and use eplsilon after transform. this
-     *                          would be more efficient but harder to understand. alright that wasnt the 
-     *                          problem. fuck knows what is. It looks like z fighting with the floor plain. Ive
-     *                          checked it doesnt only happen to the floor it happens to all objects in the scene
-     *                          but is effected by the normal of the plane
-     *                          
-     * SSAO ->                  screen space ambient occlusion.
-     * 
-     * FXAA ->                  Antialiasing. TSAA??? whatever the fuck that is.
-     *                          
+     * ### OTHER:                         
      * MANAGE OBJECT SCOPE ->   alot of classes are public that dont need to be, I havent got a good code 
      *                          interface. I want to be able to use the name space add objects and thats all 
-     *                          you can see. 
-     * 
+     *                          you can see.  
      * MULTI-THREADING ->       I have no clue how to implement this in a graphics environment. Apparently it
-     *                          works with OpenGL. 
+     *                          works with OpenGL. like how does that even work for a gpu.
      * 
-     * IDISPOSABLE ->           YOU PIECE OF UTTER SHIT.. 
-     * 
-     * EMPTY DELEGATES ->       slight performance issue as each time its called it must call the empty instruction
-     *                          really isnt an issue.
      */
 
     /* Uniformblocks:
@@ -60,12 +52,11 @@ namespace Graphics.Rendering
     class Scene
     {
         public Camera Camera;
-        
         private GeometryBuffer GBuffer;
 
         private List<Occluder> OccluderObjects = new List<Occluder>();
         private List<IRenderable> Objects = new List<IRenderable>();
-        private List<Light> LightObjects = new List<Light>();
+        private List<ILight> LightObjects = new List<ILight>();
 
         private Vector2i size;
         public Vector2i Size
@@ -93,26 +84,29 @@ namespace Graphics.Rendering
         /// renders objects inside this viewport and updates the viewport textures
         /// </summary>
         public void Render(int DrawTarget = 0)
-        { 
+        {
             GBuffer.Use();
 
-            foreach (IRenderable RO in Objects) 
+            foreach (IRenderable RO in Objects)
                 RO.Render();
 
             BeginLightPass(DrawTarget);
 
-            foreach (Light LO in LightObjects)
+            foreach (ILight LO in LightObjects)
             {
                 LO.UseLight();
 
                 foreach (Occluder Occ in OccluderObjects)
                     Occ.Occlude(LO);
-               
+
                 LO.Illuminate();
             }
         }
-
-        public void BeginLightPass(int DrawTarget)
+        /// <summary>
+        /// Sets up openGL to use light objects
+        /// </summary>
+        /// <param name="DrawTarget"></param>
+        private void BeginLightPass(int DrawTarget)
         {
             GL.Enable(EnableCap.StencilTest);
             GL.Disable(EnableCap.CullFace);
@@ -126,15 +120,17 @@ namespace Graphics.Rendering
             GL.ClearColor(0, 0, 0, 0);
             GL.Clear(ClearBufferMask.ColorBufferBit);
         }
-
+        /// <summary>
+        /// setup openGL to use this scenes functions
+        /// </summary>
         public void Use()
         {
             Camera.Block.Bind();
-            Light.AlbedoTexture = GBuffer.AlbedoTexture;
-            Light.NormalTexture = GBuffer.NormalTexture;
-            Light.PositionTexture = GBuffer.PositionTexture;
-            Light.SpecularIntensity = 0f;
-            Light.SpecularPower = 2;
+            ILight.AlbedoTexture = GBuffer.AlbedoTexture;
+            ILight.NormalTexture = GBuffer.NormalTexture;
+            ILight.PositionTexture = GBuffer.PositionTexture;
+            ILight.SpecularIntensity = 0f;
+            ILight.SpecularPower = 2;
 
             // blending functions
             GL.BlendEquation(BlendEquationMode.FuncAdd);
@@ -151,12 +147,14 @@ namespace Graphics.Rendering
             // polygon fix
             GL.PolygonOffset(0.1f, 1f);
         }
-
+        /// <summary>
+        /// adds an entity and all its children into the scene
+        /// </summary>
         public void Add(Entity Entity)
         {
             switch (Entity)
             {
-                case Light LO: 
+                case ILight LO: 
                     LightObjects.Add(LO); 
                     foreach (Entity E in Entity.GetChildren()) 
                         Add(E); 
@@ -173,28 +171,30 @@ namespace Graphics.Rendering
                     break;
                 default: throw new Exception($"Unrecognised Entity:{Entity}");
             }
-
         }
+        /// <summary>
+        /// Removes this entity and all its children from the scene
+        /// </summary>
         public void Remove(Entity Entity)
         {
             switch (Entity)
             {
-                case Light LO: 
+                case ILight LO: 
                     LightObjects.Remove(LO); 
-                    foreach (Entity E in Entity.GetChildren()) 
-                        Remove(E); 
+                    foreach (Entity Child in Entity.GetChildren()) 
+                        Remove(Child); 
                     break;
                 case IRenderable RO: 
                     Objects.Remove(RO); 
-                    foreach (Entity E in Entity.GetChildren()) 
-                        Remove(E); 
+                    foreach (Entity Child in Entity.GetChildren()) 
+                        Remove(Child); 
                     break;
                 case Occluder Occ: 
                     OccluderObjects.Remove(Occ); 
-                    foreach (Entity E in Entity.GetChildren()) 
-                        Remove(E); 
+                    foreach (Entity Child in Entity.GetChildren()) 
+                        Remove(Child); 
                     break;
-                default: throw new Exception($"Unrecognised Entity:{Entity}");
+                default: throw new Exception($"Unrecognised Entity: {Entity}");
             }
         }
 
@@ -210,7 +210,7 @@ namespace Graphics.Rendering
                 PositionTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment0, Width, Height);
                 NormalTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment1, Width, Height);
                 AlbedoTexture = NewTextureAttachment(FramebufferAttachment.ColorAttachment2, Width, Height);
-                DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent32, FramebufferAttachment.DepthAttachment, Width, Height);
+                DepthBuffer = NewRenderBufferAttachment(RenderbufferStorage.DepthComponent24, FramebufferAttachment.DepthAttachment, Width, Height);
 
                 // this frame buffer draws to multiple textures at once
                 GL.DrawBuffers(3, new DrawBuffersEnum[] { DrawBuffersEnum.ColorAttachment0, DrawBuffersEnum.ColorAttachment1, DrawBuffersEnum.ColorAttachment2 });
@@ -220,6 +220,7 @@ namespace Graphics.Rendering
 
             public override void Use()
             {
+                // prepares openGL for rendering objects instead of lighting
                 base.Use();
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
                 GL.DepthMask(true);
