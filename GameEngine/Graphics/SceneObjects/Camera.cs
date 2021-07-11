@@ -4,17 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Graphics.Shaders;
+using Graphics.Rendering;
 
 namespace Graphics.Entities
 {
-    class Camera : SpatialEntity<AbstractTransform3D>
+    class Camera : FrustumObserver
     {
-        public UniformBlock Block;
-        public float FOV { get; private set; }
-        public Matrix4 ProjMat { get; private set; }
-        private float nearZ;
-        private float farZ;
-
+        public UniformBlock Block = UniformBlock.For<CameraData>(0);
+        private float FOV, nearZ, farZ;
+        
         /// <summary>
         /// initiates with perspective projection matrix 
         /// </summary>
@@ -23,30 +21,29 @@ namespace Graphics.Entities
         /// <param name="Height"></param>
         /// <param name="DepthNear">must be greater than 0</param>
         /// <param name="DepthFar">larger values will render more objects</param>
-        public Camera(float FOV, int Width, int Height, float DepthNear, float DepthFar) : base(new InverseTransform3D())
+        public Camera(float FOV, int Width, int Height, float DepthNear, float DepthFar): base(new InverseTransform3D())
         {
             nearZ = DepthNear; 
             farZ = DepthFar;
             this.FOV = FOV / 180 * MathF.PI;
 
             if (this.FOV != 0)
-                ProjMat = Matrix4.CreatePerspectiveFieldOfView(this.FOV, Width / Height, nearZ, farZ);
+                Projection = Matrix4.CreatePerspectiveFieldOfView(this.FOV, Width / Height, nearZ, farZ);
             else
-                ProjMat = Matrix4.CreateOrthographic((int)Width, (int)Height, nearZ, farZ);
+                Projection = Matrix4.CreateOrthographic((int)Width, (int)Height, nearZ, farZ);
 
             Transform.Set_Transform += SetBlock;
             
-            Block = UniformBlock.For<CameraData>(0);
-            Block.Set(new CameraData(ProjMat, Transform.Matrix, new Vector2(Width, Height))); // set data in uniform block
-            CameraData C = Block.Get<CameraData>();
+            Block.Set(new CameraData(Projection, Transform.Matrix, new Vector2(Width, Height))); // set data in uniform block
         }
+
         public void Resize(Vector2i Size)
         {
             if (FOV != 0)
-                ProjMat = Matrix4.CreatePerspectiveFieldOfView(FOV, (float)Size.X / (float)Size.Y, nearZ, farZ);
+                Projection = Matrix4.CreatePerspectiveFieldOfView(FOV, (float)Size.X / Size.Y, nearZ, farZ);
             else
-                ProjMat = Matrix4.CreateOrthographic(Size.X, Size.Y, nearZ, farZ);
-            Block.Set(0, ProjMat);
+                Projection = Matrix4.CreateOrthographic(Size.X, Size.Y, nearZ, farZ);
+            Block.Set(0, Projection);
             Block.Set(144, (Vector2)Size); // set data in uniform block
         }
         private void SetBlock(Matrix4 Matrix)

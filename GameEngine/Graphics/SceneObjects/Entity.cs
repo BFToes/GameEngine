@@ -46,7 +46,7 @@ namespace Graphics.Entities
     {
         private Matrix4 BaseMatrix = Matrix4.Identity; 
         public event Action<Matrix4> Set_WorldMatrix = delegate { };
-        public Matrix4 WorldMatrix 
+        public Matrix4 WorldMatrix
         { 
             get => BaseMatrix; 
             private set 
@@ -55,14 +55,10 @@ namespace Graphics.Entities
                 Set_WorldMatrix(value); 
             } 
         }
-        public Vector3 WorldPosition 
+        public Vector3 WorldPosition => new Vector3(WorldMatrix.Row3);
+        public TransformType Transform
         { 
-            get => new Vector3(WorldMatrix.Row3); 
-        }
-        public TransformType Transform 
-        { 
-            get; 
-            private set; 
+            get;
         }
 
         public SpatialEntity(TransformType Transform)

@@ -1,11 +1,12 @@
-﻿using Graphics.Resources;
+﻿using Graphics.Rendering;
+using Graphics.Resources;
 using Graphics.Shaders;
 using OpenTK.Graphics.OpenGL4;
 using System;
 
 namespace Graphics.Entities
 {
-    public interface ILight
+    interface ILight : CullShape
     {       
         #region Static Light Settings
         private static int normaltexture;
@@ -55,7 +56,7 @@ namespace Graphics.Entities
         public void Illuminate();
     }
     
-    public interface IVolumeLight : ILight
+    interface IVolumeLight : ILight
     {
         #region Debug Fields
         protected const bool DEBUG_SHOW_SHADOW_VOLUME = false;

@@ -26,7 +26,13 @@ namespace Graphics.Rendering
      * FRUSTRUM CULLING ->      A frustrum cull removes the object that are outside the view frustrum from 
      *                          being rendered. just a good thing to have. This applies to lights and camera
      *                          I can also add an axis aligned bounding box around a mesh to optimise search.
-     *                          Starting to become very necessary.          
+     *                          Starting to become very necessary.   
+     *                           *  Volume Bounding Trees -> a tree for bounding volumes. It would  be really 
+     *                              good to be able to link it to the entity tree structure but that would 
+     *                              mean rendering through the entity tree, I'll have to search for the Light 
+     *                              objects, renderobjects and occluders. O(3n) compared to O(n). I could keep 
+     *                              the rendering and culling seperate and store a value instead.
+     *                          
      * OBJECT CHUNK SYSTEM ->   Octa tree of objects for faster frustrum culling and tesselation for far away
      *                          objects. can also use it for transparency and depth sorting. more importantly
      *                          it can be used for light "Frustrum" culling(it will almost never be a frustrum
@@ -45,10 +51,10 @@ namespace Graphics.Rendering
      */
 
     /* Uniformblocks:
-         * 0 -> Camera
-         * 1 -> Light
-         * ...
-         */
+     * 0 -> Camera
+     * 1 -> Light
+     * ...
+     */
     class Scene
     {
         public Camera Camera;
@@ -88,18 +94,23 @@ namespace Graphics.Rendering
             GBuffer.Use();
 
             foreach (IRenderable RO in Objects)
-                RO.Render();
+                if (RO.InView(Camera))
+                    RO.Render();
+                    
 
             BeginLightPass(DrawTarget);
 
             foreach (ILight LO in LightObjects)
             {
-                LO.UseLight();
+                if (LO.InView(Camera))
+                {
+                    LO.UseLight();
 
-                foreach (Occluder Occ in OccluderObjects)
-                    Occ.Occlude(LO);
+                    foreach (Occluder Occ in OccluderObjects)
+                        Occ.Occlude(LO);
 
-                LO.Illuminate();
+                    LO.Illuminate();
+                }
             }
         }
         /// <summary>
@@ -129,8 +140,8 @@ namespace Graphics.Rendering
             ILight.AlbedoTexture = GBuffer.AlbedoTexture;
             ILight.NormalTexture = GBuffer.NormalTexture;
             ILight.PositionTexture = GBuffer.PositionTexture;
-            ILight.SpecularIntensity = 0f;
-            ILight.SpecularPower = 2;
+            ILight.SpecularIntensity = 0.1f;
+            ILight.SpecularPower = 4;
 
             // blending functions
             GL.BlendEquation(BlendEquationMode.FuncAdd);
@@ -198,7 +209,7 @@ namespace Graphics.Rendering
             }
         }
 
-        private class GeometryBuffer : FrameBuffer
+        private class GeometryBuffer: FrameBuffer
         {
             public readonly int AlbedoTexture;   // colour texture
             public readonly int NormalTexture;   // normal texture

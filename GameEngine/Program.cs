@@ -61,10 +61,10 @@ namespace GameEngine
         {
             Camera.Transform.Position = new Vector3(0, 2, 3);
 
-            Test.CreateSquare(2, 2, 10, this);
+            Test.CreateSquare(8, 1, 3, this);
 
             new Floor(this);
-            //this.Add(new Light_Dir(new Vector3(0, -1, -1), new Vector3(0.2f)));
+            this.Add(new Light_Dir(new Vector3(0, -1, -1), new Vector3(0.8f)));
         }
     }
     class Floor : RenderObject<Vertex3D>
@@ -131,12 +131,12 @@ namespace GameEngine
     class TestLight : RenderObject<Vertex3D>
     {
         public const float Radius = 5;
-        public const int TotalLights = 3;
+        public const int TotalLights = 0;
         private Light_Pnt Light;
         private float time;
         private float Floatn;
         private static Color4[] Colours = new Color4[] { Color4.Red, Color4.Lime, Color4.Blue, Color4.Yellow, Color4.Cyan, Color4.Magenta };
-        public TestLight(Scene Scene, int n) : base(Mesh.Cube,
+        public TestLight(Scene Scene, int n) : base(Mesh.Sphere,
             "Resources/shaderscripts/Default.vert",
             "Resources/shaderscripts/SolidColour.frag")
         {

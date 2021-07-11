@@ -6,7 +6,7 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace Graphics.Entities
 {
-    public interface IOccluder
+    interface IOccluder
     {
         public void Occlude(ILight Light);
     }

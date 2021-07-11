@@ -54,9 +54,10 @@ namespace Graphics.Resources
         #endregion
 
         #region Preset Meshes
-        public static Mesh<Simple2D> Screen = From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
-        public static Mesh<Simple3D> Sphere = Construct("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
+        public static Mesh<Simple2D> SimpleScreen = From<Simple2D>(new float[8] { -1, -1, 1, -1, 1, 1, -1, 1 }, PrimitiveType.TriangleFan);
+        public static Mesh<Simple3D> SimpleSphere = Construct("Resources/Meshes/Sphere.obj", (p, n, t) => new Simple3D(p));
         public static Mesh<Vertex3D> Cube = Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
+        public static Mesh<Vertex3D> Sphere = Construct("Resources/Meshes/Sphere.obj", (p, n, t) => new Vertex3D(p, n, t));
         #endregion
 
         /// <summary>

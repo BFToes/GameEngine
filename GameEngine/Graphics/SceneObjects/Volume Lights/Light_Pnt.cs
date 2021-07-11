@@ -26,18 +26,16 @@ namespace Graphics.Entities
             ShaderProgram ILight.ShadowProgram => ShadowProgram;
             ShaderProgram ILight.LightProgram => LightProgram;
             UniformBlock ILight.LightBlock => LightBlock;
-            Mesh ILight.LightMesh => Mesh.Sphere;
+            Mesh ILight.LightMesh => Mesh.SimpleSphere;
 
             static Light_Pnt()
             {
                 // because this is an inherited static constructor it will get called on first use of the object
-                Attenuation = new float[] { 1, 0 };//{ 1.0f, 0.333f, 0.142f, 0.076f, 0.047f, 0.023f, 0.012f, 0 };
+                Attenuation = new float[] { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f };//, 0.333f, 0.142f, 0.076f, 0.047f, 0.023f, 0.012f, 0 }; //{ 200f, 0f };//
                 ShadowProgram.SetUniformBlock("CameraBlock", 0);
                 ShadowProgram.SetUniformBlock("LightBlock", 1);
                 LightProgram.SetUniformBlock("CameraBlock", 0);
                 LightProgram.SetUniformBlock("LightBlock", 1);
-                ShowMeshProgram.SetUniformBlock("CameraBlock", 0);
-                ShowMeshProgram.SetUniformBlock("LightBlock", 1);
 
                 ILight.SetNormalTexture += (Tex) => LightProgram.SetUniformSampler("NormalTexture", Tex);
                 ILight.SetPositionTexture += (Tex) => LightProgram.SetUniformSampler("PositionTexture", Tex);
@@ -50,11 +48,15 @@ namespace Graphics.Entities
                 LightProgram.SetUniformSampler("AlbedoTexture", ILight.AlbedoTexture);
                 LightProgram.SetUniform("SpecularIntensity", ILight.SpecularIntensity);
                 LightProgram.SetUniform("SpecularPower", ILight.SpecularPower);
-
+                    
+                // Debug tool
+                ShowMeshProgram.SetUniformBlock("CameraBlock", 0);
+                ShowMeshProgram.SetUniformBlock("LightBlock", 1);
                 ShowMeshProgram.SetUniform("DiffuseColor", Vector3.One);
             }
             private static int AttenSampler;
             private static float[] AttenCurve;
+            private static bool lightsteps = false;
             public static float[] Attenuation
             {
                 get => AttenCurve;
@@ -62,15 +64,22 @@ namespace Graphics.Entities
                 {
                     GL.DeleteTexture(AttenSampler);
                     float[] Value = value.AsParallel().SelectMany(f => new float[] { f, 0, 0, 0 }).ToArray();
-                    LightProgram.SetUniformSampler("Attenuation", AttenSampler = TextureManager.Create_Sampler(Value, value.Length, 1, TextureMinFilter.Linear, TextureMagFilter.Linear));
+                    LightProgram.SetUniformSampler("Attenuation", AttenSampler = TextureManager.Create_Sampler(Value, value.Length, 1, LightSteps ? TextureMinFilter.Nearest : TextureMinFilter.Linear, LightSteps ? TextureMagFilter.Nearest : TextureMagFilter.Linear));
                     AttenCurve = value;
                 }
             }
-
+            public static bool LightSteps
+            {
+                get => lightsteps;
+                set
+                {
+                    lightsteps = value;
+                    Attenuation = AttenCurve;
+                }
+            }
             #endregion
 
             #region Light Settings
-
             private Vector3 colour;
             private float aintensity;
             private float dintensity;
@@ -89,7 +98,7 @@ namespace Graphics.Entities
             {
                 get => dintensity;
                 set => LightBlock.Set(92, dintensity = value);
-        }
+            }
             #endregion
 
             public Light_Pnt(Vector3 Position, Vector3 Colour, float DIntensity = 0.1f, float AIntensity = 0.0f, float Scale = 100f) : base(new TransformAligned3D())
@@ -121,8 +130,10 @@ namespace Graphics.Entities
                 if (IVolumeLight.DEBUG_SHOW_LIGHT_MESH)
                 {
                     ShowMeshProgram.Use();
-                    Mesh.Sphere.Draw(PolygonMode.Line);
+                    Mesh.SimpleSphere.Draw(PolygonMode.Line);
                 }
             }
-        }
+
+            bool CullShape.InView(Observer Observer) => true;
+    }
     }

@@ -23,7 +23,7 @@ namespace Graphics.Entities
         ShaderProgram ILight.ShadowProgram => shadowprogram;
         ShaderProgram ILight.LightProgram => lightprogram;
         UniformBlock ILight.LightBlock => LightBlock;
-        Mesh ILight.LightMesh => Mesh.Screen;
+        Mesh ILight.LightMesh => Mesh.SimpleScreen;
 
         static Light_Dir()
         {
@@ -73,8 +73,9 @@ namespace Graphics.Entities
             LightBlock.Set(new DirectionalLightData(Direction, Colour, AmbientIntensity, DiffuseIntensity));
         }
 
-        public void UseLight() => IVolumeLight.Use(this);
+        void ILight.UseLight() => IVolumeLight.Use(this);
+        void ILight.Illuminate() => IVolumeLight.Illuminate(this);
 
-        public void Illuminate() => IVolumeLight.Illuminate(this);
+        bool CullShape.InView(Observer Observer) => true;
     }
 }
