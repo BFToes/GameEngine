@@ -40,6 +40,7 @@ namespace Graphics.Rendering
      * ENTITY UN/LOADING ->     This is the idisposable problem. you're lazy. this also leads to serialization. 
      *                          we all know serialization is disusting. this should probably done after chunk 
      *                          octatree system.
+     * Tesselation ->           Linked to chunk system. low res for far away things an stuff. Im stuff haha.
      *                          
      * ### OTHER:                         
      * MANAGE OBJECT SCOPE ->   alot of classes are public that dont need to be, I havent got a good code 
@@ -94,20 +95,18 @@ namespace Graphics.Rendering
             GBuffer.Use();
 
             foreach (IRenderable RO in Objects)
-                if (RO.InView(Camera))
-                    RO.Render();
+                if (RO.InView(Camera)) RO.Render();
                     
-
             BeginLightPass(DrawTarget);
-
+            
             foreach (ILight LO in LightObjects)
             {
                 if (LO.InView(Camera))
                 {
                     LO.UseLight();
 
-                    foreach (Occluder Occ in OccluderObjects)
-                        Occ.Occlude(LO);
+                    foreach (IOccluder Occ in OccluderObjects)
+                        if (Occ.InView(LO)) Occ.Occlude(LO);
 
                     LO.Illuminate();
                 }

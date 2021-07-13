@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Graphics.Rendering;
 using Graphics.Resources;
 using OpenTK.Graphics.OpenGL4;
-
+using OpenTK.Mathematics;
 namespace Graphics.Entities
 {
-    interface IOccluder
+    interface IOccluder : CullShape
     {
         public void Occlude(ILight Light);
     }
@@ -30,5 +31,7 @@ namespace Graphics.Entities
             Light.ShadowProgram.SetUniform("Model", WorldMatrix);
             OccMesh.Draw();
         }
+
+        bool CullShape.InView(Observer Observer) => Observer.IntersectSphere(WorldPosition, 1);
     }
 }

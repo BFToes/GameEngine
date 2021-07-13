@@ -61,7 +61,7 @@ namespace GameEngine
         {
             Camera.Transform.Position = new Vector3(0, 2, 3);
 
-            Test.CreateSquare(8, 1, 3, this);
+            Test.CreateSquare(8, 8, 25, this);
 
             new Floor(this);
             this.Add(new Light_Dir(new Vector3(0, -1, -1), new Vector3(0.8f)));
@@ -85,11 +85,10 @@ namespace GameEngine
     }
     class Test : RenderObject<Vertex3D>
     {
-        public float x;
-        public float y;
+        public float x, y;
         
-        private static readonly Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
-        private static readonly Mesh<Simple3D> Occmesh = Occluder.BuildMesh("Resources/Meshes/Cube.obj");
+        private static readonly Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
+        private static readonly Mesh<Simple3D> Occmesh = Occluder.BuildMesh("Resources/Meshes/belly button.obj");
         private Occluder occluder = new Occluder(Occmesh);
 
         public static void CreateSquare(int Width, int Height, float Divide, Scene Scene)
@@ -131,10 +130,9 @@ namespace GameEngine
     class TestLight : RenderObject<Vertex3D>
     {
         public const float Radius = 5;
-        public const int TotalLights = 0;
+        public const int TotalLights = 3;
         private Light_Pnt Light;
-        private float time;
-        private float Floatn;
+        private float time, Floatn;
         private static Color4[] Colours = new Color4[] { Color4.Red, Color4.Lime, Color4.Blue, Color4.Yellow, Color4.Cyan, Color4.Magenta };
         public TestLight(Scene Scene, int n) : base(Mesh.Sphere,
             "Resources/shaderscripts/Default.vert",
@@ -144,7 +142,7 @@ namespace GameEngine
 
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUniform("DiffuseColor", C);
-            this.Transform.Scale = new Vector3(0.2f);
+            this.Transform.Scale = new Vector3(0.8f);
             Light = new Light_Pnt(Vector3.Zero, C);
 
             this.Floatn = (float)n / TotalLights;

@@ -6,7 +6,7 @@ using System;
 
 namespace Graphics.Entities
 {
-    interface ILight : CullShape
+    interface ILight : CullShape, Observer
     {       
         #region Static Light Settings
         private static int normaltexture;

@@ -16,22 +16,10 @@ namespace Graphics.Delaunator
     {
         
         public List<float> Positions;
-        public List<int> TriangleIndexes;
-        public List<int> halfedges;
-        public List<int> ConvexHullIndexes;
-
-        private List<int> hullPrev;
-        private List<int> hullNext;
-        private List<int> hullTri;
-        private List<int> EdgeStack;
-        private int _hashSize;
-        private float _cx;
-        private float _cy;
-        private int hullStart;
-        private int trianglesLen;
-
-
-
+        public List<int> TriangleIndexes, halfedges, ConvexHullIndexes;
+        private List<int> hullPrev, hullNext, hullTri, EdgeStack;
+        private int _hashSize,  hullStart, trianglesLen;
+        private float _cx, _cy;
         /*
         public List<T1> ToVoronoi<T1>(Func<float, float, T1> PointPacker) 
         {
@@ -214,10 +202,9 @@ namespace Graphics.Delaunator
             trianglesLen = 0;
             AddTriangle(i0, i1, i2, -1, -1, -1);
             #endregion
-
-
-            float xp = 0;
-            float yp = 0;
+            
+            
+            float xp = 0, yp = 0;
             for (int k = 0; k < IDs.Count; k++)
             {
                 #region Check if skip and setup variables

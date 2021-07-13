@@ -13,17 +13,8 @@ namespace Graphics.Rendering
 
     interface Observer
     {
-        /// <summary>
-        /// point is observed by observer
-        /// </summary>
         public bool IntersectPoint(Vector3 Position);
-        /// <summary>
-        /// volume, defined by an axis aligned cube scaled around Position, is observed by observer
-        /// </summary>
         public bool IntersectVolume(Vector3 Position, Vector3 Scale);
-        /// <summary>
-        /// sphere is is observed by observer
-        /// </summary>
         public bool IntersectSphere(Vector3 Position, float Scale);
     }
 
