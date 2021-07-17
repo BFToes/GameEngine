@@ -1,8 +1,4 @@
-﻿using GameEngine.Rendering;
-using GameEngine.Resources;
-using GameEngine.Resources.Shaders;
-using OpenTK.Graphics.OpenGL4;
-using System;
+﻿using OpenTK.Graphics.OpenGL4;
 
 namespace GameEngine.Entities.Lighting
 {

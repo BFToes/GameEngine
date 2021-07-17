@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 using GameEngine.Resources.Shaders;
 using GameEngine.Resources;
 using GameEngine.Entities.Lighting;
