@@ -1,7 +1,7 @@
 ﻿using System;
 using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
-using GameEngine.Rendering.Shaders;
+
 using GameEngine.Resources;
 using GameEngine.Entities.Culling;
 using GameEngine.Geometry.Transform;

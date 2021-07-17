@@ -1,9 +1,7 @@
-﻿using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using GameEngine.Rendering.Shaders;
+
+using GameEngine.Resources.Shaders;
 using GameEngine.Entities.Culling;
 using GameEngine.Geometry.Transform;
 namespace GameEngine.Entities

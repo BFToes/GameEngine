@@ -2,7 +2,7 @@
 using System.Text;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using GameEngine.Rendering.Shaders;
+using GameEngine.Resources.Shaders;
 using GameEngine.Resources;
 using GameEngine.Entities.Culling;
 using GameEngine.Entities.Lighting;

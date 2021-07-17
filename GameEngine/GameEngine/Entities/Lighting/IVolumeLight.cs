@@ -1,6 +1,6 @@
 ﻿using GameEngine.Rendering;
 using GameEngine.Resources;
-using GameEngine.Rendering.Shaders;
+using GameEngine.Resources.Shaders;
 using OpenTK.Graphics.OpenGL4;
 using System;
 

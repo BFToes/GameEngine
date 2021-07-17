@@ -4,7 +4,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using OpenTK.Mathematics;
 
-namespace GameEngine.Rendering.Shaders
+namespace GameEngine.Resources.Shaders
 {
     /* To maintain std140 layout all fields must be a multiple of vec4
      * so theyre padded

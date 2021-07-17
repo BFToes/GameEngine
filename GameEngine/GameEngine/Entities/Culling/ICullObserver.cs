@@ -1,8 +1,5 @@
-﻿using GameEngine.Entities;
-using OpenTK.Mathematics;
+﻿using OpenTK.Mathematics;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GameEngine.Entities.Culling
 {

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using OpenTK.Graphics.OpenGL4;
 
-namespace GameEngine.Rendering.Shaders
+namespace GameEngine.Resources.Shaders
 {
     public class UniformBlock
     {

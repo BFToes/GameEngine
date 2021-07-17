@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ListExtensions;
-using GameEngine.Resources;
-namespace GameEngine.Rendering.Shaders
+
+namespace GameEngine.Resources
 {
     public class ShaderProgram
     {
