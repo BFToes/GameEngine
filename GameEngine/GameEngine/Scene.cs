@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using OpenTK.Mathematics;
 using GameEngine.Entities;
 using GameEngine.Entities.Lighting;
+using GameEngine.Entities.Culling;
 using GameEngine.Rendering;
 namespace GameEngine
 {
@@ -14,6 +15,7 @@ namespace GameEngine
      * MESH SIMPLIFICATION ->   for occluder objects. edge colapse algorithm.
      * MESH MANAGEMENT ->       like with sampler2Ds and it would be good to like idk merge that kinda resource 
      *                          management. hard to know if this is a good idea.
+     * MESH MATERIAL IMPORT ->  idk there were like funky lil .mtl files ¯\_ (ツ)_/¯
      *
      * REDO SHADERPROGRAM ->    currently the sampler units dont pack very wells
      *
@@ -61,9 +63,9 @@ namespace GameEngine
         public Camera Camera;
         private readonly GeometryBuffer GBuffer;
 
-        private readonly List<Occluder> OccluderObjects = new List<Occluder>();
-        private readonly List<IRenderable> Objects = new List<IRenderable>();
-        private readonly List<ILight> LightObjects = new List<ILight>();
+        private readonly List<Occluder> OccluderObjects = new List<Occluder>(); // ICullable
+        private readonly List<IRenderable> Objects = new List<IRenderable>(); // Potenitally ICullable
+        private readonly List<ILight> LightObjects = new List<ILight>(); // Potenitally ICullible
 
         private Vector2i size;
         public Vector2i Size
