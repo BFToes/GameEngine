@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Graphics.Triangulator
+namespace GameEngine.Geometry.Noise
 {
+    // Needs GPU-ifing
     /// <summary>
     /// Implementation of the Perlin simplex noise, an improved Perlin noise algorithm.
     /// Based loosely on SimplexNoise1234 by Stefan Gustavson: http://staffwww.itn.liu.se/~stegu/aqsis/aqsis-newnoise/

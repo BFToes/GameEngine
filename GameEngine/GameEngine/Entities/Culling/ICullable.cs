@@ -3,14 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Graphics.Rendering.Culling
+namespace GameEngine.Entities.Culling
 {
     public interface ICullable<CullType> where CullType : ICullShape
     {
         public CullType CullShape { get; }
     }
     public interface ICullShape  { }
-    struct CullPoint : ICullShape
+    sealed class CullPoint : ICullShape
     {
         public Vector3 pos;
 
@@ -19,7 +19,7 @@ namespace Graphics.Rendering.Culling
             pos = new Vector3(Matrix.Row3);
         }
     }
-    struct CullVolume : ICullShape
+    sealed class CullVolume : ICullShape
     {
         public Vector3 minPos;
         public Vector3 maxPos;
@@ -32,14 +32,13 @@ namespace Graphics.Rendering.Culling
             maxPos = Position + Scale;
         }
     }
-    struct CullSphere : ICullShape
+    sealed class CullSphere : ICullShape
     {
         public Vector3 pos;
         public float rad;
 
         public void Extract(Matrix4 Matrix)
         {
-            CullSphere Shape = new CullSphere();
             pos = new Vector3(Matrix.Row3);
             Vector3 Scale = Matrix.ExtractScale();
             rad = MathF.Max(MathF.Max(Scale.X, Scale.Y), Scale.Z);

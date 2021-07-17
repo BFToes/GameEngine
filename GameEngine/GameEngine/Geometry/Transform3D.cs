@@ -2,7 +2,7 @@
 using OpenTK.Mathematics;
 using System;
 
-namespace Graphics
+namespace GameEngine.Geometry.Transform
 {
     public interface ITransform
     {

@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Linq;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Graphics.Resources
+namespace GameEngine.Resources
 {
 
 

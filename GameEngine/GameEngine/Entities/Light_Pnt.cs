@@ -2,13 +2,15 @@
 using System.Text;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using Graphics.Shaders;
-using Graphics.Resources;
-using Graphics.Rendering.Culling;
+using GameEngine.Rendering.Shaders;
+using GameEngine.Resources;
+using GameEngine.Entities.Culling;
+using GameEngine.Entities.Lighting;
+using GameEngine.Geometry.Transform;
 using System.Linq;
 using System;
 
-namespace Graphics.Entities
+namespace GameEngine.Entities
 {
     class Light_Pnt : SpatialEntity<TransformAligned3D>, IVolumeLight, ICullable<CullSphere>
     {
@@ -66,7 +68,7 @@ namespace Graphics.Entities
             {
                 GL.DeleteTexture(AttenSampler);
                 float[] Value = value.AsParallel().SelectMany(f => new float[] { f, 0, 0, 0 }).ToArray();
-                LightProgram.SetUniformSampler("Attenuation", AttenSampler = TextureManager.Create_Sampler(Value, value.Length, 1, LightSteps ? TextureMinFilter.Nearest : TextureMinFilter.Linear, LightSteps ? TextureMagFilter.Nearest : TextureMagFilter.Linear));
+                LightProgram.SetUniformSampler("Attenuation", AttenSampler = Texture.Create_Sampler(Value, value.Length, 1, LightSteps ? TextureMinFilter.Nearest : TextureMinFilter.Linear, LightSteps ? TextureMagFilter.Nearest : TextureMagFilter.Linear));
                 AttenCurve = value;
             }
         }

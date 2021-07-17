@@ -1,18 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Graphics.Rendering;
-using Graphics.Resources;
+using GameEngine.Rendering;
+using GameEngine.Resources;
 using OpenTK.Graphics.OpenGL4;
-using OpenTK.Mathematics;
-namespace Graphics.Entities
+using GameEngine.Geometry.Transform;
+using GameEngine.Entities.Lighting;
+
+namespace GameEngine.Entities
 {
-    interface IOccluder
-    {
-        public void Occlude(ILight Light);
-    }
-
-
     class Occluder : SpatialEntity<AbstractTransform3D>, IOccluder
     {
         private readonly Mesh<Simple3D> OccMesh;

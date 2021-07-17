@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ListExtensions;
-using Graphics.Resources;
-namespace Graphics.Shaders
+using GameEngine.Resources;
+namespace GameEngine.Rendering.Shaders
 {
     public class ShaderProgram
     {
@@ -97,7 +97,7 @@ namespace Graphics.Shaders
                 int Location = GL.GetUniformLocation(Handle, Name);
 
                 if (Type == ActiveUniformType.Sampler2D)  // for each uniform sampler2D add default texture to unit
-                    AssignTextureUnit(TextureManager.Sampler("Resources/Textures/Missing.png"), out _);
+                    AssignTextureUnit(Texture.Sampler("Resources/Textures/Missing.png"), out _);
                 
                 if (!Name.Contains(".")) 
                     UniformLocation[Name] = Location; // add location lookup
@@ -199,7 +199,7 @@ namespace Graphics.Shaders
         /// </summary>
         public void SetUniformSampler2D(string Name, string TexPath)
         {
-            int Tex = TextureManager.Sampler(TexPath);
+            int Tex = Texture.Sampler(TexPath);
             SetUniformSampler(Name, Tex);
         }
         /// <summary>
@@ -248,7 +248,7 @@ namespace Graphics.Shaders
         #endregion
 
         /// <summary>
-        /// Uses this program Binds necessaryTextures to textures associated with this program into texture units
+        /// Uses this program Binds necessary Textures to textures associated with this program into texture units
         /// </summary>
         public void Use()
         {

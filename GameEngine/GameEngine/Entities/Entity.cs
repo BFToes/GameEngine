@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using OpenTK.Mathematics;
-
-namespace Graphics.Entities
+using GameEngine.Geometry.Transform;
+namespace GameEngine.Entities
 {
     class Entity
     {

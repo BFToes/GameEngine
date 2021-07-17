@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using Graphics.Shaders;
-using Graphics.Resources;
-namespace Graphics.Entities
+using GameEngine.Rendering.Shaders;
+using GameEngine.Resources;
+using GameEngine.Entities.Lighting;
+namespace GameEngine.Entities
 {
     class Light_Dir : Entity, IVolumeLight
     {

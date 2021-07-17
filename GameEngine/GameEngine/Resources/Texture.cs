@@ -4,9 +4,9 @@ using System.Drawing;
 using System;
 using System.IO;
 using System.Linq;
-namespace Graphics.Resources
+namespace GameEngine.Resources
 {
-    static class TextureManager
+    static class Texture
     {
         private static Dictionary<string, int> SamplerDict = new Dictionary<string, int>();
 

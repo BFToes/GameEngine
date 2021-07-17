@@ -1,10 +1,10 @@
-﻿using Graphics.Entities;
+﻿using GameEngine.Entities;
 using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Graphics.Rendering.Culling
+namespace GameEngine.Entities.Culling
 {
     interface ICullObserver<ObserverType> where ObserverType : IObserverShape
     {
@@ -29,9 +29,9 @@ namespace Graphics.Rendering.Culling
         private void CalculatePlane(int Plane, Vector4 ColumnA, Vector4 ColumnB)
         {
             Frustum[Plane] = ColumnA + ColumnB;
-            Frustum[Plane].Normalize();
+            Frustum[Plane] /= new Vector3(Frustum[Plane]).Length;
         }
-        
+
         public void Update(Matrix4 View, Matrix4 Proj)
         {
             Matrix4 ViewProj = View * Proj;

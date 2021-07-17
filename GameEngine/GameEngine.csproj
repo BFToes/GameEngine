@@ -87,4 +87,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="GameEngine\Entities\Particles\" />
+  </ItemGroup>
+
 </Project>

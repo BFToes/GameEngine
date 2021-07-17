@@ -3,10 +3,10 @@ using OpenTK.Mathematics;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Graphics.Shaders;
-using Graphics.Rendering.Culling;
-
-namespace Graphics.Entities
+using GameEngine.Rendering.Shaders;
+using GameEngine.Entities.Culling;
+using GameEngine.Geometry.Transform;
+namespace GameEngine.Entities
 {
     /*
         public Matrix4 Projection; // + 64
@@ -47,7 +47,7 @@ namespace Graphics.Entities
             else
                 Projection = Matrix4.CreateOrthographic((int)Width, (int)Height, nearZ, farZ);
 
-            Set_WorldMatrix += UpdateCamera;
+            Set_WorldMatrix += SetCameraMove;
             Block.Set(new CameraData(Projection, Transform.Matrix, new Vector2(Width, Height))); // set data in uniform block
         }
 
@@ -61,7 +61,7 @@ namespace Graphics.Entities
             Block.Set(144, (Vector2)Size); // set data in uniform block
             Frustum.Update(WorldMatrix, Projection);
         }
-        private void UpdateCamera(Matrix4 Matrix)
+        private void SetCameraMove(Matrix4 Matrix)
         {
             Block.Set(64, Matrix); // set camera matrix in uniform block
             Block.Set(128, WorldPosition); // set position in uniform block

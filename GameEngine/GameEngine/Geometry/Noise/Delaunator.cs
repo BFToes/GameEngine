@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using ListExtensions;
 
-namespace Graphics.Delaunator
+namespace GameEngine.Geometry.Noise
 {
     /* Thing To do
      * voronoi cells

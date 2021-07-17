@@ -1,13 +1,12 @@
 ﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Windowing.Common; // mouse event
+using OpenTK.Windowing.GraphicsLibraryFramework; // mouse button
 using System;
 
-using Graphics.Rendering;
-using Graphics.Resources;
-using Graphics.Entities;
+using GameEngine.Rendering;
+using GameEngine.Resources;
+using GameEngine.Entities;
 
 namespace GameEngine
 {
@@ -15,11 +14,7 @@ namespace GameEngine
     {
         static void Main(string[] args)
         {
-            GameWindowSettings GWS = GameWindowSettings.Default;
-            NativeWindowSettings NWS = NativeWindowSettings.Default;
-            NWS.Size = new Vector2i(800);
-
-            using RenderWindow RW = new RenderWindow(GWS, NWS);
+            using RenderWindow RW = RenderWindow.New(true, 800, 800);
 
             Scene Scene = new World();
             RW.Scene = Scene;
@@ -63,7 +58,7 @@ namespace GameEngine
         {
             Camera.Transform.Position = new Vector3(0, 2, 3);
 
-            Test.CreateSquare(8, 8, 25, this);
+            Test.CreateSquare(8, 1, 25, this);
 
             new Floor(this);
             this.Add(new Light_Dir(new Vector3(0, -1, -1), new Vector3(0.8f)));
@@ -78,7 +73,7 @@ namespace GameEngine
             Transform.Scale = new Vector3(256, 0.01f, 256);
             Transform.Position = new Vector3(0, -0.01f, 0);
 
-            TextureManager.Add_Sampler("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
+            Texture.Add_Sampler("Resources/Textures/Grid.png", TextureMinFilter.Filter4Sgis, TextureMagFilter.Nearest, TextureWrapMode.ClampToBorder, 4);
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Grid.png");
             Material.SetUniformSampler2D("SpecularTexture","Resources/Textures/SpecMap.png");
 
@@ -89,8 +84,8 @@ namespace GameEngine
     {
         public float x, y;
         
-        private static readonly Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/belly button.obj", (p, n, t) => new Vertex3D(p, n, t));
-        private static readonly Mesh<Simple3D> Occmesh = Occluder.BuildMesh("Resources/Meshes/belly button.obj");
+        private static readonly Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
+        private static readonly Mesh<Simple3D> Occmesh = Occluder.BuildMesh("Resources/Meshes/Cube.obj");
         private Occluder occluder = new Occluder(Occmesh);
 
         public static void CreateSquare(int Width, int Height, float Divide, Scene Scene)
@@ -113,7 +108,7 @@ namespace GameEngine
 
             Add(occluder);
             Transform.Position = new Vector3();
-            Transform.Scale = new Vector3(1f, 1f, 1f);
+            Transform.Scale = new Vector3(1, 1, 1);
 
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
@@ -132,7 +127,7 @@ namespace GameEngine
     class TestLight : RenderObject<Vertex3D>
     {
         public const float Radius = 5;
-        public const int TotalLights = 3;
+        public const int TotalLights = 0;
         private Light_Pnt Light;
         private float time, Floatn;
         private static Color4[] Colours = new Color4[] { Color4.Red, Color4.Lime, Color4.Blue, Color4.Yellow, Color4.Cyan, Color4.Magenta };

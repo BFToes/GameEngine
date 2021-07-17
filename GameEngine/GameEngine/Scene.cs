@@ -2,8 +2,10 @@
 using System;
 using System.Collections.Generic;
 using OpenTK.Mathematics;
-using Graphics.Entities;
-namespace Graphics.Rendering
+using GameEngine.Entities;
+using GameEngine.Entities.Lighting;
+using GameEngine.Rendering;
+namespace GameEngine
 {
     /*
      * ### MESHES:
