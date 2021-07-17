@@ -75,18 +75,7 @@ namespace Graphics.Resources
                 
                 GL.TexParameter(TextureTarget.Texture1D, TextureParameterName.TextureMinFilter, (int)MinifyFilter); // minify filter mode
                 GL.TexParameter(TextureTarget.Texture1D, TextureParameterName.TextureMagFilter, (int)MagnifyFilter); // magnify filter mode
-                GL.TexParameter(TextureTarget.Texture1D, TextureParameterName.TextureWrapS, (int)WrapMode);
-                
-                float[] Data = GetSamplerData(Handle, TextureTarget.Texture1D, out int W, out int H);
-                
-                Console.Write($"in:  width: {width}, height: {height} data: [");
-                foreach (float F in data)
-                    Console.Write($"{F}, ");
-                Console.Write($"]\nout: width: {W}, height: {H} data: [");
-                foreach (float F in Data)
-                    Console.Write($"{F}, ");
-                Console.Write("]\n");
-                
+                GL.TexParameter(TextureTarget.Texture1D, TextureParameterName.TextureWrapS, (int)WrapMode);              
             }
             return Handle;
         }
@@ -142,6 +131,17 @@ namespace Graphics.Resources
             return Data;
         }
         
+        private static void DebugSamplerdataInput(int Handle, int width, int height, float[] data)
+        {
+            float[] Data = GetSamplerData(Handle, TextureTarget.Texture1D, out int W, out int H);
 
+            Console.Write($"in:  width: {width}, height: {height} data: [");
+            foreach (float F in data)
+                Console.Write($"{F}, ");
+            Console.Write($"]\nout: width: {W}, height: {H} data: [");
+            foreach (float F in Data)
+                Console.Write($"{F}, ");
+            Console.Write("]\n");
+        }
     }
 }

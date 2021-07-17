@@ -1,12 +1,14 @@
-﻿using Graphics.Entities;
-using Graphics.Rendering;
-using Graphics.Resources;
-using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
+
+using Graphics.Rendering;
+using Graphics.Resources;
+using Graphics.Entities;
+
 namespace GameEngine
 {
     class Program

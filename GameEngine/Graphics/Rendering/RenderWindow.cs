@@ -1,9 +1,6 @@
 ﻿using System;
 using OpenTK.Windowing.Desktop;
-using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
-using System.Drawing;
-using Graphics.Entities;
 namespace Graphics.Rendering
 {
     class RenderWindow : GameWindow

@@ -11,12 +11,12 @@
         "obj": true,
         "**/.vscode": true,
         ".vscode": true,
+        "**/Testing": true,
+        "Testing": true,
         "**/GameEngine.csproj": true,
         "*.csproj": true,
         "GameEngine.csproj": true,
-        "**/*.csproj": true,
-        "**/Testing": true,
-        "Testing": true
+        "**/*.csproj": true
     },
     "explorerExclude.backup": null
 }

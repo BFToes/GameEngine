@@ -4,13 +4,13 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Graphics.Shaders;
 using Graphics.Resources;
-using Graphics.Rendering;
+using Graphics.Rendering.Culling;
 using System.Linq;
 using System;
 
 namespace Graphics.Entities
 {
-    class Light_Pnt : SpatialEntity<TransformAligned3D>, IVolumeLight
+    class Light_Pnt : SpatialEntity<TransformAligned3D>, IVolumeLight, ICullable<CullSphere>
     {
         #region Inherited Light Setup
         private static readonly ShaderProgram ShadowProgram = ShaderProgram.ReadFrom(
@@ -102,6 +102,9 @@ namespace Graphics.Entities
         }
         #endregion
 
+        CullSphere CullSphere = new CullSphere();
+        CullSphere ICullable<CullSphere>.CullShape => CullSphere;
+
         public Light_Pnt(Vector3 Position, Vector3 Colour, float DIntensity = 1f, float AIntensity = 0.0f, float Scale = 10f) : base(new TransformAligned3D())
         {
             colour = Colour;
@@ -111,10 +114,14 @@ namespace Graphics.Entities
             Transform.Scale = new Vector3(Scale);
             LightBlock.Set(new PointLightData(Transform.Matrix, Position, colour, aintensity, dintensity));
 
-            Set_WorldMatrix += (M) => LightBlock.Set(0, M);
-            Set_WorldMatrix += (M) => LightBlock.Set(80, WorldPosition);
+            Set_WorldMatrix += Update;
+        }
 
-            LightProgram.DebugUniforms();
+        private void Update(Matrix4 M)
+        {
+            LightBlock.Set(0, M);
+            LightBlock.Set(80, WorldPosition);
+            CullSphere.Extract(M);
         }
 
         void ILight.UseLight() => IVolumeLight.Use(this);
@@ -134,28 +141,5 @@ namespace Graphics.Entities
                 Mesh.SimpleSphere.Draw(PolygonMode.Line);
             }
         }
-
-        bool CullShape.InView(Observer Observer) => true;
-
-        bool Observer.IntersectPoint(Vector3 Position) => (Position - WorldPosition).LengthSquared < WorldMatrix.M11 * WorldMatrix.M11;
-        bool Observer.IntersectSphere(Vector3 Position, float Radius) => (Position - WorldPosition).LengthSquared < MathF.Pow(Radius + WorldMatrix.M11, 2);
-        bool Observer.IntersectVolume(Vector3 Position, Vector3 Scale)
-    {
-        Vector3 MinPos = Position - Scale;
-        Vector3 MaxPos = Position + Scale;
-        float distSQ = WorldMatrix.M11 * WorldMatrix.M11;
-
-        if (WorldPosition.X < MinPos.X) distSQ -= MathF.Pow(WorldPosition.X - MinPos.X, 2);
-        else if (WorldPosition.X > MaxPos.X) distSQ -= MathF.Pow(WorldPosition.X - MaxPos.X, 2);
-
-        if (WorldPosition.Y < MinPos.Y) distSQ -= MathF.Pow(WorldPosition.Y - MinPos.Y, 2);
-        else if (WorldPosition.Y > MaxPos.Y) distSQ -= MathF.Pow(WorldPosition.Y - MaxPos.Y, 2);
-
-        if (WorldPosition.Z < MinPos.Z) distSQ -= MathF.Pow(WorldPosition.Z - MinPos.Z, 2);
-        else if (WorldPosition.Z > MaxPos.Z) distSQ -= MathF.Pow(WorldPosition.Z - MaxPos.Z, 2);
-
-        return distSQ > 0;
-    }
     }
 }
-

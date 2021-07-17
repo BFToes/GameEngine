@@ -3,10 +3,10 @@ using OpenTK.Mathematics;
 using OpenTK.Graphics.OpenGL4;
 using Graphics.Shaders;
 using Graphics.Resources;
-using Graphics.Rendering;
+using Graphics.Rendering.Culling;
 namespace Graphics.Entities
 {
-    interface IRenderable : CullShape
+    interface IRenderable : ICullable<CullSphere>
     {
         public void Render();
     }
@@ -23,10 +23,13 @@ namespace Graphics.Entities
         {
             Material = ShaderProgram.ReadFrom(VertexShader, FragmentShader);
             RenderMesh = Mesh;
-
             Set_WorldMatrix += (WorldMatrix) => Material.SetUniform("Model", WorldMatrix);
+            Set_WorldMatrix += Sphere.Extract;
             Material.SetUniformBlock("CameraBlock", 0); // 0 = Camera Block Binding Index
         }
+
+        private CullSphere Sphere = new CullSphere();
+        public CullSphere CullShape => Sphere;
 
         /// <summary>
         /// Show this object in the Framebuffer
@@ -36,7 +39,5 @@ namespace Graphics.Entities
             Material.Use(); // tell openGL to use this objects program
             RenderMesh.Draw();
         }
-
-        public virtual bool InView(Observer Observer) => Observer.IntersectVolume(WorldPosition, Vector3.One);
     }
 }

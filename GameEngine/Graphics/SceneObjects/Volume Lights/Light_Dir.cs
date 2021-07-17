@@ -5,7 +5,6 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using Graphics.Shaders;
 using Graphics.Resources;
-using Graphics.Rendering;
 namespace Graphics.Entities
 {
     class Light_Dir : Entity, IVolumeLight
@@ -75,11 +74,5 @@ namespace Graphics.Entities
 
         void ILight.UseLight() => IVolumeLight.Use(this);
         void ILight.Illuminate() => IVolumeLight.Illuminate(this);
-
-        bool CullShape.InView(Observer Observer) => true;
-
-        bool Observer.IntersectPoint(Vector3 Position) => true;
-        bool Observer.IntersectVolume(Vector3 Position, Vector3 Scale) => true;
-        bool Observer.IntersectSphere(Vector3 Position, float Scale) => true;
     }
 }

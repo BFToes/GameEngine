@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using OpenTK.Mathematics;
 using Graphics.Entities;
-using Graphics.Resources;
-
 namespace Graphics.Rendering
 {
     /*
@@ -27,12 +25,12 @@ namespace Graphics.Rendering
      *                          being rendered. just a good thing to have. This applies to lights and camera
      *                          I can also add an axis aligned bounding box around a mesh to optimise search.
      *                          Starting to become very necessary.   
-     *                           *  Volume Bounding Trees -> a tree for bounding volumes. It would  be really 
-     *                              good to be able to link it to the entity tree structure but that would 
-     *                              mean rendering through the entity tree, I'll have to search for the Light 
-     *                              objects, renderobjects and occluders. O(3n) compared to O(n). I could keep 
-     *                              the rendering and culling seperate and store a value instead.
-     *                          
+     *                           *  Volume Bounding Trees -> a tree for bounding volumes. 
+     *                           *  https://cesium.com/blog/2015/08/04/fast-hierarchical-culling/ ->
+     *                              when traversing the culling tree, optimisations can be made so that the 
+     *                              children nodes only check the planes that intersected the parent node. 
+     *                              bitmask for each plane on frustum observer
+     *
      * OBJECT CHUNK SYSTEM ->   Octa tree of objects for faster frustrum culling and tesselation for far away
      *                          objects. can also use it for transparency and depth sorting. more importantly
      *                          it can be used for light "Frustrum" culling(it will almost never be a frustrum
@@ -59,11 +57,11 @@ namespace Graphics.Rendering
     class Scene
     {
         public Camera Camera;
-        private GeometryBuffer GBuffer;
+        private readonly GeometryBuffer GBuffer;
 
-        private List<Occluder> OccluderObjects = new List<Occluder>();
-        private List<IRenderable> Objects = new List<IRenderable>();
-        private List<ILight> LightObjects = new List<ILight>();
+        private readonly List<Occluder> OccluderObjects = new List<Occluder>();
+        private readonly List<IRenderable> Objects = new List<IRenderable>();
+        private readonly List<ILight> LightObjects = new List<ILight>();
 
         private Vector2i size;
         public Vector2i Size
@@ -95,18 +93,18 @@ namespace Graphics.Rendering
             GBuffer.Use();
 
             foreach (IRenderable RO in Objects)
-                if (RO.InView(Camera)) RO.Render();
+                if (Camera.Detects(RO)) RO.Render();
                     
             BeginLightPass(DrawTarget);
             
             foreach (ILight LO in LightObjects)
             {
-                if (LO.InView(Camera))
+                if (/*Camera.Detects(LO)*/true)
                 {
                     LO.UseLight();
 
                     foreach (IOccluder Occ in OccluderObjects)
-                        if (Occ.InView(LO)) Occ.Occlude(LO);
+                        if (/*LO.Detects(Occ)*/true) Occ.Occlude(LO);
 
                     LO.Illuminate();
                 }
@@ -135,7 +133,7 @@ namespace Graphics.Rendering
         /// </summary>
         public void Use()
         {
-            Camera.Block.Bind();
+            Camera.Use();
             ILight.AlbedoTexture = GBuffer.AlbedoTexture;
             ILight.NormalTexture = GBuffer.NormalTexture;
             ILight.PositionTexture = GBuffer.PositionTexture;
