@@ -1,9 +1,59 @@
 ﻿using OpenTK.Graphics.OpenGL4;
+using GameEngine.Entities.Culling;
+using System;
+using GameEngine.Resources;
+using GameEngine.Resources.Shaders;
 
 namespace GameEngine.Entities.Lighting
 {
-    interface IVolumeLight : ILight
+    interface IVolumeLight : ICullable<Sphere>, ICullObserver<Sphere>
     {
+        #region Static Light Settings
+        private static int normaltexture;
+        private static int albedotexture;
+        private static int positiontexture;
+        private static float specularintensity;
+        private static float specularpower;
+
+        protected static event Action<int> SetNormalTexture = (Tex) => { normaltexture = Tex; };
+        protected static event Action<int> SetAlbedoTexture = (Tex) => { albedotexture = Tex; };
+        protected static event Action<int> SetPositionTexture = (Tex) => { positiontexture = Tex; };
+        protected static event Action<float> SetSpecularIntensity = (intensity) => { specularintensity = intensity; };
+        protected static event Action<float> SetSpecularPower = (power) => { specularpower = power; };
+        public static int NormalTexture
+        {
+            get => normaltexture;
+            set => SetNormalTexture(value);
+        }
+        public static int AlbedoTexture
+        {
+            get => albedotexture;
+            set => SetAlbedoTexture(value);
+        }
+        public static int PositionTexture
+        {
+            get => positiontexture;
+            set => SetPositionTexture(value);
+        }
+        public static float SpecularIntensity
+        {
+            get => specularintensity;
+            set => SetSpecularIntensity(value);
+        }
+        public static float SpecularPower
+        {
+            get => specularpower;
+            set => SetSpecularPower(value);
+        }
+        #endregion
+
+        public ShaderProgram ShadowProgram { get; }
+        public ShaderProgram LightProgram { get; }
+        protected UniformBlock LightBlock { get; }
+        protected Mesh LightMesh { get; }
+
+        public void UseLight();
+        public void Illuminate();
         #region Debug Fields
         protected const bool DEBUG_SHOW_SHADOW_VOLUME = false;
         protected const bool DEBUG_SHOW_LIGHT_MESH = false;

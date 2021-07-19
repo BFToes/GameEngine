@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace GameEngine.Entities
 {
-    class Light_Pnt : SpatialEntity<TransformAligned3D>, IVolumeLight, ICullable<CullSphere>
+    class Light_Pnt : SpatialEntity<TransformAligned3D>, IVolumeLight
     {
         #region Inherited Light Setup
         private static readonly ShaderProgram ShadowProgram = ShaderProgram.ReadFrom(
@@ -24,10 +24,10 @@ namespace GameEngine.Entities
             "Resources/Shaderscripts/Rendering/Light/Light_Debug.frag");
         protected readonly UniformBlock LightBlock = UniformBlock.For<PointLightData>(1);
 
-        ShaderProgram ILight.ShadowProgram => ShadowProgram;
-        ShaderProgram ILight.LightProgram => LightProgram;
-        UniformBlock ILight.LightBlock => LightBlock;
-        Mesh ILight.LightMesh => Mesh.SimpleSphere;
+        ShaderProgram IVolumeLight.ShadowProgram => ShadowProgram;
+        ShaderProgram IVolumeLight.LightProgram => LightProgram;
+        UniformBlock IVolumeLight.LightBlock => LightBlock;
+        Mesh IVolumeLight.LightMesh => Mesh.SimpleSphere;
 
         static Light_Pnt()
         {
@@ -38,17 +38,17 @@ namespace GameEngine.Entities
             LightProgram.SetUniformBlock("CameraBlock", 0);
             LightProgram.SetUniformBlock("LightBlock", 1);
 
-            ILight.SetNormalTexture += (Tex) => LightProgram.SetUniformSampler("NormalTexture", Tex);
-            ILight.SetPositionTexture += (Tex) => LightProgram.SetUniformSampler("PositionTexture", Tex);
-            ILight.SetAlbedoTexture += (Tex) => LightProgram.SetUniformSampler("AlbedoTexture", Tex);
-            ILight.SetSpecularIntensity += (SI) => LightProgram.SetUniform("SpecularIntensity", SI);
-            ILight.SetSpecularPower += (SP) => LightProgram.SetUniform("SpecularPower", SP);
+            IVolumeLight.SetNormalTexture += (Tex) => LightProgram.SetUniformSampler("NormalTexture", Tex);
+            IVolumeLight.SetPositionTexture += (Tex) => LightProgram.SetUniformSampler("PositionTexture", Tex);
+            IVolumeLight.SetAlbedoTexture += (Tex) => LightProgram.SetUniformSampler("AlbedoTexture", Tex);
+            IVolumeLight.SetSpecularIntensity += (SI) => LightProgram.SetUniform("SpecularIntensity", SI);
+            IVolumeLight.SetSpecularPower += (SP) => LightProgram.SetUniform("SpecularPower", SP);
 
-            LightProgram.SetUniformSampler("NormalTexture", ILight.NormalTexture);
-            LightProgram.SetUniformSampler("PositionTexture", ILight.PositionTexture);
-            LightProgram.SetUniformSampler("AlbedoTexture", ILight.AlbedoTexture);
-            LightProgram.SetUniform("SpecularIntensity", ILight.SpecularIntensity);
-            LightProgram.SetUniform("SpecularPower", ILight.SpecularPower);
+            LightProgram.SetUniformSampler("NormalTexture", IVolumeLight.NormalTexture);
+            LightProgram.SetUniformSampler("PositionTexture", IVolumeLight.PositionTexture);
+            LightProgram.SetUniformSampler("AlbedoTexture", IVolumeLight.AlbedoTexture);
+            LightProgram.SetUniform("SpecularIntensity", IVolumeLight.SpecularIntensity);
+            LightProgram.SetUniform("SpecularPower", IVolumeLight.SpecularPower);
                     
             // Debug tool
             ShowMeshProgram.SetUniformBlock("CameraBlock", 0);
@@ -101,9 +101,6 @@ namespace GameEngine.Entities
         }
         #endregion
 
-        CullSphere CullSphere = new CullSphere();
-        CullSphere ICullable<CullSphere>.CullShape => CullSphere;
-
         public Light_Pnt(Vector3 Position, Vector3 Colour, float DIntensity = 1f, float AIntensity = 0.0f, float Scale = 10f) : base(new TransformAligned3D())
         {
             colour = Colour;
@@ -120,11 +117,11 @@ namespace GameEngine.Entities
         {
             LightBlock.Set(0, M);
             LightBlock.Set(80, WorldPosition);
-            CullSphere.Extract(M);
+            CullShape.Update(M);
         }
 
-        void ILight.UseLight() => IVolumeLight.Use(this);
-        void ILight.Illuminate()
+        void IVolumeLight.UseLight() => IVolumeLight.Use(this);
+        void IVolumeLight.Illuminate()
         {
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Front);
@@ -140,5 +137,12 @@ namespace GameEngine.Entities
                 Mesh.SimpleSphere.Draw(PolygonMode.Line);
             }
         }
+
+
+        Sphere CullShape = new Sphere(Vector3.Zero, float.MaxValue);
+        Sphere ICullable<Sphere>.CullShape => CullShape;
+        Sphere ICullObserver<Sphere>.Observer => CullShape;
+        public bool Detects(ICullable<Sphere> Entity) => CullShape.Intersect(Entity.CullShape);
+        public bool Detects(ICullable<Box> Entity) => CullShape.Intersect(Entity.CullShape);
     }
 }

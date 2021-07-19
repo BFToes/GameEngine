@@ -4,6 +4,8 @@ using System;
 using GameEngine.Resources.Shaders;
 using GameEngine.Entities.Culling;
 using GameEngine.Geometry.Transform;
+using GameEngine.Entities.Lighting;
+
 namespace GameEngine.Entities
 {
     /*
@@ -14,10 +16,10 @@ namespace GameEngine.Entities
      */
 
 
-    class Camera : SpatialEntity<AbstractTransform3D>, ICullObserver<FrustumObserver>
+    class Camera : SpatialEntity<AbstractTransform3D>, ICullObserver<Frustum>
     {
-        private readonly FrustumObserver Frustum = new FrustumObserver();
-        FrustumObserver ICullObserver<FrustumObserver>.Observer => Frustum;
+        private readonly Frustum Frustum = new Frustum();
+        Frustum ICullObserver<Frustum>.Observer => Frustum;
 
         private UniformBlock Block = UniformBlock.For<CameraData>(0);
         private readonly float FOV, nearZ, farZ;
@@ -67,8 +69,7 @@ namespace GameEngine.Entities
         }
         public void Use() => Block.Bind();
 
-        public bool Detects(ICullable<CullPoint> Entity) => Frustum.Detects(Entity.CullShape);
-        public bool Detects(ICullable<CullSphere> Entity) => Frustum.Detects(Entity.CullShape);
-        public bool Detects(ICullable<CullVolume> Entity) => Frustum.Detects(Entity.CullShape);
+        public bool Detects(ICullable<Sphere> Entity) => Frustum.Intersect(Entity.CullShape);
+        public bool Detects(ICullable<Box> Entity) => Frustum.Intersect(Entity.CullShape);
     }
 }

@@ -1,7 +1,8 @@
-﻿namespace GameEngine.Entities.Lighting
+﻿using GameEngine.Entities.Culling;
+namespace GameEngine.Entities.Lighting
 {
-    interface IOccluder
+    interface IOccluder : ICullable<Sphere>
     {
-        public void Occlude(ILight Light);
+        public void Occlude(IVolumeLight Light);
     }
 }

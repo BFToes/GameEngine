@@ -4,18 +4,24 @@ using System.Collections.Generic;
 using OpenTK.Mathematics;
 using GameEngine.Entities;
 using GameEngine.Entities.Lighting;
-using GameEngine.Entities.Culling;
 using GameEngine.Rendering;
 namespace GameEngine
 {
-    /*
+    /* FIX ENTITY CLASSES ->    They should only be doing one thing. like a transform object, then the
+     *                          other classes should extend off them:
+     *                           * Updating ViewPort:
+     *                              * Spatial - Extended by: Camera, Mesh, Culling, Observing, Light
+     *                              * Mesh - Extended by: Occluder, Render
+     *                              * 
+     *                           * (mostly)Static ViewPort:
+     *                              * Box Extended by: Text, Image, Button
      * ### MESHES:
      * MESH SKELETAL ANIM ->    like squish w armatures an stuff? ASIMP is a word? opgdev has a tutorial
      * MESH NORMALIZATION ->    for bounding box on frustrum culling
-     * MESH SIMPLIFICATION ->   for occluder objects. edge colapse algorithm.
+     * MESH SIMPLIFICATION ->   for occluder objects. edge colapse algorithm. or just resample?
      * MESH MANAGEMENT ->       like with sampler2Ds and it would be good to like idk merge that kinda resource 
      *                          management. hard to know if this is a good idea.
-     * MESH MATERIAL IMPORT ->  idk there were like funky lil .mtl files ¯\_ (ツ)_/¯
+     * MESH MATERIAL IMPORT ->  idk there were like funky lil .mtl files ¯\_(ツ)_/¯
      *
      * REDO SHADERPROGRAM ->    currently the sampler units dont pack very wells
      *
@@ -63,9 +69,9 @@ namespace GameEngine
         public Camera Camera;
         private readonly GeometryBuffer GBuffer;
 
-        private readonly List<Occluder> OccluderObjects = new List<Occluder>(); // ICullable
-        private readonly List<IRenderable> Objects = new List<IRenderable>(); // Potenitally ICullable
-        private readonly List<ILight> LightObjects = new List<ILight>(); // Potenitally ICullible
+        private readonly List<Occluder> OccluderEntities = new List<Occluder>(); // ICullable
+        private readonly List<IRenderable> RenderEntities = new List<IRenderable>(); // Potenitally ICullable
+        private readonly List<IVolumeLight> VLightEntities = new List<IVolumeLight>(); // Potenitally ICullible
 
         private Vector2i size;
         public Vector2i Size
@@ -96,19 +102,19 @@ namespace GameEngine
         {
             GBuffer.Use();
 
-            foreach (IRenderable RO in Objects)
+            foreach (IRenderable RO in RenderEntities)
                 if (Camera.Detects(RO)) RO.Render();
                     
             BeginLightPass(DrawTarget);
             
-            foreach (ILight LO in LightObjects)
+            foreach (IVolumeLight LO in VLightEntities)
             {
-                if (/*Camera.Detects(LO)*/true)
+                if (Camera.Detects(LO))
                 {
                     LO.UseLight();
 
-                    foreach (IOccluder Occ in OccluderObjects)
-                        if (/*LO.Detects(Occ)*/true) Occ.Occlude(LO);
+                    foreach (IOccluder Occ in OccluderEntities)
+                        if (LO.Detects(Occ)) Occ.Occlude(LO);
 
                     LO.Illuminate();
                 }
@@ -138,11 +144,11 @@ namespace GameEngine
         public void Use()
         {
             Camera.Use();
-            ILight.AlbedoTexture = GBuffer.AlbedoTexture;
-            ILight.NormalTexture = GBuffer.NormalTexture;
-            ILight.PositionTexture = GBuffer.PositionTexture;
-            ILight.SpecularIntensity = 0.1f;
-            ILight.SpecularPower = 4;
+            IVolumeLight.AlbedoTexture = GBuffer.AlbedoTexture;
+            IVolumeLight.NormalTexture = GBuffer.NormalTexture;
+            IVolumeLight.PositionTexture = GBuffer.PositionTexture;
+            IVolumeLight.SpecularIntensity = 0.1f;
+            IVolumeLight.SpecularPower = 4;
 
             // blending functions
             GL.BlendEquation(BlendEquationMode.FuncAdd);
@@ -166,18 +172,18 @@ namespace GameEngine
         {
             switch (Entity)
             {
-                case ILight LO: 
-                    LightObjects.Add(LO); 
+                case IVolumeLight LO: 
+                    VLightEntities.Add(LO); 
                     foreach (Entity E in Entity.GetChildren()) 
                         Add(E); 
                     break;
                 case IRenderable RO: 
-                    Objects.Add(RO); 
+                    RenderEntities.Add(RO); 
                     foreach (Entity E in Entity.GetChildren()) 
                         Add(E); 
                     break;
                 case Occluder Occ: 
-                    OccluderObjects.Add(Occ); 
+                    OccluderEntities.Add(Occ); 
                     foreach (Entity E in Entity.GetChildren()) 
                         Add(E); 
                     break;
@@ -191,18 +197,18 @@ namespace GameEngine
         {
             switch (Entity)
             {
-                case ILight LO: 
-                    LightObjects.Remove(LO); 
+                case IVolumeLight LO: 
+                    VLightEntities.Remove(LO); 
                     foreach (Entity Child in Entity.GetChildren()) 
                         Remove(Child); 
                     break;
                 case IRenderable RO: 
-                    Objects.Remove(RO); 
+                    RenderEntities.Remove(RO); 
                     foreach (Entity Child in Entity.GetChildren()) 
                         Remove(Child); 
                     break;
                 case Occluder Occ: 
-                    OccluderObjects.Remove(Occ); 
+                    OccluderEntities.Remove(Occ); 
                     foreach (Entity Child in Entity.GetChildren()) 
                         Remove(Child); 
                     break;

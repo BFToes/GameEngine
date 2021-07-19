@@ -22,6 +22,8 @@ namespace GameEngine
             Action<MouseMoveEventArgs> MoveCamera = (e) => RW.Scene.Camera.Transform.Position += 10 * new Vector3(RW.Scene.Camera.Transform.Matrix * -new Vector4(-e.DeltaX / RW.Size.X, e.DeltaY / RW.Size.Y, 0, 1));
             Action<MouseMoveEventArgs> RotaCamera = (e) => RW.Scene.Camera.Transform.Rotation += new Vector3(e.DeltaY / RW.Size.Y, e.DeltaX / RW.Size.X, 0);
 
+
+
             RW.MouseWheel += (e) => RW.Scene.Camera.Transform.Position += new Vector3(RW.Scene.Camera.Transform.Matrix * -new Vector4(0, 0, e.OffsetY, 1));
             RW.MouseDown += (e) =>
             {
@@ -58,7 +60,7 @@ namespace GameEngine
         {
             Camera.Transform.Position = new Vector3(0, 2, 3);
 
-            Test.CreateSquare(8, 1, 25, this);
+            Test.CreateSquare(8, 1, 3f, this);
 
             new Floor(this);
             this.Add(new Light_Dir(new Vector3(0, -1, -1), new Vector3(0.8f)));
@@ -135,12 +137,12 @@ namespace GameEngine
             "Resources/shaderscripts/Default.vert",
             "Resources/shaderscripts/SolidColour.frag")
         {
-            Vector3 C = new Vector3(Colours[n].R, Colours[n].G, Colours[n].B) * 4;
+            Vector3 C = new Vector3(Colours[n].R, Colours[n].G, Colours[n].B);
 
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
             Material.SetUniform("DiffuseColor", C);
-            this.Transform.Scale = new Vector3(0.8f);
-            Light = new Light_Pnt(Vector3.Zero, C);
+            this.Transform.Scale = new Vector3(0.1f);
+            Light = new Light_Pnt(Vector3.Zero, C, 2, 0, 80);
 
             this.Floatn = (float)n / TotalLights;
             this.Add(Light);

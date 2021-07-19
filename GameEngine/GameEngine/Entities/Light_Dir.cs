@@ -2,6 +2,8 @@
 using GameEngine.Resources.Shaders;
 using GameEngine.Resources;
 using GameEngine.Entities.Lighting;
+using GameEngine.Entities.Culling;
+
 namespace GameEngine.Entities
 {
     class Light_Dir : Entity, IVolumeLight
@@ -16,10 +18,10 @@ namespace GameEngine.Entities
             "Resources/Shaderscripts/Rendering/Light/Light_Directional.frag");
         private readonly UniformBlock LightBlock = UniformBlock.For<DirectionalLightData>(1);
 
-        ShaderProgram ILight.ShadowProgram => shadowprogram;
-        ShaderProgram ILight.LightProgram => lightprogram;
-        UniformBlock ILight.LightBlock => LightBlock;
-        Mesh ILight.LightMesh => Mesh.SimpleScreen;
+        ShaderProgram IVolumeLight.ShadowProgram => shadowprogram;
+        ShaderProgram IVolumeLight.LightProgram => lightprogram;
+        UniformBlock IVolumeLight.LightBlock => LightBlock;
+        Mesh IVolumeLight.LightMesh => Mesh.SimpleScreen;
 
         static Light_Dir()
         {
@@ -28,12 +30,12 @@ namespace GameEngine.Entities
             lightprogram.SetUniformBlock("CameraBlock", 0);
             lightprogram.SetUniformBlock("LightBlock", 1);
 
-            ILight.SetAlbedoTexture += (Tex) => lightprogram.SetUniformSampler("AlbedoTexture", Tex);
-            ILight.SetNormalTexture += (Tex) => lightprogram.SetUniformSampler("NormalTexture", Tex);
-            ILight.SetPositionTexture += (Tex) => lightprogram.SetUniformSampler("PositionTexture", Tex);
+            IVolumeLight.SetAlbedoTexture += (Tex) => lightprogram.SetUniformSampler("AlbedoTexture", Tex);
+            IVolumeLight.SetNormalTexture += (Tex) => lightprogram.SetUniformSampler("NormalTexture", Tex);
+            IVolumeLight.SetPositionTexture += (Tex) => lightprogram.SetUniformSampler("PositionTexture", Tex);
 
-            ILight.SetSpecularIntensity += (SI) => lightprogram.SetUniform("SpecularIntensity", SI);
-            ILight.SetSpecularPower += (SP) => lightprogram.SetUniform("SpecularPower", SP);
+            IVolumeLight.SetSpecularIntensity += (SI) => lightprogram.SetUniform("SpecularIntensity", SI);
+            IVolumeLight.SetSpecularPower += (SP) => lightprogram.SetUniform("SpecularPower", SP);
         }
         #endregion
 
@@ -69,7 +71,14 @@ namespace GameEngine.Entities
             LightBlock.Set(new DirectionalLightData(Direction, Colour, AmbientIntensity, DiffuseIntensity));
         }
 
-        void ILight.UseLight() => IVolumeLight.Use(this);
-        void ILight.Illuminate() => IVolumeLight.Illuminate(this);
+        void IVolumeLight.UseLight() => IVolumeLight.Use(this);
+        void IVolumeLight.Illuminate() => IVolumeLight.Illuminate(this);
+
+
+        Sphere CullShape = new Sphere(Vector3.Zero, 1);
+        Sphere ICullable<Sphere>.CullShape => CullShape;
+        Sphere ICullObserver<Sphere>.Observer => CullShape;
+        public bool Detects(ICullable<Sphere> Entity) => CullShape.Intersect(Entity.CullShape);
+        public bool Detects(ICullable<Box> Entity) => CullShape.Intersect(Entity.CullShape);
     }
 }
