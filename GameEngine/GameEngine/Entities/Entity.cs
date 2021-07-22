@@ -38,21 +38,21 @@ namespace GameEngine.Entities
 
     interface ISpatial
     {
-        public event Action<Matrix4> Set_WorldMatrix;
+        public event Action<Matrix4> SetWorldMatrix;
         public Matrix4 WorldMatrix { get; }
     }
 
     class SpatialEntity<TransformType> : Entity, ISpatial where TransformType : ITransform
     {
         private Matrix4 BaseMatrix = Matrix4.Identity; 
-        public event Action<Matrix4> Set_WorldMatrix = delegate { };
+        public event Action<Matrix4> SetWorldMatrix = delegate { };
         public Matrix4 WorldMatrix
         { 
             get => BaseMatrix; 
             private set 
             { 
                 BaseMatrix = value; 
-                Set_WorldMatrix(value); 
+                SetWorldMatrix(value); 
             } 
         }
         public Vector3 WorldPosition => new Vector3(WorldMatrix.Row3);
@@ -64,19 +64,19 @@ namespace GameEngine.Entities
         public SpatialEntity(TransformType Transform)
         {
             this.Transform = Transform;
-            this.Transform.Set_Transform += UpdateMatrix;
+            this.Transform.SetTransform += UpdateMatrix;
         }
         
         public virtual void Add<T>(SpatialEntity<T> Child) where T : ITransform
         {
             base.AddChild(Child);
-            Set_WorldMatrix += Child.UpdateMatrix;
+            SetWorldMatrix += Child.UpdateMatrix;
             Child.WorldMatrix = Child.Transform.Matrix * this.WorldMatrix;
         }
         public virtual void Remove<T>(SpatialEntity<T> Child) where T : ITransform
         {
             base.RemoveChild(Child);
-            Set_WorldMatrix += Child.UpdateMatrix;
+            SetWorldMatrix += Child.UpdateMatrix;
             Child.Transform.Extract(WorldMatrix);
         }
         private void UpdateMatrix(Matrix4 _)

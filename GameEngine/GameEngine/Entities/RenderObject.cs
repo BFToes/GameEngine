@@ -25,8 +25,8 @@ namespace GameEngine.Entities
         {
             Material = ShaderProgram.ReadFrom(VertexShader, FragmentShader);
             RenderMesh = Mesh;
-            Set_WorldMatrix += (WorldMatrix) => Material.SetUniform("Model", WorldMatrix);
-            Set_WorldMatrix += Sphere.Update;
+            SetWorldMatrix += (WorldMatrix) => Material.SetUniform("Model", WorldMatrix);
+            SetWorldMatrix += Sphere.Update;
             Material.SetUniformBlock("CameraBlock", 0); // 0 = Camera Block Binding Index
         }
 

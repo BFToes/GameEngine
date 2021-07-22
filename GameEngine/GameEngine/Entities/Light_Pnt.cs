@@ -110,7 +110,7 @@ namespace GameEngine.Entities
             Transform.Scale = new Vector3(Scale);
             LightBlock.Set(new PointLightData(Transform.Matrix, Position, colour, aintensity, dintensity));
 
-            Set_WorldMatrix += Update;
+            SetWorldMatrix += Update;
         }
 
         private void Update(Matrix4 M)

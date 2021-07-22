@@ -47,7 +47,7 @@ namespace GameEngine.Entities
             else
                 Projection = Matrix4.CreateOrthographic((int)Width, (int)Height, nearZ, farZ);
 
-            Set_WorldMatrix += SetCameraMove;
+            SetWorldMatrix += SetCameraMove;
             Block.Set(new CameraData(Projection, Transform.Matrix, new Vector2(Width, Height))); // set data in uniform block
         }
 

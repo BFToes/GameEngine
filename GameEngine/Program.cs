@@ -7,13 +7,16 @@ using System;
 using GameEngine.Rendering;
 using GameEngine.Resources;
 using GameEngine.Entities;
+using Assimp;
 
 namespace GameEngine
 {
     class Program
     {
+        /*
         static void Main(string[] args)
         {
+            
             using RenderWindow RW = RenderWindow.New(true, 800, 800);
 
             Scene Scene = new World();
@@ -51,6 +54,9 @@ namespace GameEngine
             };
 
             RW.Run();
+            
+
+            
         }
     }
     class World : Scene
@@ -86,7 +92,7 @@ namespace GameEngine
     {
         public float x, y;
         
-        private static readonly Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/Cube.obj", (p, n, t) => new Vertex3D(p, n, t));
+        private static readonly Mesh<Vertex3D> mesh = Mesh.Construct("Resources/Meshes/Hat.obj", (p, n, t) => new Vertex3D(p, n, t));
         private static readonly Mesh<Simple3D> Occmesh = Occluder.BuildMesh("Resources/Meshes/Cube.obj");
         private Occluder occluder = new Occluder(Occmesh);
 
@@ -110,7 +116,7 @@ namespace GameEngine
 
             Add(occluder);
             Transform.Position = new Vector3();
-            Transform.Scale = new Vector3(1, 1, 1);
+            Transform.Scale = Vector3.One * 4;
 
             Material.SetUniformSampler2D("DiffuseTexture", "Resources/Textures/Test.png");
             Material.SetUniformSampler2D("SpecularTexture", "Resources/Textures/SpecMap.png");
@@ -154,7 +160,41 @@ namespace GameEngine
             Transform.Position = new Vector3(MathF.Sin(2 * MathF.PI * Floatn + time) * Radius, 1.6f, MathF.Cos(2 * MathF.PI * Floatn + time) * Radius);
             base.OnProcess(delta);
         }
+        */
+
+        static void Main(string[] _)
+        {
+            SpatialEntity A = new SpatialEntity();
+            SpatialEntity B = new SpatialEntity();
+            ECS.Spatial3DComponent CompA = A.GetComponent<ECS.Spatial3DComponent>();
+            ECS.Spatial3DComponent CompB = B.GetComponent<ECS.Spatial3DComponent>();
+
+            
+            CompA.Scale = new Vector3(2, 3, 1);
+            CompB.Position = new Vector3(1, 4, 6);
+            A.Add(B);
+
+            Console.WriteLine($"{CompB.Position.X}, {CompB.Position.Y}, {CompB.Position.Z}");
+            Console.WriteLine($"{CompB.GlobalTransform.M41}, {CompB.GlobalTransform.M42}, {CompB.GlobalTransform.M43}");
+            
+            A.Remove(B);
+            Console.WriteLine($"{CompB.Position.X}, {CompB.Position.Y}, {CompB.Position.Z}");
+            Console.WriteLine($"{CompB.GlobalTransform.M41}, {CompB.GlobalTransform.M42}, {CompB.GlobalTransform.M43}");
+
+            Assimp.Mesh M = new Assimp.Mesh();
+
+        }
+        class SpatialEntity : ECS.Entity
+        {
+            public SpatialEntity()
+            {
+                AddComponent<ECS.Spatial3DComponent>();
+            }
+        }
     }
+
+
+
 }
 
 

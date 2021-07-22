@@ -12,11 +12,11 @@ namespace GameEngine.Geometry.Transform
         private Vector2 position = Vector2.Zero;
         private int z_index;
 
-        public event Action<float> Set_Rotation = delegate { };
-        public event Action<Vector2> Set_Position = delegate { };
-        public event Action<Vector2> Set_Scale = delegate { };
-        public event Action<int> Set_Z_Index = delegate { };
-        public event Action<Matrix4> Set_Transform = delegate { };
+        public event Action<float> SetRotation = delegate { };
+        public event Action<Vector2> SetPosition = delegate { };
+        public event Action<Vector2> SetScale = delegate { };
+        public event Action<int> SetZ_Index = delegate { };
+        public event Action<Matrix4> SetTransform = delegate { };
 
         public Matrix4 Matrix { get; protected set; }
         public virtual float Rotation
@@ -24,8 +24,8 @@ namespace GameEngine.Geometry.Transform
             set
             {
                 rotation = value;
-                Set_Rotation(rotation);
-                Set_Transform(Matrix);
+                SetRotation(rotation);
+                SetTransform(Matrix);
             }
             get => rotation;
 
@@ -35,8 +35,8 @@ namespace GameEngine.Geometry.Transform
             set
             {
                 scale = value;
-                Set_Scale(scale);
-                Set_Transform(Matrix);
+                SetScale(scale);
+                SetTransform(Matrix);
             }
             get => scale;
         }
@@ -46,8 +46,8 @@ namespace GameEngine.Geometry.Transform
             {
                 position = value;
 
-                Set_Position(position);
-                Set_Transform(Matrix);
+                SetPosition(position);
+                SetTransform(Matrix);
             }
             get => position;
         }
@@ -57,8 +57,8 @@ namespace GameEngine.Geometry.Transform
             set
             {
                 z_index = value;
-                Set_Z_Index(z_index);
-                Set_Transform(Matrix);
+                SetZ_Index(z_index);
+                SetTransform(Matrix);
             }
         }
 

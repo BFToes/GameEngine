@@ -8,13 +8,37 @@ using GameEngine.Rendering;
 namespace GameEngine
 {
     /* FIX ENTITY CLASSES ->    They should only be doing one thing. like a transform object, then the
-     *                          other classes should extend off them:
-     *                           * Updating ViewPort:
-     *                              * Spatial - Extended by: Camera, Mesh, Culling, Observing, Light
-     *                              * Mesh - Extended by: Occluder, Render
-     *                              * 
-     *                           * (mostly)Static ViewPort:
-     *                              * Box Extended by: Text, Image, Button
+     *                          other classes should extend off them. I CAN USE INTERNAL CLASSES BABY:
+     *                          Split functionality into entity and component:
+     *                           * Transform Component
+     *                           * Mesh Component
+     *                           * Occluder Component
+     *                           * Render Component
+     *                           * ScreenSpace Refection
+     *                           * Particle System
+     *                           * Culling Component
+     *                           * Collider Component
+     *                           * Animation Component
+     * Entity:
+     *    Entity Parent 
+     *    List<Entity> Children
+     *    List<EntityComponent> components
+     *    Component GetComponent<Component>()
+     *    Render()
+     *    Update()
+     * EntityComponent:
+     *    Entity entity
+     *    bool Renderable
+     *    bool Updatable
+     *    void Update(float)
+     *    void Render()
+     *  
+     * REPLACE MESH WITH ASSIMP LIBRARY
+     * REPLACE SHADERPROGRAM WITH ASSIMP LIBRARY
+     *  
+     *  
+     *  
+     * 
      * ### MESHES:
      * MESH SKELETAL ANIM ->    like squish w armatures an stuff? ASIMP is a word? opgdev has a tutorial
      * MESH NORMALIZATION ->    for bounding box on frustrum culling
@@ -216,7 +240,7 @@ namespace GameEngine
             }
         }
 
-        private class GeometryBuffer: FrameBuffer
+        private class GeometryBuffer : FrameBuffer
         {
             public readonly int AlbedoTexture;   // colour texture
             public readonly int NormalTexture;   // normal texture

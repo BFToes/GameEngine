@@ -6,7 +6,7 @@ namespace GameEngine.Geometry.Transform
     public interface ITransform
     {
         public Matrix4 Matrix { get; }
-        public event Action<Matrix4> Set_Transform;
+        public event Action<Matrix4> SetTransform;
         public void Extract(Matrix4 Matrix);
     }
     public abstract class AbstractTransform3D : ITransform
@@ -16,10 +16,10 @@ namespace GameEngine.Geometry.Transform
         private Vector3 scale = Vector3.One;
         private Vector3 position = Vector3.Zero;
 
-        public event Action<Vector3> Set_Rotation = delegate{ };
-        public event Action<Vector3> Set_Position = delegate{ };
-        public event Action<Vector3> Set_Scale = delegate{ };
-        public event Action<Matrix4> Set_Transform = delegate{ };
+        public event Action<Vector3> SetRotation = delegate{ };
+        public event Action<Vector3> SetPosition = delegate{ };
+        public event Action<Vector3> SetScale = delegate{ };
+        public event Action<Matrix4> SetTransform = delegate{ };
 
         public Matrix4 Matrix { get; protected set; }
         public virtual Vector3 Rotation
@@ -27,8 +27,8 @@ namespace GameEngine.Geometry.Transform
             set
             {
                 rotation = value;
-                Set_Rotation(rotation);
-                Set_Transform(Matrix);
+                SetRotation(rotation);
+                SetTransform(Matrix);
             }
             get => rotation;
 
@@ -38,8 +38,8 @@ namespace GameEngine.Geometry.Transform
             set
             {
                 scale = value;
-                Set_Scale(scale);
-                Set_Transform(Matrix);
+                SetScale(scale);
+                SetTransform(Matrix);
             }
             get => scale;
         }
@@ -49,8 +49,8 @@ namespace GameEngine.Geometry.Transform
             {
                 position = value;
 
-                Set_Position(position);
-                Set_Transform(Matrix);
+                SetPosition(position);
+                SetTransform(Matrix);
             }
             get => position;
         }
