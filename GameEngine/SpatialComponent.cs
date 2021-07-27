@@ -5,7 +5,8 @@ using System.Text;
 using System.Linq;
 namespace GameEngine.ECS
 {
-    public abstract class SpatialComponent : EntityComponent 
+    /*
+    public abstract class SpatialComponent : IComponent
     {
         public Matrix4 GlobalTransform
         {
@@ -38,7 +39,7 @@ namespace GameEngine.ECS
             if (InheritTransform) GlobalTransform = LocalTransform * ParentTransform.GlobalTransform;
             else GlobalTransform = LocalTransform; 
         }
-        public override void OnSetParent(Entity Parent)
+        private void OnSetParent(Entity Parent)
         {
             if (!(ParentTransform is null)) ParentTransform.SetGlobalTransform -= UpdateGlobalTransform;
 
@@ -48,6 +49,10 @@ namespace GameEngine.ECS
             if (!(ParentTransform is null)) ParentTransform.SetGlobalTransform += UpdateGlobalTransform;
 
             UpdateGlobalTransform(Matrix4.Zero);
+        }
+        internal override void Added()
+        {
+            entity.SetParent += OnSetParent;
         }
     }
     public sealed class Spatial3DComponent : SpatialComponent
@@ -164,4 +169,5 @@ namespace GameEngine.ECS
             get => scale;
         }
     }
+    */
 }

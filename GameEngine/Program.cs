@@ -6,8 +6,9 @@ using System;
 
 using GameEngine.Rendering;
 using GameEngine.Resources;
-using GameEngine.Entities;
+//using GameEngine.Entities;
 using Assimp;
+using GameEngine.ECS;
 
 namespace GameEngine
 {
@@ -164,33 +165,32 @@ namespace GameEngine
 
         static void Main(string[] _)
         {
-            SpatialEntity A = new SpatialEntity();
-            SpatialEntity B = new SpatialEntity();
-            ECS.Spatial3DComponent CompA = A.GetComponent<ECS.Spatial3DComponent>();
-            ECS.Spatial3DComponent CompB = B.GetComponent<ECS.Spatial3DComponent>();
-
+            var World = new World();
             
-            CompA.Scale = new Vector3(2, 3, 1);
-            CompB.Position = new Vector3(1, 4, 6);
-            A.Add(B);
-
-            Console.WriteLine($"{CompB.Position.X}, {CompB.Position.Y}, {CompB.Position.Z}");
-            Console.WriteLine($"{CompB.GlobalTransform.M41}, {CompB.GlobalTransform.M42}, {CompB.GlobalTransform.M43}");
-            
-            A.Remove(B);
-            Console.WriteLine($"{CompB.Position.X}, {CompB.Position.Y}, {CompB.Position.Z}");
-            Console.WriteLine($"{CompB.GlobalTransform.M41}, {CompB.GlobalTransform.M42}, {CompB.GlobalTransform.M43}");
-
-            Assimp.Mesh M = new Assimp.Mesh();
+        }
+        public class ComponentA : IComponent
+        {
+            static ComponentA()
+            {
+                ComponentType<ComponentA>.Register();
+            }
 
         }
-        class SpatialEntity : ECS.Entity
+
+        public class EntityA : Entity
         {
-            public SpatialEntity()
+            public EntityA() : base()
             {
-                AddComponent<ECS.Spatial3DComponent>();
+                AddComponent<ComponentA>();
             }
         }
+
+        public class Scene : World
+        {
+            
+        }
+        
+        
     }
 
 
