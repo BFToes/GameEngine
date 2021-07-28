@@ -8,25 +8,11 @@ using GameEngine.ECS.Systems;
 
 
 
-// https://github.com/voledyhil/MiniEcs
+// https://github.com/voledyhil/Mini
 namespace GameEngine.ECS
 {
     public partial class World
     {
-        private EntityExtended CreateEntity(uint id)
-        {
-            EntityExtended entity = _entitiesPool.Count <= 0
-                ? new EntityExtended(_entitiesPool, _entities, _archetypeManager)
-                : _entitiesPool.Dequeue();
-
-            entity.Initialize(id);
-
-            _entities.Add(id, entity);
-            _entityCounter = Math.Max(_entityCounter, ++id);
-
-            return entity;
-        }
-
         /// <summary>
         /// Reads data from DataReader, and updates the world of entities.
         /// </summary>
@@ -40,7 +26,7 @@ namespace GameEngine.ECS
                     uint key = reader.ReadUInt();
                     if (key == uint.MaxValue) break;
 
-                    if (!_entities.TryGetValue(key, out EntityExtended entity)) // if byte
+                    if (!_entities.TryGetValue(key, out Entity entity)) // if byte
                         entity = CreateEntity(key);
 
                     using (BinaryDataReader entityReader = reader.ReadNode())
@@ -83,25 +69,25 @@ namespace GameEngine.ECS
         /// <param name="filter">Filter</param>
         public byte[] Serialize(Filter filter)
         {
-            IGroup group = Filter(filter);
+            Group group = InternalFilter(filter);
 
             byte[] data;
             using (BinaryDataWriter writer = new BinaryDataWriter())
             {
-                foreach (IArchetype archetype in group)
+                foreach (Archetype archetype in group)
                 {
-                    byte[] indices = archetype.Indices;
+                    byte[] indices = archetype.ComponentIDs;
 
                     for (int i = 0; i < archetype.EntityCount; i++)
                     {
-                        IEntity entity = archetype[i];
+                        Entity entity = archetype[i];
 
                         BinaryDataWriter entityWriter = writer.TryWriteNode(sizeof(uint));
                         foreach (byte index in indices)
                         {
                             CompositeBinarySerializer ser = Serializer.GetSerializer(TypeManager.Types[index]);
                             BinaryDataWriter componentWriter = entityWriter.TryWriteNode(sizeof(byte));
-                            ser.Serialize(archetype.GetComponentPool(index).Get(i), componentWriter);
+                            ser.Serialize(archetype.GetComponents(index)[i], componentWriter);
                             entityWriter.WriteByte(index);
                             componentWriter.PushNode();
                         }
@@ -124,18 +110,18 @@ namespace GameEngine.ECS
         /// <param name="baseline">Baseline</param>
         public byte[] Serialize(Filter filter, Baseline<uint> baseline)
         {
-            IGroup group = Filter(filter);
+            Group group = InternalFilter(filter);
 
             byte[] data;
             using (BinaryDataWriter writer = new BinaryDataWriter())
             {
                 List<uint> entitiesBaseKeys = new List<uint>(baseline.BaselineKeys);
-                foreach (IArchetype archetype in group)
+                foreach (Archetype archetype in group)
                 {
-                    byte[] indices = archetype.Indices;
+                    byte[] indices = archetype.ComponentIDs;
                     for (int i = 0; i < archetype.EntityCount; i++)
                     {
-                        IEntity entity = archetype[i];
+                        Entity entity = archetype[i];
 
                         uint entityId = entity.ID;
 
@@ -148,7 +134,7 @@ namespace GameEngine.ECS
                             CompositeBinarySerializer ser = Serializer.GetSerializer(TypeManager.Types[index]);
                             BinaryDataWriter compWriter = entityWriter.TryWriteNode(sizeof(byte));
                             Baseline<byte> compBaseline = entityBaseline.GetOrCreateBaseline<Baseline<byte>>(index, ser.Count, out bool compIsNew);
-                            ser.Serialize(archetype.GetComponentPool(index).Get(i), compWriter, compBaseline);
+                            ser.Serialize(archetype.GetComponents(index)[i], compWriter, compBaseline);
 
                             if (compWriter.Length > 0 || compIsNew)
                             {

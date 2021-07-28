@@ -12,44 +12,44 @@ namespace GameEngine.ECS
         public HashSet<byte> None;
 
         public Filter AnyOf<T>() 
-            where T : class, IComponent, new() => AnyOf(ComponentType<T>.Index);
+            where T : class, IComponent, new() => AnyOf(ComponentType<T>.ID);
         public Filter AnyOf<T1, T2>() 
             where T1 : class, IComponent, new() 
-            where T2 : class, IComponent, new() => AnyOf(ComponentType<T1>.Index, ComponentType<T2>.Index);
+            where T2 : class, IComponent, new() => AnyOf(ComponentType<T1>.ID, ComponentType<T2>.ID);
         public Filter AnyOf<T1, T2, T3>() 
             where T1 : class, IComponent, new() 
             where T2 : class, IComponent, new() 
-            where T3 : class, IComponent, new() => AnyOf(ComponentType<T1>.Index, ComponentType<T2>.Index, ComponentType<T3>.Index);
+            where T3 : class, IComponent, new() => AnyOf(ComponentType<T1>.ID, ComponentType<T2>.ID, ComponentType<T3>.ID);
         public Filter AnyOf<T1, T2, T3, T4>()
             where T1 : class, IComponent, new()
             where T2 : class, IComponent, new()
             where T3 : class, IComponent, new()
-            where T4 : class, IComponent, new() => AnyOf(ComponentType<T1>.Index, ComponentType<T2>.Index, ComponentType<T3>.Index, ComponentType<T4>.Index);
+            where T4 : class, IComponent, new() => AnyOf(ComponentType<T1>.ID, ComponentType<T2>.ID, ComponentType<T3>.ID, ComponentType<T4>.ID);
         private Filter AnyOf(params byte[] types) 
         {
-            Any = Any ?? new HashSet<byte>();
-            foreach (byte type in types)
+            HashSet<byte> Any = new HashSet<byte>(); // The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null
+            foreach (byte comptype in types)
             {
-                Any.Add(type);
+                Any.Add(comptype);
                 _isCached = false;
             }
             return this;
         }
 
         public Filter AllOf<T1>() 
-            where T1 : class, IComponent, new() => AllOf(ComponentType<T1>.Index);
+            where T1 : class, IComponent, new() => AllOf(ComponentType<T1>.ID);
         public Filter AllOf<T1, T2>() 
             where T1 : class, IComponent, new() 
-            where T2 : class, IComponent, new() => AllOf(ComponentType<T1>.Index, ComponentType<T2>.Index);
+            where T2 : class, IComponent, new() => AllOf(ComponentType<T1>.ID, ComponentType<T2>.ID);
         public Filter AllOf<T1, T2, T3>() 
             where T1 : class, IComponent, new() 
             where T2 : class, IComponent, new() 
-            where T3 : class, IComponent, new() => AllOf(ComponentType<T1>.Index, ComponentType<T2>.Index, ComponentType<T3>.Index);
+            where T3 : class, IComponent, new() => AllOf(ComponentType<T1>.ID, ComponentType<T2>.ID, ComponentType<T3>.ID);
         public Filter AllOf<T1, T2, T3, T4>() 
             where T1 : class, IComponent, new() 
             where T2 : class, IComponent, new() 
             where T3 : class, IComponent, new() 
-            where T4 : class, IComponent, new() => AllOf(ComponentType<T1>.Index, ComponentType<T2>.Index, ComponentType<T3>.Index, ComponentType<T4>.Index);
+            where T4 : class, IComponent, new() => AllOf(ComponentType<T1>.ID, ComponentType<T2>.ID, ComponentType<T3>.ID, ComponentType<T4>.ID);
         private Filter AllOf(params byte[] types)
         {
             All = All ?? new HashSet<byte>();
@@ -66,19 +66,19 @@ namespace GameEngine.ECS
         /// </summary>
         /// <returns>Current filter</returns>
         public Filter NoneOf<T1>() 
-            where T1 : class, IComponent, new() => NoneOf(ComponentType<T1>.Index);
+            where T1 : class, IComponent, new() => NoneOf(ComponentType<T1>.ID);
         public Filter NoneOf<T1, T2>()
             where T1 : class, IComponent, new()
-            where T2 : class, IComponent, new() => NoneOf(ComponentType<T1>.Index, ComponentType<T2>.Index);
+            where T2 : class, IComponent, new() => NoneOf(ComponentType<T1>.ID, ComponentType<T2>.ID);
         public Filter NoneOf<T1, T2, T3>()
             where T1 : class, IComponent, new()
             where T2 : class, IComponent, new()
-            where T3 : class, IComponent, new() => NoneOf(ComponentType<T1>.Index, ComponentType<T2>.Index, ComponentType<T3>.Index);
+            where T3 : class, IComponent, new() => NoneOf(ComponentType<T1>.ID, ComponentType<T2>.ID, ComponentType<T3>.ID);
         public Filter NoneOf<T1, T2, T3, T4>()
             where T1 : class, IComponent, new()
             where T2 : class, IComponent, new()
             where T3 : class, IComponent, new() 
-            where T4 : class, IComponent, new() => NoneOf(ComponentType<T1>.Index, ComponentType<T2>.Index, ComponentType<T3>.Index, ComponentType<T4>.Index);
+            where T4 : class, IComponent, new() => NoneOf(ComponentType<T1>.ID, ComponentType<T2>.ID, ComponentType<T3>.ID, ComponentType<T4>.ID);
 
         private Filter NoneOf(params byte[] types)
         {

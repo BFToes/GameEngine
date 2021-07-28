@@ -6,43 +6,17 @@ using System.Text;
 
 namespace GameEngine.ECS.Systems
 {
-    public delegate void ForEachEntity(IEntity entity);
-    public delegate void ForEachArchetype(IArchetype archetype);
-    public delegate void ForEachEntityComponent<in T1>(IEntity entity, T1 comp0) where T1 : class, IComponent, new();
-    public delegate void ForEachEntityComponent<in T1, in T2>(IEntity entity, T1 comp0, T2 comp1) where T1 : class, IComponent, new() where T2 : class, IComponent, new();
-    public delegate void ForEachEntityComponent<in T1, in T2, in T3>(IEntity entity, T1 comp0, T2 comp1, T3 comp2) where T1 : class, IComponent, new() where T2 : class, IComponent, new() where T3 : class, IComponent, new();
-    public delegate void ForEachEntityComponent<in T1, in T2, in T3, in T4>(IEntity entity, T1 comp0, T2 comp1, T3 comp2, T4 comp3) where T1 : class, IComponent, new() where T2 : class, IComponent, new() where T3 : class, IComponent, new() where T4 : class, IComponent, new();
+    internal delegate void ForEachEntity(Entity entity);
+    internal delegate void ForEachArchetype(Archetype archetype);
+    internal delegate void ForEachEntityComponent<in T1>(Entity entity, T1 comp0) where T1 : class, IComponent, new();
+    internal delegate void ForEachEntityComponent<in T1, in T2>(Entity entity, T1 comp0, T2 comp1) where T1 : class, IComponent, new() where T2 : class, IComponent, new();
+    internal delegate void ForEachEntityComponent<in T1, in T2, in T3>(Entity entity, T1 comp0, T2 comp1, T3 comp2) where T1 : class, IComponent, new() where T2 : class, IComponent, new() where T3 : class, IComponent, new();
+    internal delegate void ForEachEntityComponent<in T1, in T2, in T3, in T4>(Entity entity, T1 comp0, T2 comp1, T3 comp2, T4 comp3) where T1 : class, IComponent, new() where T2 : class, IComponent, new() where T3 : class, IComponent, new() where T4 : class, IComponent, new();
 
     /// <summary>
     /// collection of archetypes matching filter criteria
     /// </summary>
-    public interface IGroup : IEnumerable<IArchetype>
-    {
-        int CalculateCount();
-
-        void ForEach(ForEachArchetype handler);
-        void ForEach(ForEachEntity handler);
-        void ForEach<T1>(ForEachEntityComponent<T1> handler)
-            where T1 : class, IComponent, new();
-
-        void ForEach<T1, T2>(ForEachEntityComponent<T1, T2> handler)
-            where T1 : class, IComponent, new()
-            where T2 : class, IComponent, new();
-
-        void ForEach<T1, T2, T3>(ForEachEntityComponent<T1, T2, T3> handler) where T1 : class, IComponent, new()
-            where T2 : class, IComponent, new()
-            where T3 : class, IComponent, new();
-
-        void ForEach<T1, T2, T3, T4>(ForEachEntityComponent<T1, T2, T3, T4> handler)
-            where T1 : class, IComponent, new()
-            where T2 : class, IComponent, new()
-            where T3 : class, IComponent, new()
-            where T4 : class, IComponent, new();
-
-        IEntity[] ToEntityArray();
-    }
-
-    public class Group : IGroup
+    internal class Group : IEnumerable<Archetype>
     {
         private delegate void ForEachArchetypeHandler(Archetype archetype);
 
@@ -78,7 +52,6 @@ namespace GameEngine.ECS.Systems
             _archetypes.AddRange(newArchetypes);
         }
 
-        /// <inheritdoc />
         /// <summary>
         /// Calculate the number of entities in a group
         /// </summary>
@@ -96,21 +69,20 @@ namespace GameEngine.ECS.Systems
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ForEach(ForEachArchetypeHandler handler)
+        public void ForEach(ForEachArchetype handler)
         {
             foreach (Archetype archetype in _archetypes)
             {
-                if (archetype.EntityCount <= 0)
-                    continue;
+                if (archetype.EntityCount <= 0) continue;
 
                 handler(archetype);
             }
         }
 
-        public IEntity[] ToEntityArray()
+        public Entity[] ToEntityArray()
         {
             int index = 0;
-            IEntity[] totalEntities = new IEntity[CalculateCount()];
+            Entity[] totalEntities = new Entity[CalculateCount()];
 
             ForEach(archetype =>
             {
@@ -122,16 +94,7 @@ namespace GameEngine.ECS.Systems
             return totalEntities;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ForEach(ForEachArchetype handler)
-        {
-            foreach (Archetype archetype in _archetypes)
-            {
-                if (archetype.EntityCount <= 0) continue;
 
-                handler(archetype);
-            }
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ForEach(ForEachEntity handler)
@@ -144,7 +107,8 @@ namespace GameEngine.ECS.Systems
             });
         }
 
-        void IGroup.ForEach<T1>(ForEachEntityComponent<T1> handler)
+        void ForEach<T1>(ForEachEntityComponent<T1> handler)
+            where T1 : class, IComponent, new()
         {
             ForEach(archetype =>
             {
@@ -156,8 +120,9 @@ namespace GameEngine.ECS.Systems
             });
         }
 
-
-        void IGroup.ForEach<T1, T2>(ForEachEntityComponent<T1, T2> handler)
+        void ForEach<T1, T2>(ForEachEntityComponent<T1, T2> handler)
+            where T1 : class, IComponent, new()
+            where T2 : class, IComponent, new()
         {
             ForEach(archetype =>
             {
@@ -170,7 +135,10 @@ namespace GameEngine.ECS.Systems
             });
         }
 
-        void IGroup.ForEach<T1, T2, T3>(ForEachEntityComponent<T1, T2, T3> handler)
+        void ForEach<T1, T2, T3>(ForEachEntityComponent<T1, T2, T3> handler)
+            where T1 : class, IComponent, new()
+            where T2 : class, IComponent, new()
+            where T3 : class, IComponent, new()
         {
             ForEach(archetype =>
             {
@@ -184,7 +152,11 @@ namespace GameEngine.ECS.Systems
             });
         }
 
-        void IGroup.ForEach<T1, T2, T3, T4>(ForEachEntityComponent<T1, T2, T3, T4> handler)
+        void ForEach<T1, T2, T3, T4>(ForEachEntityComponent<T1, T2, T3, T4> handler)
+            where T1 : class, IComponent, new()
+            where T2 : class, IComponent, new()
+            where T3 : class, IComponent, new()
+            where T4 : class, IComponent, new()
         {
             ForEach(archetype =>
             {
@@ -199,7 +171,7 @@ namespace GameEngine.ECS.Systems
             });
         }
 
-        public IEnumerator<IArchetype> GetEnumerator() => _archetypes.GetEnumerator();
+        public IEnumerator<Archetype> GetEnumerator() => _archetypes.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

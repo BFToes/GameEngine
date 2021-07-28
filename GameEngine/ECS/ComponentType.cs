@@ -9,29 +9,35 @@ namespace GameEngine.ECS
     public interface IComponent { }
 
     /// <summary>
-    /// create component pool creators for each new component and stores it.
+    /// Manages the types of component and stores them in individual <see cref="ComponentPool{T}"/>
     /// </summary>
-    internal static class TypeManager
+    internal static class TypeManager 
     {
         public static readonly IComponentPoolCreator[] ComponentPoolCreators = new IComponentPoolCreator[byte.MaxValue];
         public static readonly Type[] Types = new Type[byte.MaxValue];
 
         private static byte _length;
+
+        /// <summary>
+        /// registers component type. initiates component pool and component creator.
+        /// </summary>
+        /// <typeparam name="T">the component's type</typeparam>
+        /// <returns></returns>
         internal static byte RegisterType<T>() where T : class, IComponent, new()
         {
             Type type = typeof(T);
 
-            int index = Array.IndexOf(Types, type); // search if Type already exists
-            if (index > -1) return (byte)index; // if found, return value
+            int Component = Array.IndexOf(Types, type); // search if Type already exists
+            if (Component > -1) return (byte)Component; // if found, return value
 
-            index = _length++; // add to end of list
+            Component = _length++; // add to end of list
 
-            Types[index] = type;
-            ComponentPoolCreators[index] = new ComponentPoolCreator<T>();
-            return (byte)index;
+            Types[Component] = type;
+            ComponentPoolCreators[Component] = new ComponentPoolCreator<T>();
+            return (byte)Component;
         }
 
-        internal static IComponent CreateComponent(byte index) => ComponentPoolCreators[index].CreateComponent();
+        internal static IComponent CreateComponent(byte Component) => ComponentPoolCreators[Component].CreateComponent();
     }
     /// <summary>
     /// a class for registering each component type with the type manager
@@ -40,21 +46,21 @@ namespace GameEngine.ECS
     internal static class ComponentType<T> where T : class, IComponent, new()
     {
         private static byte _index;
-        private static bool _isRegister;
+        private static bool _registered;
 
-
-        public static byte Index
+        public static byte ID
         {
+            // index of the component pool
             get
             {
-                if (!_isRegister) throw new InvalidOperationException("component must be registered before use");
+                if (!_registered) throw new InvalidOperationException("component must be registered before use");
                 return _index;
             }
         }
 
         public static void Register()
         {
-            _isRegister = true;
+            _registered = true;
             _index = TypeManager.RegisterType<T>();
 
             Serializer.RegisterType(typeof(T));

@@ -7,13 +7,13 @@ namespace GameEngine.ECS
     /// <summary>
     /// interface for un-typed component creator
     /// </summary>
-    internal interface IComponentPoolCreator
+    interface IComponentPoolCreator
     {
         IComponentPool InstantiatePool();
         IComponent CreateComponent();
     }
     /// <summary>
-    /// creates components and the pool to store them
+    /// creates Component and Component pool
     /// </summary>
     /// <typeparam name="T"></typeparam>
     internal class ComponentPoolCreator<T> : IComponentPoolCreator where T : class, IComponent, new()
@@ -31,11 +31,12 @@ namespace GameEngine.ECS
         void Replace(int freeIndex, int current);
         void Remove(int index);
         IComponent Get(int index);
+        IComponent[] ToArray();
     }
     /// <summary>
-    /// stores a range of components together by type
+    /// array for <see cref="IComponent"/> T
     /// </summary>
-    /// <typeparam name="T">the type of component</typeparam>
+    /// <typeparam name="T">the <see cref="IComponent"/> stored in this pool</typeparam>
     internal class ComponentPool<T> : IComponentPool where T : class, IComponent, new()
     {
         private T[] Components = new T[1];
@@ -53,8 +54,9 @@ namespace GameEngine.ECS
             Components[freeIndex] = comp;
             Components[current] = default;
         }
-        public void Remove(int index) => Components[index] = default;
+        public void Remove(int index) => Components[index] = default; // this isnt a very good solution
         public IComponent Get(int index) => Components[index];
         public T GetTyped(int index) => Components[index];
+        public IComponent[] ToArray() => Components;
     }
 }

@@ -9,7 +9,7 @@ using GameEngine.Resources;
 //using GameEngine.Entities;
 using Assimp;
 using GameEngine.ECS;
-
+using GameEngine.ECS.System;
 namespace GameEngine
 {
     class Program
@@ -163,34 +163,48 @@ namespace GameEngine
         }
         */
 
+        class EntityA : Entity
+        {
+            public EntityA(World World) : base(World)
+            {
+                AddComponent<RenderComponent>();
+            }
+        }
+
+        class RenderComponent : IComponent
+        {
+            public void Render()
+            {
+                
+            }
+        }
+
+        class RenderSystem : ISystem
+        {
+            private Filter _filter = new Filter().AllOf<RenderComponent>();
+
+            public RenderSystem()
+            {
+
+            }
+            public void Update(float deltaTime, World World)
+            {
+
+            }
+
+        }
+
+        class Scene : World
+        {
+
+        }
+
         static void Main(string[] _)
         {
             var World = new World();
+            var E = new EntityA(World);
             
         }
-        public class ComponentA : IComponent
-        {
-            static ComponentA()
-            {
-                ComponentType<ComponentA>.Register();
-            }
-
-        }
-
-        public class EntityA : Entity
-        {
-            public EntityA() : base()
-            {
-                AddComponent<ComponentA>();
-            }
-        }
-
-        public class Scene : World
-        {
-            
-        }
-        
-        
     }
 
 

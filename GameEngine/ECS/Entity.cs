@@ -1,85 +1,72 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace GameEngine.ECS
 {
-    public interface IEntity
+
+    public abstract class Entity
     {
-        uint ID { get; }
-        int ComponentsCount { get; }
-        T GetComponent<T>() where T : class, IComponent, new();
-        bool HasComponent<T>() where T : class, IComponent, new();
-        void AddComponent<T>() where T : class, IComponent, new();
-        void RemoveComponent<T>() where T : class, IComponent, new();
-        void Destroy();
-    }
+        internal uint ID { get; private set; }
+        
+        internal int ArchetypeIndex;
+        internal Archetype _archetype;
 
+        private readonly World World;
 
-    public abstract class Entity : IEntity
-    {
-        public int ArchetypeIndex;
-        public uint ID { get; private set; }
-        public int ComponentsCount => throw new NotImplementedException();
-
-        private Archetype _archetype;
-        private readonly ArchetypeManager _archetypemanager;
-
-        protected Entity(ArchetypeManager manager)
+        protected Entity(World World)
         {
-            _archetypemanager = manager;
+            this.World = World;
         }
-        public void Initialize(uint ID)
+        internal void Initialize(uint ID)
         {
             this.ID = ID;
-            _archetype = _archetypemanager.Empty;
+            _archetype = World.archetypeManager.Empty;
             _archetype.AddEntity(this);
         }
 
-        public void Initialize<T1>(uint ID, T1 Component1) 
+        internal void Initialize<T1>(uint ID, T1 Component1) 
             where T1 : class, IComponent, new()
         {
             this.ID = ID;
 
-            byte i1 = ComponentType<T1>.Index;
+            byte i1 = ComponentType<T1>.ID;
 
-            _archetype = _archetypemanager.FindOrCreateArchetype(i1);
+            _archetype = World.archetypeManager.FindOrCreateArchetype(i1);
             _archetype.AddComponent(i1, Component1);
             _archetype.AddEntity(this);
         }
-        public void Initialize<T1, T2>(uint ID, T1 Component1, T2 Component2) 
+        internal void Initialize<T1, T2>(uint ID, T1 Component1, T2 Component2) 
             where T1 : class, IComponent, new()
             where T2 : class, IComponent, new()
         {
             this.ID = ID;
 
-            byte i1 = ComponentType<T1>.Index;
-            byte i2 = ComponentType<T2>.Index;
+            byte i1 = ComponentType<T1>.ID;
+            byte i2 = ComponentType<T2>.ID;
 
-            _archetype = _archetypemanager.FindOrCreateArchetype(i1, i2);
+            _archetype = World.archetypeManager.FindOrCreateArchetype(i1, i2);
             _archetype.AddComponent(i1, Component1);
             _archetype.AddComponent(i2, Component2);
             _archetype.AddEntity(this);
         }
-        public void Initialize<T1, T2, T3>(uint ID, T1 Component1, T2 Component2, T3 Component3) 
+        internal void Initialize<T1, T2, T3>(uint ID, T1 Component1, T2 Component2, T3 Component3) 
             where T1 : class, IComponent, new()
             where T2 : class, IComponent, new()
             where T3 : class, IComponent, new()
         {
             this.ID = ID;
 
-            byte i1 = ComponentType<T1>.Index;
-            byte i2 = ComponentType<T2>.Index;
-            byte i3 = ComponentType<T3>.Index;
+            byte i1 = ComponentType<T1>.ID;
+            byte i2 = ComponentType<T2>.ID;
+            byte i3 = ComponentType<T3>.ID;
 
-            _archetype = _archetypemanager.FindOrCreateArchetype(i1, i2, i3);
+            _archetype = World.archetypeManager.FindOrCreateArchetype(i1, i2, i3);
             _archetype.AddComponent(i1, Component1);
             _archetype.AddComponent(i2, Component2);
             _archetype.AddComponent(i3, Component3);
             _archetype.AddEntity(this);
         }
-        public void Initialize<T1, T2, T3, T4>(uint ID, T1 Component1, T2 Component2, T3 Component3, T4 Component4) 
+        internal void Initialize<T1, T2, T3, T4>(uint ID, T1 Component1, T2 Component2, T3 Component3, T4 Component4) 
             where T1 : class, IComponent, new()
             where T2 : class, IComponent, new()
             where T3 : class, IComponent, new()
@@ -87,12 +74,12 @@ namespace GameEngine.ECS
         {
             this.ID = ID;
 
-            byte i1 = ComponentType<T1>.Index;
-            byte i2 = ComponentType<T2>.Index;
-            byte i3 = ComponentType<T3>.Index;
-            byte i4 = ComponentType<T4>.Index;
+            byte i1 = ComponentType<T1>.ID;
+            byte i2 = ComponentType<T2>.ID;
+            byte i3 = ComponentType<T3>.ID;
+            byte i4 = ComponentType<T4>.ID;
 
-            _archetype = _archetypemanager.FindOrCreateArchetype(i1, i2, i3, i4);
+            _archetype = World.archetypeManager.FindOrCreateArchetype(i1, i2, i3, i4);
             _archetype.AddComponent(i1, Component1);
             _archetype.AddComponent(i2, Component2);
             _archetype.AddComponent(i3, Component3);
@@ -102,18 +89,18 @@ namespace GameEngine.ECS
 
         public void AddComponent<T>() where T : class, IComponent, new()
         {
-            byte index = ComponentType<T>.Index;
+            byte index = ComponentType<T>.ID;
             T component = new T();
             if (HasComponent(index) || component == null) throw new ArgumentException();
             AddComponent(index, component);
         }
         internal void AddComponent(byte index, IComponent component)
         {
-            Archetype newArchetype = _archetypemanager.FindOrCreateNextArchetype(_archetype, index);
-            foreach (byte curIndex in _archetype.Indices)
+            Archetype newArchetype = World.archetypeManager.FindOrCreateNextArchetype(_archetype, index);
+            foreach (byte curIndex in _archetype.ComponentIDs)
             {
-                IComponentPool componentPool = _archetype.GetComponentPool(curIndex);
-                newArchetype.AddComponent(curIndex, componentPool.Get(ArchetypeIndex));
+                IComponent[] componentPool = _archetype.GetComponents(curIndex);
+                newArchetype.AddComponent(curIndex, componentPool[ArchetypeIndex]);
             }
 
             newArchetype.AddComponent(index, component);
@@ -122,21 +109,22 @@ namespace GameEngine.ECS
             _archetype = newArchetype;
             _archetype.AddEntity(this);
         }
-        public void RemoveComponent<TC>() where TC : class, IComponent, new()
+        
+        public void RemoveComponent<T>() where T : class, IComponent, new()
         {
-            byte index = ComponentType<TC>.Index;
+            byte index = ComponentType<T>.ID;
             if (!HasComponent(index)) throw new InvalidOperationException();
             RemoveComponent(index);
         }
         internal void RemoveComponent(byte index)
         {
-            Archetype newArchetype = _archetypemanager.FindOrCreatePriorArchetype(_archetype, index);
-            foreach (byte curIndex in _archetype.Indices)
+            Archetype newArchetype = World.archetypeManager.FindOrCreatePriorArchetype(_archetype, index);
+            foreach (byte curIndex in _archetype.ComponentIDs)
             {
                 if (curIndex == index) continue;
 
-                IComponentPool componentPool = _archetype.GetComponentPool(curIndex);
-                newArchetype.AddComponent(curIndex, componentPool.Get(ArchetypeIndex));
+                IComponent[] componentPool = _archetype.GetComponents(curIndex);
+                newArchetype.AddComponent(curIndex, componentPool[ArchetypeIndex]);
             }
 
             _archetype.RemoveEntity(this);
@@ -150,15 +138,14 @@ namespace GameEngine.ECS
 
             return _archetype.GetComponentPool<T>().GetTyped(ArchetypeIndex);
         }
-        internal IComponent GetComponent(byte index) => ((IArchetype)_archetype).GetComponentPool(index).Get(ArchetypeIndex);
+       internal IComponent GetComponent(byte index) => _archetype.GetComponents(index)[ArchetypeIndex];
 
-        public bool HasComponent<T>() where T : class, IComponent, new() => HasComponent(ComponentType<T>.Index);
-        internal bool HasComponent(byte index) => _archetype.SetIndices.Contains(index);
-
+        public bool HasComponent<T>() where T : class, IComponent, new() => HasComponent(ComponentType<T>.ID);
+        internal bool HasComponent(byte index) => _archetype.ComponentIDs.Contains(index);
 
         public void Destroy()
         {
-            _archetype.RemoveEntity(this);
+            World.RemoveEntity(this);
             _archetype = null;
 
             OnDestroy();
@@ -166,5 +153,6 @@ namespace GameEngine.ECS
         protected virtual void OnDestroy()
         {
         }
+
     }
 }

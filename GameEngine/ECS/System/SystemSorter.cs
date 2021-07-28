@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace GameEngine.ECS.Systems
+namespace GameEngine.ECS.System
 {
     public static class SystemSorter
     {
