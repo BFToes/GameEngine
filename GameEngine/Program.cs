@@ -171,7 +171,7 @@ namespace GameEngine
             ComponentA A;
             ComponentB B;
 
-            public EntityA(EntityManager World) : base(World)
+            public EntityA(EntityContext World) : base(World)
             {
                 AddComponent<ComponentA>(); A = GetComponent<ComponentA>();
                 AddComponent<ComponentB>(); B = GetComponent<ComponentB>();
@@ -194,7 +194,7 @@ namespace GameEngine
             public int foo3;
         }
 
-        class Scene : EntityManager
+        class Scene : EntityContext
         {
 
         }

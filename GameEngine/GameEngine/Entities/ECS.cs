@@ -5,99 +5,6 @@ using System.Text;
 
 namespace ECS
 {
-    public interface IComponent { }
-    /// <summary>
-    /// gives Components a type ID and stores its <see cref="IComponentInitiator"/>
-    /// </summary>
-    public static class ComponentManager
-    {
-        internal static readonly IComponentInitiator[] Initiators = new IComponentInitiator[byte.MaxValue];
-        internal static readonly Type[] Types = new Type[byte.MaxValue];
-        internal static int _length;
-
-        public static byte RegisterType<T>() where T : IComponent, new()
-        {
-            Type type = typeof(T);
-            int Component = Array.IndexOf(Types, type);
-            if (Component > -1) return (byte)Component; // if found, return value
-
-            Component = _length++; // add to end of list
-
-            Types[Component] = type;
-            Initiators[Component] = new ComponentInitiator<T>();
-            ComponentType<T>.Registered = true;
-            return (byte)Component;
-        }
-        public static byte ID<T>(T _) where T : IComponent, new() => ComponentType<T>.ID;
-        public static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
-        internal interface IComponentInitiator
-        {
-            IComponentPool CreatePool();
-            IComponent CreateComponent();
-        }
-        /// <summary>
-        /// a class for initiating <see cref="IComponent"/> and <see cref="ComponentInitiator{TComponent}"/> 
-        /// </summary>
-        private class ComponentInitiator<TComponent> : IComponentInitiator where TComponent : IComponent, new()
-        {
-            public IComponentPool CreatePool() => new ComponentPool<TComponent>();
-            public IComponent CreateComponent() => new TComponent();
-        }
-    }
-    /// <summary>
-    /// A static class for each <see cref="IComponent"/> to store the type ID.
-    /// </summary>
-    /// <typeparam name="TComponent"></typeparam>
-    internal static class ComponentType<TComponent> where TComponent : IComponent, new()
-    {
-        private static byte _id;
-        public static byte ID 
-        { 
-            get 
-            {
-                if (!Registered) _id = ComponentManager.RegisterType<TComponent>();
-                return _id;
-            }
-        }
-        public static bool Registered = false;
-    }
-
-    internal interface IComponentPool
-    {
-        IComponent this[int Index] { get; }
-        /// <summary>
-        /// adds an item to the index specified
-        /// </summary>
-        /// <param name="item"></param>
-        void Set(IComponent item, uint Index);
-        /// <summary>
-        /// swaps the end of the array with the given index. then removes the end. 
-        /// </summary>
-        /// <param name="FreeIndex"></param>
-        void Replace(int Index, uint Length);
-        /// <summary>
-        /// Resizes the array to the specified size
-        /// </summary>
-        /// <param name="Size"></param>
-        void Resize(int Size);
-
-    }
-    /// <summary>
-    /// a simple collection of <see cref="IComponent"/>
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    internal class ComponentPool<T> : IComponentPool where T : IComponent, new()
-    {
-        private T[] _array = new T[1];
-        public IComponent this[int Index] { get => _array[Index]; }
-        public void Set(IComponent item, uint Index) => _array[Index] = (T)item;
-        public void Replace(int FreeIndex, uint Length) => _array[FreeIndex] = _array[Length];
-        public void Resize(int Size) => Array.Resize(ref _array, Size);
-    }
-
-
-
-
     /// <summary>
     /// A collection of <see cref="Entity"/> which all share the same types of <see cref="IComponent"/>.
     /// </summary>
@@ -106,10 +13,10 @@ namespace ECS
         private uint EntityCount;
         private readonly IComponentPool[] ComponentPools;
         private Entity[] Entities = new Entity[1];
-        private readonly EntityManager Manager;
+        private readonly EntityContext Manager;
         internal readonly byte[] ComponentIDs;
 
-        internal Archetype(EntityManager Manager, params byte[] ComponentIDs)
+        internal Archetype(EntityContext Manager, params byte[] ComponentIDs)
         {
             this.Manager = Manager;
 
@@ -119,7 +26,7 @@ namespace ECS
             this.ComponentPools = new IComponentPool[ComponentIDs.Length];
             
             for (int i = 0; i < ComponentIDs.Length; i++)
-                ComponentPools[i] = ComponentManager.Initiators[ComponentIDs[i]].CreatePool();
+                ComponentPools[i] = ComponentManager.CreatePool(ComponentIDs[i]);
         }
 
         public void Add(Entity Entity)
@@ -135,7 +42,7 @@ namespace ECS
 
             Entities[EntityCount] = Entity;
             for (int i = 0; i < ComponentIDs.Length; i++)
-                ComponentPools[i].Set(ComponentManager.Initiators[ComponentIDs[i]].CreateComponent(), EntityCount);
+                ComponentPools[i].Set(ComponentManager.CreateComponent(ComponentIDs[i]), EntityCount);
             EntityCount++;
         }
         public void Remove(Entity Entity)
@@ -180,7 +87,10 @@ namespace ECS
         internal Archetype FindPrior(byte Component) => Manager.NextArchetype(this, Component);
     }
 
-    public class EntityManager 
+    /// <summary>
+    /// a local context of entities with behaviour systems and archetypes. 
+    /// </summary>
+    public abstract class EntityContext 
     {
         private readonly List<Entity> _entities = new List<Entity>();
         private readonly List<Archetype> _archetypes = new List<Archetype>();
@@ -231,14 +141,12 @@ namespace ECS
         }
     }
 
-
-
     public abstract class Entity
     {
-        protected internal EntityManager Manager { get; internal set; }
+        protected internal EntityContext Manager { get; internal set; }
         private Archetype Archetype;
 
-        protected Entity(EntityManager Manager)
+        protected Entity(EntityContext Manager)
         {
             this.Manager = Manager;
         }
@@ -258,13 +166,7 @@ namespace ECS
         }
         public TComponent GetComponent<TComponent>() where TComponent : IComponent, new() => Archetype.GetComponent<TComponent>(this);
         public bool HasComponent<TComponent>() where TComponent : IComponent, new() => Archetype.Has(ComponentType<TComponent>.ID);
-
-        public void Destroy()
-        {
-            OnDestroy();
-            Manager.RemoveEntity(this);
-           
-        }
-        protected virtual void OnDestroy() { }
     }
+
+    
 }
