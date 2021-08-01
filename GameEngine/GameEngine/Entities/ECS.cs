@@ -3,85 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GameEngine.GameEngine.Entities
+namespace ECS
 {
-    public class World
-    {
-        private ArchetypeManager archetypeManager = new ArchetypeManager();
-        private readonly Dictionary<uint, Entity> _entities = new Dictionary<uint, Entity>();
-        public void AddEntity(Entity E) 
-        {
-            E.World = this;
-            
-        }
-        public void RemoveEntity(Entity E) 
-        {
-            E.World = null;
-            
-        }
-    }
-
-
-
-    public interface IComponent 
-    { 
-    }
-
-    internal interface IComponentPool : IEnumerable<IComponent>
-    {
-        IComponent this[int Index] { get; }
-        void Add(IComponent Comp);
-        void Replace(int FreeIndex);
-    }
+    public interface IComponent { }
     /// <summary>
-    /// Component pool stores <see cref="IComponent"/> of the same type,
+    /// gives Components a type ID and stores its <see cref="IComponentInitiator"/>
     /// </summary>
-    /// <typeparam name="TComponent"></typeparam>
-    internal class ComponentPool<TComponent> : IComponentPool where TComponent : IComponent, new()
-    {
-        private TComponent[] Components = new TComponent[1];
-        private uint Length = 0;
-
-        IComponent IComponentPool.this[int Index]
-        {
-            get
-            {
-                #if DEBUG
-                if (Index >= Length) throw new Exception();
-                #endif
-                return Components[Index];
-            }
-        }
-        void IComponentPool.Add(IComponent Comp) => Add((TComponent)Comp);
-        void IComponentPool.Replace(int FreeIndex) => Components[FreeIndex] = Components[--Length];
-
-        private void Add(TComponent C)
-        {
-            if (Length >= Components.Length)
-                Array.Resize(ref Components, Components.Length << 1); // doubles
-            Components[Length++] = C;
-        }
-
-        public IEnumerator<IComponent> GetEnumerator() 
-        {
-            foreach (IComponent C in Components) yield return C;
-        }
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    }
-
-    internal interface IComponentInitiator 
-    {
-        IComponentPool CreatePool();
-        IComponent CreateComponent();
-    }
-    internal class ComponentInitiator<TComponent> : IComponentInitiator where TComponent : IComponent, new()
-    {
-        public IComponentPool CreatePool() => new ComponentPool<TComponent>();
-        public IComponent CreateComponent() => new TComponent();
-    }
-
-
-    public static class ComponentManager 
+    public static class ComponentManager
     {
         internal static readonly IComponentInitiator[] Initiators = new IComponentInitiator[byte.MaxValue];
         internal static readonly Type[] Types = new Type[byte.MaxValue];
@@ -97,73 +25,245 @@ namespace GameEngine.GameEngine.Entities
 
             Types[Component] = type;
             Initiators[Component] = new ComponentInitiator<T>();
+            ComponentType<T>.Registered = true;
             return (byte)Component;
         }
-
-        public static byte ID<T>(T C) where T : IComponent, new() => ComponentType<T>.ID;
+        public static byte ID<T>(T _) where T : IComponent, new() => ComponentType<T>.ID;
+        public static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
+        internal interface IComponentInitiator
+        {
+            IComponentPool CreatePool();
+            IComponent CreateComponent();
+        }
+        /// <summary>
+        /// a class for initiating <see cref="IComponent"/> and <see cref="ComponentInitiator{TComponent}"/> 
+        /// </summary>
+        private class ComponentInitiator<TComponent> : IComponentInitiator where TComponent : IComponent, new()
+        {
+            public IComponentPool CreatePool() => new ComponentPool<TComponent>();
+            public IComponent CreateComponent() => new TComponent();
+        }
     }
+    /// <summary>
+    /// A static class for each <see cref="IComponent"/> to store the type ID.
+    /// </summary>
+    /// <typeparam name="TComponent"></typeparam>
     internal static class ComponentType<TComponent> where TComponent : IComponent, new()
     {
-        public static byte ID { get; private set; }
-        public static bool Registered;
+        private static byte _id;
+        public static byte ID 
+        { 
+            get 
+            {
+                if (!Registered) _id = ComponentManager.RegisterType<TComponent>();
+                return _id;
+            }
+        }
+        public static bool Registered = false;
     }
 
-    public abstract class Archetype
+    internal interface IComponentPool
     {
-        private readonly uint ID;
-        private HashSet<byte> ComponentIDs;
-        public Entity[] Entities { get; private set; } = new Entity[1];
-        internal IComponentPool[] ComponentPools { get; private set; } = new IComponentPool[byte.MaxValue];
+        IComponent this[int Index] { get; }
+        /// <summary>
+        /// adds an item to the index specified
+        /// </summary>
+        /// <param name="item"></param>
+        void Set(IComponent item, uint Index);
+        /// <summary>
+        /// swaps the end of the array with the given index. then removes the end. 
+        /// </summary>
+        /// <param name="FreeIndex"></param>
+        void Replace(int Index, uint Length);
+        /// <summary>
+        /// Resizes the array to the specified size
+        /// </summary>
+        /// <param name="Size"></param>
+        void Resize(int Size);
 
-        internal Archetype(uint ID, params byte[] ComponentIDs)
+    }
+    /// <summary>
+    /// a simple collection of <see cref="IComponent"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal class ComponentPool<T> : IComponentPool where T : IComponent, new()
+    {
+        private T[] _array = new T[1];
+        public IComponent this[int Index] { get => _array[Index]; }
+        public void Set(IComponent item, uint Index) => _array[Index] = (T)item;
+        public void Replace(int FreeIndex, uint Length) => _array[FreeIndex] = _array[Length];
+        public void Resize(int Size) => Array.Resize(ref _array, Size);
+    }
+
+
+
+
+    /// <summary>
+    /// A collection of <see cref="Entity"/> which all share the same types of <see cref="IComponent"/>.
+    /// </summary>
+    public class Archetype
+    {
+        private uint EntityCount;
+        private readonly IComponentPool[] ComponentPools;
+        private Entity[] Entities = new Entity[1];
+        private readonly EntityManager Manager;
+        internal readonly byte[] ComponentIDs;
+
+        internal Archetype(EntityManager Manager, params byte[] ComponentIDs)
         {
-            this.ID = ID;
-            this.ComponentIDs = new HashSet<byte>(ComponentIDs);
+            this.Manager = Manager;
 
-            foreach (byte Component in ComponentIDs)
-                ComponentPools[Component] = ComponentManager.Initiators[Component].CreatePool();
+            this.ComponentIDs = ComponentIDs; 
+            Array.Sort(ComponentIDs); // Components must be sorted
+
+            this.ComponentPools = new IComponentPool[ComponentIDs.Length];
+            
+            for (int i = 0; i < ComponentIDs.Length; i++)
+                ComponentPools[i] = ComponentManager.Initiators[ComponentIDs[i]].CreatePool();
         }
 
-    }
-    internal class ArchetypeManager 
-    {
-        private readonly List<IArchetype> archetypes;     
+        public void Add(Entity Entity)
+        {
+            if (EntityCount == Entities.Length)
+            {
+                int newSize = Entities.Length << 1; // make bigger
+                foreach (IComponentPool Pool in ComponentPools)
+                    Pool.Resize(newSize);
 
+                Array.Resize(ref Entities, newSize);
+            }
+
+            Entities[EntityCount] = Entity;
+            for (int i = 0; i < ComponentIDs.Length; i++)
+                ComponentPools[i].Set(ComponentManager.Initiators[ComponentIDs[i]].CreateComponent(), EntityCount);
+            EntityCount++;
+        }
+        public void Remove(Entity Entity)
+        {
+            EntityCount--;
+            int EntityIndex = Array.FindIndex(Entities, E => E == Entity);
+            if (EntityIndex < 0) return;
+
+            if (EntityIndex != EntityCount) 
+            {
+                foreach (IComponentPool Pool in ComponentPools)
+                    Pool.Replace(EntityIndex, EntityCount);
+
+                Entities[EntityIndex] = Entities[EntityCount]; 
+            }
+            
+            if (EntityCount < Entities.Length >> 1)
+            {
+                int newSize = Entities.Length >> 1; // make smaller
+                foreach (IComponentPool Pool in ComponentPools)
+                    Pool.Resize(newSize);
+
+                Array.Resize(ref Entities, newSize);
+            }
+        }
+        public bool Has<T>() where T : IComponent, new() => Has(ComponentType<T>.ID);
+        internal bool Has(byte Component)
+        {
+            if (Array.FindIndex(ComponentIDs, ID => ID == Component) != -1) return true;
+            return false;
+        }
+        public T GetComponent<T>(Entity Entity) where T : IComponent, new()
+        {
+            int EntityIndex = Array.FindIndex(Entities, E => E == Entity);
+            byte CompID = ComponentManager.ID<T>();
+            for (int i = 0; i < ComponentIDs.Length; i++) // find entity index
+                if (CompID == ComponentIDs[i])
+                    return (T)ComponentPools[i][EntityIndex];
+            throw new Exception("Component Not Found");
+        }
+        internal Archetype FindNext(byte Component) => Manager.NextArchetype(this, Component);
+        internal Archetype FindPrior(byte Component) => Manager.NextArchetype(this, Component);
     }
+
+    public class EntityManager 
+    {
+        private readonly List<Entity> _entities = new List<Entity>();
+        private readonly List<Archetype> _archetypes = new List<Archetype>();
+
+        internal Archetype Empty => new Archetype(this);
+        public Archetype GetArchetype(byte[] Components)
+        {
+            foreach(Archetype A in _archetypes)
+            {
+                if (A.ComponentIDs == Components)
+                    return A;
+            }
+            return new Archetype(this, Components);
+        }
+        internal Archetype PriorArchetype(Archetype Archetype, byte Component) 
+        {
+            // rearrange component array
+            byte[] Components = new byte[Archetype.ComponentIDs.Length - 1];
+            int i = 0;
+            foreach (byte C in Archetype.ComponentIDs) 
+                if (C != Component) Components[i++] = C;
+
+            return GetArchetype(Components);
+        }
+        internal Archetype NextArchetype(Archetype Archetype, byte Component) 
+        {
+            // rearrange component array
+            byte[] ComponentIDs = Archetype.ComponentIDs;
+            int i = Archetype.ComponentIDs.Length - 1; // start at the end
+            Array.Resize(ref ComponentIDs, ComponentIDs.Length + 1); // make space for new element
+            while (i >= 0 && Component < ComponentIDs[i]) ComponentIDs[i + 1] = ComponentIDs[i]; // loop down shifting elements right
+
+            Console.WriteLine(ComponentIDs);
+            
+            ComponentIDs[++i] = Component; // add element in position found
+
+            return GetArchetype(ComponentIDs);
+        }
+        internal void AddEntity(Entity E)
+        {
+            E.Manager = this;
+            _entities.Add(E);
+        }
+        internal void RemoveEntity(Entity E)
+        {
+            E.Manager = this;
+            _entities.Add(E);
+        }
+    }
+
+
 
     public abstract class Entity
     {
-        internal uint ID { get; private set; }
-        internal HashSet<byte> ComponentIDs = new HashSet<byte>();
-        protected internal World World { get; internal set; }
+        protected internal EntityManager Manager { get; internal set; }
+        private Archetype Archetype;
 
-        internal void Initialize(uint ID)
+        protected Entity(EntityManager Manager)
         {
-            this.ID = ID;
+            this.Manager = Manager;
         }
 
-        public void AddComponent<T>() where T : IComponent, new()
+        protected void AddComponent<T>() where T : IComponent, new()
         {
-            byte compID = ComponentType<T>.ID;
-            ComponentIDs.Add(compID);
+            Archetype.Remove(this);
+            Archetype = Archetype.FindNext(ComponentType<T>.ID);
+            Archetype.Add(this);
 
         }
-        public void RemoveComponent<T>() where T : IComponent, new()
+        protected void RemoveComponent<T>() where T : IComponent, new()
         {
-            byte compID = ComponentType<T>.ID;
-            ComponentIDs.Remove(compID);
-
-            World.UpdateEntityArchetype();
-
+            Archetype.Remove(this);
+            Archetype = Archetype.FindPrior(ComponentType<T>.ID);
+            Archetype.Add(this);
         }
-        public TComponent GetComponent<TComponent>() where TComponent : IComponent, new() => throw new NotImplementedException();
-        public bool HasComponent<TComponent>() where TComponent : IComponent, new() => ComponentIDs.Contains(ComponentType<TComponent>.ID);
+        public TComponent GetComponent<TComponent>() where TComponent : IComponent, new() => Archetype.GetComponent<TComponent>(this);
+        public bool HasComponent<TComponent>() where TComponent : IComponent, new() => Archetype.Has(ComponentType<TComponent>.ID);
 
         public void Destroy()
         {
-            World.RemoveEntity(this);
-
             OnDestroy();
+            Manager.RemoveEntity(this);
+           
         }
         protected virtual void OnDestroy() { }
     }

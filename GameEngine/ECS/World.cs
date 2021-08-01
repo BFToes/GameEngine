@@ -18,13 +18,13 @@ namespace GameEngine.ECS
         public int ArchetypeCount => archetypeManager.ArchetypeCount;
         public int EntitiesInProcessing => _entityPool.Count;
         public Entity this[uint id] => _entities[id];
-        private uint _entityCounter;
+        
 
         private readonly Dictionary<Filter, Group> _groups = new Dictionary<Filter, Group>();
         private readonly Dictionary<uint, Entity> _entities = new Dictionary<uint, Entity>();
         private readonly Queue<Entity> _entityPool = new Queue<Entity>();
         internal readonly ArchetypeManager archetypeManager = new ArchetypeManager();
-
+        /*
         #region Create Entity
         public Entity CreateEntity() 
         {
@@ -99,18 +99,14 @@ namespace GameEngine.ECS
             return component;
         }
         #endregion
-
+        */
         public void RemoveEntity(Entity Entity)
         {
-            archetypeManager..RemoveEntity(this);
+            //archetypeManager.RemoveEntity(this);
             _entities.Remove(Entity.ID);
             _entityPool.Enqueue(Entity);
 
         }
-
-
-
-
 
         #region GetArchetype
         public Archetype GetArchetype<T>() 
@@ -215,7 +211,7 @@ namespace GameEngine.ECS
             _groups.Add(filter.Clone(), group);
             return group;
         }
-
+        /*
         private Entity CreateEntity(uint id)
         {
             Entity entity = _entityPool.Count <= 0
@@ -229,6 +225,7 @@ namespace GameEngine.ECS
 
             return entity;
         }
+        */
         #endregion
     }
 }

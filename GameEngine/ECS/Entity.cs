@@ -138,10 +138,10 @@ namespace GameEngine.ECS
 
             return _archetype.GetComponentPool<T>().GetTyped(ArchetypeIndex);
         }
-       internal IComponent GetComponent(byte index) => _archetype.GetComponents(index)[ArchetypeIndex];
+        internal IComponent GetComponent(byte index) => _archetype.GetComponents(index)[ArchetypeIndex];
 
         public bool HasComponent<T>() where T : class, IComponent, new() => HasComponent(ComponentType<T>.ID);
-        internal bool HasComponent(byte index) => _archetype.ComponentIDs.Contains(index);
+        internal bool HasComponent(byte CompID) => Array.FindIndex(_archetype.ComponentIDs, B => B == CompID) != -1;
 
         public void Destroy()
         {

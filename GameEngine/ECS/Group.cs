@@ -86,9 +86,9 @@ namespace GameEngine.ECS.Systems
 
             ForEach(archetype =>
             {
-                Entity[] entities = archetype.GetEntities(out int length);
+                int length = archetype.Entities.Length;
                 for (int j = 0; j < length; j++)
-                    totalEntities[index++] = entities[j];
+                    totalEntities[index++] = archetype.Entities[j];
             });
 
             return totalEntities;
@@ -101,9 +101,8 @@ namespace GameEngine.ECS.Systems
         {
             ForEach(archetype =>
             {
-                Entity[] entities = archetype.GetEntities(out int length);
-                for (int j = 0; j < length; j++)
-                    handler(entities[j]);
+                for (int j = 0; j < archetype.Entities.Length; j++)
+                    handler(archetype.Entities[j]);
             });
         }
 
@@ -114,9 +113,8 @@ namespace GameEngine.ECS.Systems
             {
                 ComponentPool<T1> comps0 = archetype.GetComponentPool<T1>();
 
-                Entity[] entities = archetype.GetEntities(out int length);
-                for (int j = 0; j < length; j++)
-                    handler(entities[j], comps0.GetTyped(j));
+                for (int j = 0; j < archetype.Entities.Length; j++)
+                    handler(archetype.Entities[j], comps0.GetTyped(j));
             });
         }
 
@@ -129,9 +127,8 @@ namespace GameEngine.ECS.Systems
                 ComponentPool<T1> comps0 = archetype.GetComponentPool<T1>();
                 ComponentPool<T2> comps1 = archetype.GetComponentPool<T2>();
 
-                Entity[] entities = archetype.GetEntities(out int length);
-                for (int j = 0; j < length; j++)
-                    handler(entities[j], comps0.GetTyped(j), comps1.GetTyped(j));
+                for (int j = 0; j < archetype.Entities.Length; j++)
+                    handler(archetype.Entities[j], comps0.GetTyped(j), comps1.GetTyped(j));
             });
         }
 
@@ -146,9 +143,8 @@ namespace GameEngine.ECS.Systems
                 ComponentPool<T2> comps1 = archetype.GetComponentPool<T2>();
                 ComponentPool<T3> comps2 = archetype.GetComponentPool<T3>();
 
-                Entity[] entities = archetype.GetEntities(out int length);
-                for (int j = 0; j < length; j++)
-                    handler(entities[j], comps0.GetTyped(j), comps1.GetTyped(j), comps2.GetTyped(j));
+                for (int j = 0; j < archetype.Entities.Length; j++)
+                    handler(archetype.Entities[j], comps0.GetTyped(j), comps1.GetTyped(j), comps2.GetTyped(j));
             });
         }
 
@@ -165,9 +161,8 @@ namespace GameEngine.ECS.Systems
                 ComponentPool<T3> comps2 = archetype.GetComponentPool<T3>();
                 ComponentPool<T4> comps3 = archetype.GetComponentPool<T4>();
 
-                Entity[] entities = archetype.GetEntities(out int length);
-                for (int j = 0; j < length; j++)
-                    handler(entities[j], comps0.GetTyped(j), comps1.GetTyped(j), comps2.GetTyped(j), comps3.GetTyped(j));
+                for (int j = 0; j < archetype.Entities.Length; j++)
+                    handler(archetype.Entities[j], comps0.GetTyped(j), comps1.GetTyped(j), comps2.GetTyped(j), comps3.GetTyped(j));
             });
         }
 

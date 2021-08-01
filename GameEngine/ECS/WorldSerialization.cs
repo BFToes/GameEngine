@@ -26,8 +26,8 @@ namespace GameEngine.ECS
                     uint key = reader.ReadUInt();
                     if (key == uint.MaxValue) break;
 
-                    if (!_entities.TryGetValue(key, out Entity entity)) // if byte
-                        entity = CreateEntity(key);
+                    //if (!_entities.TryGetValue(key, out Entity entity)) // if byte
+                    //   entity = CreateEntity(key);
 
                     using (BinaryDataReader entityReader = reader.ReadNode())
                     {
@@ -39,22 +39,21 @@ namespace GameEngine.ECS
                             using (BinaryDataReader componentReader = entityReader.ReadNode())
                             {
                                 IComponent component;
-                                if (entity.HasComponent(index))
-                                {
-                                    component = entity.GetComponent(index);
-                                }
+                                /*
+                                if (entity.HasComponent(index)) component = entity.GetComponent(index);
+
                                 else
                                 {
                                     component = TypeManager.CreateComponent(index);
                                     entity.AddComponent(index, component);
                                 }
-
+                                
                                 Serializer.GetSerializer(TypeManager.Types[index]).Update(component, componentReader);
+                            */
                             }
                         }
 
-                        while (entityReader.Position < entityReader.Length)
-                            entity.RemoveComponent(entityReader.ReadByte());
+                        //while (entityReader.Position < entityReader.Length) entity.RemoveComponent(entityReader.ReadByte());
                     }
                 }
 

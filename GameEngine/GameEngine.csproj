@@ -93,6 +93,7 @@
 
   <ItemGroup>
     <Folder Include="GameEngine\Entities\Particles\" />
+    <Folder Include="GameEngine\ECS\" />
   </ItemGroup>
 
 </Project>

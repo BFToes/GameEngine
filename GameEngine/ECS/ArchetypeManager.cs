@@ -88,7 +88,7 @@ namespace GameEngine.ECS
 
             bool added = false;
             int length = 0;
-            byte[] indices = new byte[archetype.ComponentIDs.Count + 1];
+            byte[] indices = new byte[archetype.ComponentIDs.Length + 1];
             foreach (byte index in archetype.ComponentIDs)
             {
                 if (addIndex < index && !added)
@@ -114,7 +114,7 @@ namespace GameEngine.ECS
                 return priorArchetype;
 
             int length = 0;
-            byte[] indices = new byte[archetype.ComponentIDs.Count - 1];
+            byte[] indices = new byte[archetype.ComponentIDs.Length - 1];
             foreach (byte index in archetype.ComponentIDs)
             {
                 if (index != removeIndex)

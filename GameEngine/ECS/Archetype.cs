@@ -11,10 +11,12 @@ namespace GameEngine.ECS
     public class Archetype
     {
         public int ID { get; }
-        public HashSet<byte> ComponentIDs { get; } 
+        public byte[] ComponentIDs;
         public readonly Archetype[] Next = new Archetype[byte.MaxValue]; // why is each archetype storing an array of max length???
         public readonly Archetype[] Prior = new Archetype[byte.MaxValue]; // shitty linked list? no indexing in a linked list
-        public Entity[] Entities { get; private set; } = new Entity[1];
+        public Entity[] Entities => _entities;
+        private Entity[] _entities = new Entity[1];
+        public int EntityCount { get; private set; } 
 
         private int _length;
         private int _count;
@@ -24,7 +26,7 @@ namespace GameEngine.ECS
         public Archetype(int ID, byte[] ComponentIDs)
         {
             this.ID = ID;
-            this.ComponentIDs = new HashSet<byte>(ComponentIDs);
+            this.ComponentIDs  = ComponentIDs;
 
             // why??? it isnt stored??? it just instantiates a pool which will be removed immediately
             foreach(byte Component in ComponentIDs)

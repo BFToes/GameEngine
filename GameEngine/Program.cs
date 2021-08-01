@@ -8,8 +8,10 @@ using GameEngine.Rendering;
 using GameEngine.Resources;
 //using GameEngine.Entities;
 using Assimp;
-using GameEngine.ECS;
-using GameEngine.ECS.System;
+//using GameEngine.ECS;
+//using GameEngine.ECS.System;
+using ECS;
+
 namespace GameEngine
 {
     class Program
@@ -165,45 +167,45 @@ namespace GameEngine
 
         class EntityA : Entity
         {
-            public EntityA(World World) : base(World)
+
+            ComponentA A;
+            ComponentB B;
+
+            public EntityA(EntityManager World) : base(World)
             {
-                AddComponent<RenderComponent>();
+                AddComponent<ComponentA>(); A = GetComponent<ComponentA>();
+                AddComponent<ComponentB>(); B = GetComponent<ComponentB>();
             }
         }
 
-        class RenderComponent : IComponent
+        class ComponentA : IComponent
         {
             public void Render()
             {
                 
             }
+
         }
 
-        class RenderSystem : ISystem
+        class ComponentB : IComponent
         {
-            private Filter _filter = new Filter().AllOf<RenderComponent>();
-
-            public RenderSystem()
-            {
-
-            }
-            public void Update(float deltaTime, World World)
-            {
-
-            }
-
+            public int foo1;
+            public int foo2;
+            public int foo3;
         }
 
-        class Scene : World
+        class Scene : EntityManager
         {
 
         }
 
         static void Main(string[] _)
         {
-            var World = new World();
-            var E = new EntityA(World);
-            
+            Scene W = new Scene();
+            Entity E = new EntityA(W);
+
+            W.AddEntity(E);
+            Console.ReadLine();
         }
     }
 
