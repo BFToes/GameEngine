@@ -4,6 +4,10 @@ using System.Text;
 
 namespace ECS
 {
+    /// <summary>
+    /// A reusable module of data that can attach to entities to provide functionality. 
+    /// All logic is implemented through <see cref="IComponent"/>s.
+    /// </summary>
     public interface IComponent { }
     /// <summary>
     /// <see cref="ComponentManager"/> gives each <see cref="IComponent"/> type an <see cref="ComponentInitiator{TComponent}"/>.
@@ -20,10 +24,12 @@ namespace ECS
         internal static byte RegisterType<TComponent>() where TComponent : IComponent, new()
         {
             Type type = typeof(TComponent);
-            Types[_length++] = type;
+            Types[_length] = type;
             Initiators[_length] = new ComponentInitiator<TComponent>();
-            ComponentType<TComponent>.Registered = true;
-            return (byte)_length;
+            
+            Console.WriteLine($"{typeof(TComponent)} ID = {_length}");
+            
+            return (byte)_length++;
         }
         internal static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
         
@@ -52,10 +58,15 @@ namespace ECS
         {
             get
             {
-                if (!Registered) _id = ComponentManager.RegisterType<TComponent>();
+                if (!Registered) Register();
                 return _id;
             }
         }
-        public static bool Registered = false;
+        public static bool Registered { get; private set; } = false;
+        public static void Register()
+        {
+            _id = ComponentManager.RegisterType<TComponent>();
+            Registered = true;
+        }
     }
 }

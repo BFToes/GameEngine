@@ -20,17 +20,21 @@ namespace ECS
         /// adds an item to the index specified
         /// </summary>
         /// <param name="item"></param>
-        void Set(IComponent item, uint Index);
+        void Set(IComponent item, int Index);
         /// <summary>
         /// swaps the end of the array with the given index. then removes the end. 
         /// </summary>
         /// <param name="FreeIndex"></param>
-        void Replace(int Index, uint Length);
+        void Replace(int Index, int Length);
         /// <summary>
         /// Resizes the array to the specified size
         /// </summary>
         /// <param name="Size"></param>
         void Resize(int Size);
+        /// <summary>
+        /// Clears the last item in the pool
+        /// </summary>
+        void Clear(int Index);
 
     }
     /// <summary>
@@ -41,8 +45,9 @@ namespace ECS
     {
         private T[] _array = new T[1];
         public IComponent this[int Index] { get => _array[Index]; }
-        public void Set(IComponent item, uint Index) => _array[Index] = (T)item;
-        public void Replace(int FreeIndex, uint Length) => _array[FreeIndex] = _array[Length];
+        public void Set(IComponent item, int Index) => _array[Index] = (T)item;
+        public void Replace(int FreeIndex, int Length) => _array[FreeIndex] = _array[Length];
         public void Resize(int Size) => Array.Resize(ref _array, Size);
+        public void Clear(int Index) => _array[Index] = default;
     }
 }
