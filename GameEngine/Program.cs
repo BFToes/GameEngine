@@ -38,7 +38,7 @@ namespace GameEngine
                 AddD();
 
 
-                this.Manager.DebugArchetypes();
+                this.Manager.Debug();
             }
             public void RemoveA() => RemoveComponent<ComponentA>();
             public void RemoveB() => RemoveComponent<ComponentB>();

@@ -15,12 +15,7 @@ namespace ECS
         /// </summary>
         /// <param name="Index"></param>
         /// <returns></returns>
-        IComponent this[int Index] { get; }
-        /// <summary>
-        /// adds an item to the index specified
-        /// </summary>
-        /// <param name="item"></param>
-        void Set(IComponent item, int Index);
+        IComponent this[int Index] { get; set; }
         /// <summary>
         /// swaps the end of the array with the given index. then removes the end. 
         /// </summary>
@@ -44,8 +39,7 @@ namespace ECS
     internal class ComponentPool<T> : IComponentPool where T : IComponent, new()
     {
         private T[] _array = new T[1];
-        public IComponent this[int Index] { get => _array[Index]; }
-        public void Set(IComponent item, int Index) => _array[Index] = (T)item;
+        public IComponent this[int Index] { get => _array[Index]; set => _array[Index] = (T)value; }
         public void Replace(int FreeIndex, int Length) => _array[FreeIndex] = _array[Length];
         public void Resize(int Size) => Array.Resize(ref _array, Size);
         public void Clear(int Index) => _array[Index] = default;
