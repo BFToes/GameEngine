@@ -27,8 +27,6 @@ namespace ECS
             Types[_length] = type;
             Initiators[_length] = new ComponentInitiator<TComponent>();
             
-            Console.WriteLine($"{typeof(TComponent)} ID = {_length}");
-            
             return (byte)_length++;
         }
         internal static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
