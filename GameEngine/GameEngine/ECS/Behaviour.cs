@@ -11,19 +11,17 @@ namespace ECS
 
         public Filter(T[] Whitelist = default, T[] Blacklist = default)
         {
-            this.Whitelist = new HashSet<T>(Whitelist);
-            this.Blacklist = new HashSet<T>(Blacklist);
+            this.Whitelist = Whitelist != null ? new HashSet<T>(Whitelist) : null;
+            this.Blacklist = Blacklist != null ? new HashSet<T>(Blacklist) : new HashSet<T>();
         }
         public bool Check(params T[] Items) =>
             (Whitelist.Count == 0 || (Whitelist.Count > 0 && Whitelist.IsSubsetOf(Items))) &&
             (Blacklist.Count == 0 || (Blacklist.Count > 0 && !Blacklist.Overlaps(Items)));
     }
 
-    public class BehaviourFunction : Behaviour
+    public abstract class TypedBehaviour : BaseBehaviour
     {
-        public delegate void BehaviourExecute(Entity Entity);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(new Filter<byte>()) => this.Function = Function;
+        public TypedBehaviour() : base(new Filter<byte>()){ }
 
         public override void Execute()
         {
@@ -31,13 +29,12 @@ namespace ECS
                 for (int i = 0; i < A.EntityCount; i++)
                     Function(A[i]);
         }
+        public abstract void Function(Entity E);
     }
-    public class BehaviourFunction<T1> : Behaviour
+    public abstract class TypedBehaviour<T1> : BaseBehaviour
         where T1 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1>()) { }
 
         public override void Execute()
         {
@@ -49,14 +46,13 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i]);
             }
         }
+        public abstract void Function(Entity E, T1 Component1); 
     }
-    public class BehaviourFunction<T1, T2> : Behaviour
+    public abstract class TypedBehaviour<T1, T2> : BaseBehaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1, T2 Component2);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1>()) { }
 
         public override void Execute()
         {
@@ -69,15 +65,14 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i]);
             }
         }
+        public abstract void Function(Entity E, T1 C1, T2 C2);
     }
-    public class BehaviourFunction<T1, T2, T3> : Behaviour
+    public abstract class TypedBehaviour<T1, T2, T3> : BaseBehaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1, T2 Component2, T3 Component3);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1, T2, T3>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1, T2, T3>()) { }
 
         public override void Execute()
         {
@@ -91,16 +86,15 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i]);
             }
         }
+        public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3);
     }
-    public class BehaviourFunction<T1, T2, T3, T4> : Behaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4> : BaseBehaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
         where T4 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1, T2 Component2, T3 Component3, T4 Component4);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1, T2, T3, T4>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1, T2, T3, T4>()) { }
 
         public override void Execute()
         {
@@ -115,17 +109,16 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i]);
             }
         }
+        public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4);
     }
-    public class BehaviourFunction<T1, T2, T3, T4, T5> : Behaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5> : BaseBehaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
         where T4 : IComponent, new()
         where T5 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1, T2 Component2, T3 Component3, T4 Component4, T5 Component5);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1, T2, T3, T4, T5>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1, T2, T3, T4, T5>()){ }
 
         public override void Execute()
         {
@@ -141,8 +134,9 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i]);
             }
         }
+        public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5);
     }
-    public class BehaviourFunction<T1, T2, T3, T4, T5, T6> : Behaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6> : BaseBehaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -150,9 +144,7 @@ namespace ECS
         where T5 : IComponent, new()
         where T6 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1, T2 Component2, T3 Component3, T4 Component4, T5 Component5, T6 Component6);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1, T2, T3, T4, T5, T6>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1, T2, T3, T4, T5, T6>()){ }
 
         public override void Execute()
         {
@@ -169,8 +161,9 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i], (T6)CompPool6[i]);
             }
         }
+        public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5, T6 C6);
     }
-    public class BehaviourFunction<T1, T2, T3, T4, T5, T6, T7> : Behaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6, T7> : BaseBehaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -179,9 +172,7 @@ namespace ECS
         where T6 : IComponent, new()
         where T7 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1, T2 Component2, T3 Component3, T4 Component4, T5 Component5, T6 Component6, T7 Component7);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1, T2, T3, T4, T5, T6, T7>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1, T2, T3, T4, T5, T6, T7>()){ }
 
         public override void Execute()
         {
@@ -199,8 +190,9 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i], (T6)CompPool6[i], (T7)CompPool7[i]);
             }
         }
+        public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5, T6 C6, T7 C7);
     }
-    public class BehaviourFunction<T1, T2, T3, T4, T5, T6, T7, T8> : Behaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6, T7, T8> : BaseBehaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -210,9 +202,7 @@ namespace ECS
         where T7 : IComponent, new()
         where T8 : IComponent, new()
     {
-        public delegate void BehaviourExecute(Entity Entity, T1 Component1, T2 Component2, T3 Component3, T4 Component4, T5 Component5, T6 Component6, T7 Component7, T8 Component8);
-        private readonly BehaviourExecute Function;
-        public BehaviourFunction(BehaviourExecute Function) : base(CreateFilter<T1, T2, T3, T4, T5, T6, T7, T8>()) => this.Function = Function;
+        public TypedBehaviour() : base(CreateFilter<T1, T2, T3, T4, T5, T6, T7, T8>()){ }
 
         public override void Execute()
         {
@@ -231,33 +221,45 @@ namespace ECS
                     Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i], (T6)CompPool6[i], (T7)CompPool7[i], (T8)CompPool8[i]);
             }
         }
+        public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5, T6 C6, T7 C7, T8 C8);
     }
-    
+
     /// <summary>
     /// A collection of <see cref="Archetype"/>s which fulfils a <see cref="Filter{T}"/> condition. 
     /// Used to perform logic over filtered selection of <see cref="Entity"/>.
     /// </summary>
-    public abstract class Behaviour
+    public abstract class BaseBehaviour
     {
         public readonly Filter<byte> Filter;
-        protected EntityContext Manager;
         protected List<Archetype> Archetypes;
+
+        public int EntityCount
+        {
+            get
+            {
+                int count = 0;
+                foreach(Archetype A in Archetypes)
+                    count += A.EntityCount;
+                return count;
+            }
+        }
+        public int ArchetypeCount => Archetypes.Count;
 
         #region Filter Constructors
         internal static Filter<byte> CreateFilter<T1>()
             where T1 : IComponent, new()
         {
-            return new Filter<byte>(new byte[] { 
-                ComponentType<T1>.ID 
+            return new Filter<byte>(new byte[] {
+                ComponentType<T1>.ID
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2>()
             where T1 : IComponent, new()
             where T2 : IComponent, new()
         {
-            return new Filter<byte>(new byte[] { 
-                ComponentType<T1>.ID, 
-                ComponentType<T2>.ID 
+            return new Filter<byte>(new byte[] {
+                ComponentType<T1>.ID,
+                ComponentType<T2>.ID
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3>()
@@ -265,10 +267,10 @@ namespace ECS
             where T2 : IComponent, new()
             where T3 : IComponent, new()
         {
-            return new Filter<byte>(new byte[] { 
-                ComponentType<T1>.ID, 
-                ComponentType<T2>.ID, 
-                ComponentType<T3>.ID 
+            return new Filter<byte>(new byte[] {
+                ComponentType<T1>.ID,
+                ComponentType<T2>.ID,
+                ComponentType<T3>.ID
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3, T4>()
@@ -360,14 +362,13 @@ namespace ECS
         }
         #endregion
 
-        public Behaviour(Filter<byte> Filter)
+        public BaseBehaviour(Filter<byte> Filter)
         {
             this.Filter = Filter;
+            this.Archetypes = new List<Archetype>();
         }
-        public void Add(Archetype Archetype) => Archetypes.Add(Archetype);
-        public void Remove(Archetype Archetype) => Archetypes.Remove(Archetype);
+        internal void Add(Archetype Archetype) => Archetypes.Add(Archetype);
+        internal void Remove(Archetype Archetype) => Archetypes.Remove(Archetype);
         public abstract void Execute();
     }
-
-
 }

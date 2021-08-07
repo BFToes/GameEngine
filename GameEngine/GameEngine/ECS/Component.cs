@@ -16,7 +16,7 @@ namespace ECS
     {
         private static readonly IComponentInitiator[] Initiators = new IComponentInitiator[byte.MaxValue];
         internal static readonly Type[] Types = new Type[byte.MaxValue];
-        internal static int _length;
+        internal static int ComponentCount;
 
         internal static IComponentPool CreatePool(byte ComponentID) => Initiators[ComponentID].CreatePool();
         internal static IComponent CreateComponent(byte ComponentID) => Initiators[ComponentID].CreateComponent();
@@ -24,10 +24,10 @@ namespace ECS
         internal static byte RegisterType<TComponent>() where TComponent : IComponent, new()
         {
             Type type = typeof(TComponent);
-            Types[_length] = type;
-            Initiators[_length] = new ComponentInitiator<TComponent>();
+            Types[ComponentCount] = type;
+            Initiators[ComponentCount] = new ComponentInitiator<TComponent>();
             
-            return (byte)_length++;
+            return (byte)ComponentCount++;
         }
         internal static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
         
@@ -43,6 +43,13 @@ namespace ECS
         {
             public IComponentPool CreatePool() => new ComponentPool<TComponent>();
             public IComponent CreateComponent() => new TComponent();
+        }
+
+        internal static void WriteDebug()
+        {
+            int i = 0;
+            while (i < ComponentCount)
+                Console.WriteLine($"Component {i} : {Types[i++]}");
         }
     }
     /// <summary>

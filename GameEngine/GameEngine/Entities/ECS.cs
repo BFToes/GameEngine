@@ -81,8 +81,6 @@ namespace ECS
         /// <summary>
         /// removes the <see cref="Entity"/> and <see cref="IComponentPool"/>s objects from this array.
         /// Does not change Entity's "ArchetypeIndex" and "Archetype" object pointer.
-        /// </summary>
-        /// <param name="Entity"></param>
         internal void Remove(Entity Entity)
         {
             // if entity not at the end move it to the end
@@ -116,8 +114,6 @@ namespace ECS
         /// <summary>
         /// Finds or creates the <see cref="Archetype"/> with the added component <paramref name="ComponentType"/>
         /// </summary>
-        /// <param name="ComponentType"></param>
-        /// <returns></returns>
         internal Archetype FindNext(byte ComponentType)
         {
             byte[] Components = _componentIDs; // copy components
@@ -167,7 +163,14 @@ namespace ECS
         /// </summary>
         public bool Has<TComponent>() where TComponent : IComponent, new() => Array.FindIndex(_componentIDs, ID => ID == ComponentType<TComponent>.ID) != -1;
 
-        
+        internal void WriteDebug()
+        {
+            Console.Write("Archetype : ");
+            foreach (byte C in _componentIDs)
+                Console.Write($"{C}, ");
+            Console.Write("\n");
+        }
+
         internal bool Equals(byte[] ComponentIDs) => Equals(this._componentIDs, ComponentIDs);
         private static bool Equals(byte[] Left, byte[] Right)
         {
@@ -195,7 +198,7 @@ namespace ECS
     public abstract class EntityContext 
     {
         private readonly List<Archetype> _archetypes = new List<Archetype>();
-        private readonly List<Behaviour> _behaviours = new List<Behaviour>();
+        private readonly List<BaseBehaviour> _behaviours = new List<BaseBehaviour>();
 
         internal Archetype EmptyArchetype;
 
@@ -204,12 +207,8 @@ namespace ECS
             EmptyArchetype = new Archetype(this);
         }
 
-        public void AddBehaviour(Behaviour Behaviour)
-        {
-            _behaviours.Add(Behaviour);
-            
-        }
-
+        public void AddBehaviour(BaseBehaviour Behaviour) => _behaviours.Add(Behaviour);
+        public void RemoveBehaviour(BaseBehaviour Behaviour) => _behaviours.Remove(Behaviour);
 
         internal void Remove(Archetype Archetype)
         {
@@ -225,11 +224,24 @@ namespace ECS
             Archetype New = new Archetype(this, Components);
             _archetypes.Add(New);
 
-            foreach (Behaviour B in _behaviours)
+            foreach (BaseBehaviour B in _behaviours)
                 if (B.Filter.Check(Components))
                     B.Add(New);
 
             return New;
+        }
+
+        internal void Debug()
+        {
+            Console.WriteLine("Components:");
+            ComponentManager.WriteDebug();
+            Console.WriteLine("Archetypes:");
+            foreach(Archetype A in GetArchetypes())
+            {
+                Console.Write($"Archetype :");
+                A.WriteDebug();
+            }
+
         }
 
         internal IEnumerable<Archetype> GetArchetypes()
@@ -237,9 +249,9 @@ namespace ECS
             foreach (Archetype A in _archetypes)
                 yield return A;
         }
-        internal IEnumerable<Behaviour> GetBehaviours()
+        internal IEnumerable<BaseBehaviour> GetBehaviours()
         {
-            foreach (Behaviour B in _behaviours)
+            foreach (BaseBehaviour B in _behaviours)
                 yield return B;
         }
         internal IEnumerable<Entity> GetEntities()
