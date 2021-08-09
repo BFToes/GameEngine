@@ -19,7 +19,7 @@ namespace ECS
             (Blacklist.Count == 0 || (Blacklist.Count > 0 && !Blacklist.Overlaps(Items)));
     }
 
-    public abstract class TypedBehaviour : BaseBehaviour
+    public abstract class TypedBehaviour : Behaviour
     {
         public TypedBehaviour() : base(new Filter<byte>()){ }
 
@@ -31,7 +31,7 @@ namespace ECS
         }
         public abstract void Function(Entity E);
     }
-    public abstract class TypedBehaviour<T1> : BaseBehaviour
+    public abstract class TypedBehaviour<T1> : Behaviour
         where T1 : IComponent, new()
     {
         public TypedBehaviour() : base(CreateFilter<T1>()) { }
@@ -43,12 +43,12 @@ namespace ECS
                 ComponentPool<T1> CompPool1 = A.GetComponentPool<T1>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i]);
+                    Function(A[i], CompPool1[i]);
             }
         }
         public abstract void Function(Entity E, T1 Component1); 
     }
-    public abstract class TypedBehaviour<T1, T2> : BaseBehaviour
+    public abstract class TypedBehaviour<T1, T2> : Behaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
     {
@@ -62,12 +62,12 @@ namespace ECS
                 ComponentPool<T2> CompPool2 = A.GetComponentPool<T2>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i]);
+                    Function(A[i], CompPool1[i], CompPool2[i]);
             }
         }
         public abstract void Function(Entity E, T1 C1, T2 C2);
     }
-    public abstract class TypedBehaviour<T1, T2, T3> : BaseBehaviour
+    public abstract class TypedBehaviour<T1, T2, T3> : Behaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -83,12 +83,12 @@ namespace ECS
                 ComponentPool<T3> CompPool3 = A.GetComponentPool<T3>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i]);
+                    Function(A[i], CompPool1[i], CompPool2[i], CompPool3[i]);
             }
         }
         public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3);
     }
-    public abstract class TypedBehaviour<T1, T2, T3, T4> : BaseBehaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4> : Behaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -106,12 +106,12 @@ namespace ECS
                 ComponentPool<T4> CompPool4 = A.GetComponentPool<T4>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i]);
+                    Function(A[i], CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i]);
             }
         }
         public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4);
     }
-    public abstract class TypedBehaviour<T1, T2, T3, T4, T5> : BaseBehaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5> : Behaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -131,12 +131,12 @@ namespace ECS
                 ComponentPool<T5> CompPool5 = A.GetComponentPool<T5>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i]);
+                    Function(A[i], CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i]);
             }
         }
         public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5);
     }
-    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6> : BaseBehaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6> : Behaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -158,12 +158,12 @@ namespace ECS
                 ComponentPool<T6> CompPool6 = A.GetComponentPool<T6>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i], (T6)CompPool6[i]);
+                    Function(A[i], CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i], CompPool6[i]);
             }
         }
         public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5, T6 C6);
     }
-    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6, T7> : BaseBehaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6, T7> : Behaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -187,12 +187,12 @@ namespace ECS
                 ComponentPool<T7> CompPool7 = A.GetComponentPool<T7>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i], (T6)CompPool6[i], (T7)CompPool7[i]);
+                    Function(A[i], CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i], CompPool6[i], CompPool7[i]);
             }
         }
         public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5, T6 C6, T7 C7);
     }
-    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6, T7, T8> : BaseBehaviour
+    public abstract class TypedBehaviour<T1, T2, T3, T4, T5, T6, T7, T8> : Behaviour
         where T1 : IComponent, new()
         where T2 : IComponent, new()
         where T3 : IComponent, new()
@@ -218,7 +218,7 @@ namespace ECS
                 ComponentPool<T8> CompPool8 = A.GetComponentPool<T8>();
 
                 for (int i = 0; i < A.EntityCount; i++)
-                    Function(A[i], (T1)CompPool1[i], (T2)CompPool2[i], (T3)CompPool3[i], (T4)CompPool4[i], (T5)CompPool5[i], (T6)CompPool6[i], (T7)CompPool7[i], (T8)CompPool8[i]);
+                    Function(A[i], CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i], CompPool6[i], CompPool7[i], CompPool8[i]);
             }
         }
         public abstract void Function(Entity E, T1 C1, T2 C2, T3 C3, T4 C4, T5 C5, T6 C6, T7 C7, T8 C8);
@@ -228,7 +228,7 @@ namespace ECS
     /// A collection of <see cref="Archetype"/>s which fulfils a <see cref="Filter{T}"/> condition. 
     /// Used to perform logic over filtered selection of <see cref="Entity"/>.
     /// </summary>
-    public abstract class BaseBehaviour
+    public abstract class Behaviour
     {
         public readonly Filter<byte> Filter;
         protected List<Archetype> Archetypes;
@@ -250,7 +250,7 @@ namespace ECS
             where T1 : IComponent, new()
         {
             return new Filter<byte>(new byte[] {
-                ComponentType<T1>.ID
+                ComponentManager.ID<T1>()
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2>()
@@ -258,8 +258,8 @@ namespace ECS
             where T2 : IComponent, new()
         {
             return new Filter<byte>(new byte[] {
-                ComponentType<T1>.ID,
-                ComponentType<T2>.ID
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>()
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3>()
@@ -268,9 +268,9 @@ namespace ECS
             where T3 : IComponent, new()
         {
             return new Filter<byte>(new byte[] {
-                ComponentType<T1>.ID,
-                ComponentType<T2>.ID,
-                ComponentType<T3>.ID
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>()
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3, T4>()
@@ -280,10 +280,10 @@ namespace ECS
             where T4 : IComponent, new()
         {
             return new Filter<byte>(new byte[] {
-                ComponentType<T1>.ID,
-                ComponentType<T2>.ID,
-                ComponentType<T3>.ID,
-                ComponentType<T4>.ID
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>()
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3, T4, T5>()
@@ -294,11 +294,11 @@ namespace ECS
             where T5 : IComponent, new()
         {
             return new Filter<byte>(new byte[] {
-                ComponentType<T1>.ID,
-                ComponentType<T2>.ID,
-                ComponentType<T3>.ID,
-                ComponentType<T4>.ID,
-                ComponentType<T5>.ID,
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3, T4, T5, T6>()
@@ -310,12 +310,12 @@ namespace ECS
             where T6 : IComponent, new()
         {
             return new Filter<byte>(new byte[] {
-                ComponentType<T1>.ID,
-                ComponentType<T2>.ID,
-                ComponentType<T3>.ID,
-                ComponentType<T4>.ID,
-                ComponentType<T5>.ID,
-                ComponentType<T6>.ID,
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
+                ComponentManager.ID<T6>(),
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3, T4, T5, T6, T7>()
@@ -329,13 +329,13 @@ namespace ECS
         {
             return new Filter<byte>(new byte[]
             {
-                ComponentType<T1>.ID,
-                ComponentType<T2>.ID,
-                ComponentType<T3>.ID,
-                ComponentType<T4>.ID,
-                ComponentType<T5>.ID,
-                ComponentType<T6>.ID,
-                ComponentType<T7>.ID,
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
+                ComponentManager.ID<T6>(),
+                ComponentManager.ID<T7>(),
             });
         }
         internal static Filter<byte> CreateFilter<T1, T2, T3, T4, T5, T6, T7, T8>()
@@ -350,25 +350,34 @@ namespace ECS
         {
             return new Filter<byte>(new byte[]
             {
-                ComponentType<T1>.ID,
-                ComponentType<T2>.ID,
-                ComponentType<T3>.ID,
-                ComponentType<T4>.ID,
-                ComponentType<T5>.ID,
-                ComponentType<T6>.ID,
-                ComponentType<T7>.ID,
-                ComponentType<T8>.ID,
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
+                ComponentManager.ID<T6>(),
+                ComponentManager.ID<T7>(),
+                ComponentManager.ID<T8>(),
             });
         }
         #endregion
 
-        public BaseBehaviour(Filter<byte> Filter)
+        public Behaviour(Filter<byte> Filter)
         {
             this.Filter = Filter;
             this.Archetypes = new List<Archetype>();
         }
-        internal void Add(Archetype Archetype) => Archetypes.Add(Archetype);
-        internal void Remove(Archetype Archetype) => Archetypes.Remove(Archetype);
+
+        internal void AddArchetype(Archetype Archetype)
+        {
+            Archetypes.Add(Archetype);
+            Archetype.Destroy += RemoveArchetype;
+        }
+        private void RemoveArchetype(Archetype Archetype)
+        {
+            Archetypes.Remove(Archetype);
+            Archetype.Destroy -= RemoveArchetype;
+        }
         public abstract void Execute();
     }
 }

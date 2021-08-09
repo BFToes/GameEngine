@@ -9,18 +9,21 @@ namespace ECS
     /// All logic is implemented through <see cref="IComponent"/>s.
     /// </summary>
     public interface IComponent { }
+    
     /// <summary>
     /// <see cref="ComponentManager"/> gives each <see cref="IComponent"/> type an <see cref="ComponentInitiator{TComponent}"/>.
     /// </summary>
     internal static class ComponentManager
     {
         private static readonly IComponentInitiator[] Initiators = new IComponentInitiator[byte.MaxValue];
-        internal static readonly Type[] Types = new Type[byte.MaxValue];
+        private static readonly Type[] Types = new Type[byte.MaxValue];
         internal static int ComponentCount;
 
         internal static IComponentPool CreatePool(byte ComponentID) => Initiators[ComponentID].CreatePool();
         internal static IComponent CreateComponent(byte ComponentID) => Initiators[ComponentID].CreateComponent();
-
+        /// <summary>
+        /// generates a ComponentID  for the <typeparamref name="TComponent"/>. The component ID is the index of the type in the Types array.
+        /// </summary>
         internal static byte RegisterType<TComponent>() where TComponent : IComponent, new()
         {
             Type type = typeof(TComponent);
@@ -29,9 +32,17 @@ namespace ECS
             
             return (byte)ComponentCount++;
         }
-        internal static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
-        
-        internal interface IComponentInitiator
+        /// <summary>
+        /// Gets the ID of the <typeparamref name="TComponent"/>
+        /// </summary>
+        /// <typeparam name="TComponent"></typeparam>
+        /// <returns></returns>
+        internal static byte ID<TComponent>() where TComponent : IComponent, new() => ComponentType<TComponent>.ID;
+
+        /// <summary>
+        /// <see cref="IComponentInitiator"/> Creates <see cref="IComponent"/>s and <see cref="IComponentPool"/>s
+        /// </summary>
+        private interface IComponentInitiator
         {
             IComponentPool CreatePool();
             IComponent CreateComponent();
@@ -44,34 +55,28 @@ namespace ECS
             public IComponentPool CreatePool() => new ComponentPool<TComponent>();
             public IComponent CreateComponent() => new TComponent();
         }
-
-        internal static void WriteDebug()
+        
+        /// <summary>
+        /// A static class for each <see cref="IComponent"/> to store the type ID.
+        /// </summary>
+        /// <typeparam name="TComponent"></typeparam>
+        private static class ComponentType<TComponent> where TComponent : IComponent, new()
         {
-            int i = 0;
-            while (i < ComponentCount)
-                Console.WriteLine($"Component {i} : {Types[i++]}");
-        }
-    }
-    /// <summary>
-    /// A static class for each <see cref="IComponent"/> to store the type ID.
-    /// </summary>
-    /// <typeparam name="TComponent"></typeparam>
-    internal static class ComponentType<TComponent> where TComponent : IComponent, new()
-    {
-        private static byte _id;
-        public static byte ID
-        {
-            get
+            private static byte _id;
+            public static byte ID
             {
-                if (!Registered) Register();
-                return _id;
+                get
+                {
+                    if (!Registered) Register();
+                    return _id;
+                }
             }
-        }
-        public static bool Registered { get; private set; } = false;
-        public static void Register()
-        {
-            _id = ComponentManager.RegisterType<TComponent>();
-            Registered = true;
+            public static bool Registered { get; private set; } = false;
+            public static void Register()
+            {
+                _id = RegisterType<TComponent>();
+                Registered = true;
+            }
         }
     }
 }

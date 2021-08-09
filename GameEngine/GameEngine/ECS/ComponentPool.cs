@@ -10,38 +10,43 @@ namespace ECS
     /// <typeparam name="T"></typeparam>
     internal interface IComponentPool
     {
-        /// <summary>
-        /// The <see cref="Entity"/>'s <see cref="IComponent"/> at the Index
-        /// </summary>
-        /// <param name="Index"></param>
-        /// <returns></returns>
-        IComponent this[int Index] { get; set; }
+        internal IComponent this[int Index] { get; set; }
         /// <summary>
         /// swaps the end of the array with the given index. then removes the end. 
         /// </summary>
         /// <param name="FreeIndex"></param>
-        void Replace(int Index, int Length);
+        internal void Replace(int Index, int Length);
         /// <summary>
         /// Resizes the array to the specified size
         /// </summary>
         /// <param name="Size"></param>
-        void Resize(int Size);
+        internal void Resize(int Size);
         /// <summary>
         /// Clears the last item in the pool
         /// </summary>
-        void Clear(int Index);
+        internal void Clear(int Index);
 
     }
     /// <summary>
-    /// Implements <see cref="IComponentPool"/>
+    /// Implements <see cref="IComponentPool"/>, a simple collection of <typeparamref name="TComponent"/>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    internal class ComponentPool<T> : IComponentPool where T : IComponent, new()
+    /// <typeparam name="TComponent"></typeparam>
+    public sealed class ComponentPool<TComponent> : IComponentPool where TComponent : IComponent, new()
     {
-        private T[] _array = new T[1];
-        public IComponent this[int Index] { get => _array[Index]; set => _array[Index] = (T)value; }
-        public void Replace(int FreeIndex, int Length) => _array[FreeIndex] = _array[Length];
-        public void Resize(int Size) => Array.Resize(ref _array, Size);
-        public void Clear(int Index) => _array[Index] = default;
+        private TComponent[] _array = new TComponent[1];
+        public TComponent this[int Index]
+        {
+            get => _array[Index];
+            set => _array[Index] = value;
+        }
+
+        IComponent IComponentPool.this[int Index] 
+        {
+            get => _array[Index];
+            set => _array[Index] = (TComponent)value;
+        }
+        void IComponentPool.Replace(int Index, int Length) => _array[Index] = _array[Length];
+        void IComponentPool.Resize(int Size) => Array.Resize(ref _array, Size);
+        void IComponentPool.Clear(int Index) => _array[Index] = default;
     }
 }
