@@ -1,101 +1,111 @@
 ﻿using System;
 using ECS;
 using System.Threading;
+using OpenTK.Mathematics;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GameEngine
 {
     /* NOTES:
-     * - Inheritance does not work with components. will be registered as a new component with no relation to the base.
-     * 
+     * - Inheritance does not work with components. will be registered as a new component with no relation to the base. this maybe more useful.
+     * - Need to adapt existing entities into new component system. 
+     * - should try and work out threading at some point.
      */
-    class Program
+
+    // Render components
+    public sealed class CullComponent : IComponent { } // Requires - RenderComponent
+    public sealed class CullObserverComponent : IComponent { }
+    public sealed class CameraComponent : IComponent { } // Requires - CullObserverComponent
+    public sealed class RenderComponent : IComponent { } // Requires - TransformComponent, MeshComponent, LODGroupComponent
+    public sealed class LODGroupComponent : IComponent { } // Requires - RenderComponent
+    public sealed class MaterialComponent : IComponent { }
+    public sealed class MeshComponent : IComponent { }
+    // Light components
+    public sealed class PointLightComponent : IComponent { } // Requires - TransformComponent, CullObserverComponent
+    public sealed class DirectionLightComponent : IComponent { } // Requires - CullObserverComponent
+    public sealed class OccluderComponent : IComponent { } // Requires - TransformComponent, MeshComponent, CullComponent
+    // animation components
+    public sealed class AnimationComponent : IComponent { }
+    public sealed class ArticulatedJointComponent : IComponent { }
+    public sealed class SkinMeshComponent : IComponent { }
+    // collider component
+    public sealed class ColliderComponent : IComponent { }
+    public sealed class RayCastComponent : IComponent { }
+
+    public sealed class TransformComponent : IComponent 
     {
-        class EntityA : Entity
+        private Vector3 _position = Vector3.Zero;
+        private Quaternion _rotation = Quaternion.Identity;
+        private Vector3 _scale = Vector3.One;
+
+        public Matrix4 Matrix { get; private set; }
+        public Vector3 Position 
         {
-            public EntityA(EntityContext World) : base(World)
+            get => _position;
+            set
             {
-                //AddComponent<ComponentA>();
-                AddComponent<ComponentB>();
-                AddComponent<ComponentC>();
-                AddComponent<ComponentD>();
-                AddComponent<ComponentE>();
+                Matrix = CalculateTransform(_position = value, _rotation, _scale);
+            }
+        }
+        public Quaternion Rotation 
+        {
+            get => _rotation;
+            set
+            {
+                Matrix = CalculateTransform(_position, _rotation = value, _scale);
+            }
+        }
+        public Vector3 Scale 
+        {
+            get => _scale;
+            set
+            {
+                Matrix = CalculateTransform(_position, _rotation, _scale = value);
             }
         }
 
-        class EntityB : Entity
+        private static Matrix4 CalculateTransform(Vector3 Position, Quaternion Rotation, Vector3 Scale)
         {
-            public EntityB(EntityContext World) : base(World)
+            Matrix4 RotationMatrix = Matrix4.CreateFromQuaternion(Rotation);
+            Matrix4 ScaleMatrix = Matrix4.CreateScale(Scale);
+            Matrix4 TranslationMatrix = Matrix4.CreateTranslation(Position);
+            return RotationMatrix * ScaleMatrix * TranslationMatrix;
+        }
+        
+        public sealed class UpdateSystem : Behaviour
+        {
+            public UpdateSystem() : base(Filter.FromType<TransformComponent>()) { }
+            public void Update()
             {
-                AddComponent<ComponentA>();
-                AddComponent<ComponentB>();
-                AddComponent<ComponentC>();
+
             }
-        }
-
-
-        class ComponentA : IComponent 
-        {
-            public int A;
-        }
-        class ComponentB : IComponent 
-        {
-            public int B;
-        }
-        class ComponentC : IComponent 
-        {
-            public int C;
-        }
-        class ComponentD : IComponent 
-        {
-            public int D;
-        }
-        class ComponentE : IComponent
-        {
-            public int E, F, G;
-        }
-        [Serializable]
-        class Scene : EntityContext
-        {
-            public Scene()
-            {
-                AddBehaviour(B1);
-            }
-            public void AddBehaviour2() => AddBehaviour(B2);
-            public void ExecuteBehaviour1() => B1.Execute();
-            public void ExecuteBehaviour2() => B2.Execute();
-
-
-            public Behaviour B1 = new TestBehaviour1();
-            public class TestBehaviour1 : TypedBehaviour<ComponentA>
-            {
-                public TestBehaviour1() : base() { }
-                public override void Function(Entity E, ComponentA C1)
-                {
-                    Console.WriteLine($"Behaviour Acting on Entity with components A, B, C, D, E");
-                }
-            }
-            public Behaviour B2 = new TestBehaviour2();
-            public class TestBehaviour2 : TypedBehaviour<ComponentA, ComponentB, ComponentC>
-            {
-                public TestBehaviour2() : base() { }
-                public override void Function(Entity E, ComponentA C1, ComponentB C2, ComponentC C3)
-                {
-                    Console.WriteLine($"Behaviour Acting on Entity with components A, B, C");
-                }
-            }
-        }
-
-        static void Main(string[] _)
-        {
-
-            Scene Wor = new Scene();
-            for (int i = 0; i < 3; i++)
-                new EntityA(Wor);
-            for (int i = 0; i < 2; i++)
-                new EntityB(Wor);
             
-            Console.Write($"Behaviour 1 EntityCount : {Wor.B1.EntityCount}\nBehaviour 2 EntityCount : {Wor.B2.EntityCount}\n");
-            Console.ReadLine();
         }
     }
+
+    public class scene : EntityContext
+    {
+        private readonly Behaviour<PointLightComponent> LightSystem;
+        private readonly Behaviour<OccluderComponent, MeshComponent> OccluderSystem;
+        private readonly Behaviour<RenderComponent, CullComponent> RenderCullSystem;
+        private readonly TransformComponent.UpdateSystem TransformSystem = new TransformComponent.UpdateSystem();
+
+
+    }
+    public class thing : Entity
+    {
+        public thing(EntityContext C) : base(C) { }
+    }
+    class Program
+    {
+        static public void Main(string[] args)
+        {
+            var C = new scene();
+            var E1 = new thing(C);
+            E1.AddComponent<TransformComponent>();
+        }
+    }
+    
+
 }

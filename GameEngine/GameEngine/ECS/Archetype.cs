@@ -10,6 +10,9 @@ namespace ECS
     /// </summary>
     public sealed class Archetype : IEnumerable<Entity>
     {
+        private readonly Archetype[] Next = new Archetype[byte.MaxValue];
+        private readonly Archetype[] Prior = new Archetype[byte.MaxValue];
+
         private readonly EntityContext _manager;
         internal readonly byte[] ComponentIDs;
         private readonly IComponentPool[] _componentPools;
@@ -29,13 +32,11 @@ namespace ECS
             _componentPools = new IComponentPool[ComponentIDs.Length];
             for (int i = 0; i < ComponentIDs.Length; i++)
                 _componentPools[i] = ComponentManager.CreatePool(ComponentIDs[i]);
-
-            Destroy = OnDestroy;
         }
 
         /// <summary>
         /// Moves <see cref="Entity"/> to a new <see cref="Archetype"/>. 
-        /// Copies <see cref="IComponent"/>s to new <see cref="Archetype"/>.
+        /// And copies <see cref="IComponent"/>s to new <see cref="Archetype"/>.
         /// </summary>
         /// <param name="Entity">the <see cref="Entity"/> to be moved in this <see cref="Archetype"/>.</param>
         /// <param name="Archetype">the <see cref="Archetype"/> the <see cref="Entity"/> will be moved to.</param>
@@ -47,7 +48,7 @@ namespace ECS
             for (int i = 0; i < ComponentIDs.Length; i++)
             {
                 IComponent Component = _componentPools[i][Entity.ArchetypeIndex];
-                int ComponentIndex = Array.FindIndex(Archetype.ComponentIDs, ID => ID == ComponentIDs[i]);
+                int ComponentIndex = FindComponent(ComponentIDs[i]);
                 if (ComponentIndex != -1)
                     Archetype._componentPools[ComponentIndex][NewEntityIndex] = Component;
             }
@@ -57,7 +58,8 @@ namespace ECS
             Entity.ArchetypeIndex = NewEntityIndex;
         }
         /// <summary>
-        /// Adds the <see cref="Entity"/> to the archetype and generates <see cref="IComponentPool"/> for the relevant <see cref="IComponent"/>.
+        /// Adds the <see cref="Entity"/> to the archetype and generates <see cref="IComponentPool"/> 
+        /// for the relevant <see cref="IComponent"/>.
         /// Does not change Entity's "ArchetypeIndex" and "Archetype" object pointer.
         /// </summary>
         /// <param name="Entity"></param>
@@ -77,6 +79,7 @@ namespace ECS
             _entities[EntityCount] = Entity;
             for (int i = 0; i < ComponentIDs.Length; i++)
                 _componentPools[i][EntityCount] = ComponentManager.CreateComponent(ComponentIDs[i]);
+
             return EntityCount++;
         }
         /// <summary>
@@ -107,25 +110,17 @@ namespace ECS
 
                 Array.Resize(ref _entities, newSize);
             }
-
-            // if no entities in list, cease existing
-            if (--EntityCount == 0)
-                Destroy(this);
+            --EntityCount;                
         }
-        /// <summary>
-        /// Finds All references to this object in the <see cref="EntityContext"/> and in the <see cref="Behaviour"/>s and removes them.
-        /// </summary>
-        internal event Action<Archetype> Destroy;
-        private void OnDestroy(Archetype Archetype)
-        {
-            _manager.RemoveArchetype(Archetype);
-        }
-
+        
         /// <summary>
         /// Finds or creates the <see cref="Archetype"/> with the added component <paramref name="ComponentType"/>
         /// </summary>
         internal Archetype FindNext(byte ComponentType)
         {
+            if (Next[ComponentType] != null)
+                return Next[ComponentType];
+
             byte[] Components = ComponentIDs; // copy components
             Array.Resize(ref Components, Components.Length + 1); // resize
 
@@ -134,13 +129,16 @@ namespace ECS
                 Components[i + 1] = Components[i--];
             Components[++i] = ComponentType; // add element in position found
 
-            return _manager.FindOrCreateArchetype(Components);
+            return Next[ComponentType] = _manager.FindOrCreateArchetype(Components);
         }
         /// <summary>
         /// Finds or creates the <see cref="Archetype"/> with out the removed component <paramref name="ComponentType"/>
         /// </summary>
         internal Archetype FindPrior(byte ComponentType)
         {
+            if (Prior[ComponentType] != null)
+                return Prior[ComponentType];
+
             byte[] Components = ComponentIDs; // copy components
             Array.Resize(ref Components, Components.Length - 1); // resize
 
@@ -148,34 +146,71 @@ namespace ECS
             while (i >= 0 && ComponentIDs[i] != ComponentType) // if keeping value
                 Components[i - 1] = ComponentIDs[i--]; // shuffle value down 1 index, overwriting previous
 
-            return _manager.FindOrCreateArchetype(Components);
+            return Prior[ComponentType] = _manager.FindOrCreateArchetype(Components);
         }
+        
         /// <summary>
         /// Gets the <see cref="IComponent"/> with ID <paramref name="ComponentID"/> on the <see cref="Entity"/> at <paramref name="Index"></paramref>.
         /// </summary>
         internal IComponent GetComponent(byte ComponentID, int Index)
         {
-            int CompIndex = Array.FindIndex(ComponentIDs, ID => ID == ComponentID);
+            int CompIndex = FindComponent(ComponentID);
+            if (CompIndex == -1) throw new ComponentNotFound();
             return _componentPools[CompIndex][Index];
+        }
+        /// <summary>
+        /// Gets the <see cref="IComponent"/>s related to <see cref="Entity"/> at <paramref name="Index">Archetype Index</paramref>.
+        /// </summary>
+        internal IEnumerable<IComponent> GetAllComponents(int Index)
+        {
+            for (int i = 0; i< _componentPools.Length; i++)
+                yield return _componentPools[i][Index];
         }
         /// <summary>
         /// Gets the <see cref="ComponentPool{T}"/> for Component <paramref name="ComponentID"/>
         /// </summary>
         internal IComponentPool GetComponentPool(byte ComponentID)
         {
-            int CompIndex = Array.FindIndex(ComponentIDs, ID => ID == ComponentID);
+            int CompIndex = FindComponent(ComponentID);
+            if (CompIndex == -1) throw new ComponentNotFound();
             return _componentPools[CompIndex];
         }
         /// <summary>
         /// Gets the <see cref="ComponentPool{T}"/> for Component <paramref name="ComponentID"/>
         /// </summary>
         public ComponentPool<TComponent> GetComponentPool<TComponent>() where TComponent : IComponent, new() => (ComponentPool<TComponent>)GetComponentPool(ComponentManager.ID<TComponent>());
-
+        
+        /// <summary>
+        /// returns true if Archetype contains Component of type <typeparamref name="TComponent"/>.
+        /// </summary>
+        public bool Has<TComponent>() where TComponent : IComponent, new() => FindComponent(ComponentManager.ID<TComponent>()) != -1;
+        /// <summary>
+        /// returns true if Archetype contains Component of type <typeparamref name="TComponent"/>.
+        /// </summary>
+        /// <param name="Index">the entity index for <paramref name="Component"/></param>
+        /// <param name="Component">the Component</param>
+        /// <returns></returns>
+        public bool Has<TComponent>(int Index, out TComponent Component) where TComponent : IComponent, new()
+        {
+            int CompIndex = FindComponent(ComponentManager.ID<TComponent>());
+            if (CompIndex == -1) 
+            {
+                Component = default;
+                return false;
+            }
+            else
+            {
+                Component = (TComponent)_componentPools[CompIndex][Index];
+                return true;
+            }
+        }
 
         /// <summary>
-        /// returns true if Archetype has Component of type <typeparamref name="TComponent"/>
+        /// returns the index of the <paramref name="CompID"/>
         /// </summary>
-        public bool Has<TComponent>() where TComponent : IComponent, new() => Array.FindIndex(ComponentIDs, ID => ID == ComponentManager.ID<TComponent>()) != -1;
+        /// <param name="CompID"></param>
+        /// <returns></returns>
+        private int FindComponent(byte CompID) => Array.BinarySearch(ComponentIDs, 0, ComponentIDs.Length, CompID);
 
         internal bool Equals(byte[] ComponentIDs) => Equals(this.ComponentIDs, ComponentIDs);
         private static bool Equals(byte[] Left, byte[] Right)
