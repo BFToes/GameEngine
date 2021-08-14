@@ -4,6 +4,7 @@ using System.Threading;
 using OpenTK.Mathematics;
 using System.Collections.Generic;
 using System.Linq;
+using ECS.Pool;
 
 namespace GameEngine
 {
@@ -12,7 +13,7 @@ namespace GameEngine
      * - Need to adapt existing entities into new component system. 
      * - should try and work out threading at some point.
      */
-
+    /*
     // Render components
     public sealed class CullComponent : IComponent { } // Requires - RenderComponent
     public sealed class CullObserverComponent : IComponent { }
@@ -33,8 +34,14 @@ namespace GameEngine
     public sealed class ColliderComponent : IComponent { }
     public sealed class RayCastComponent : IComponent { }
 
+    */
+
     public sealed class TransformComponent : IComponent 
     {
+        int IPoolItem.ID { get; set; }
+
+        private bool DirtyFlag = false;
+
         private Vector3 _position = Vector3.Zero;
         private Quaternion _rotation = Quaternion.Identity;
         private Vector3 _scale = Vector3.One;
@@ -45,7 +52,8 @@ namespace GameEngine
             get => _position;
             set
             {
-                Matrix = CalculateTransform(_position = value, _rotation, _scale);
+                DirtyFlag = true;
+                _position = value;
             }
         }
         public Quaternion Rotation 
@@ -53,7 +61,8 @@ namespace GameEngine
             get => _rotation;
             set
             {
-                Matrix = CalculateTransform(_position, _rotation = value, _scale);
+                DirtyFlag = true;
+                _rotation = value;
             }
         }
         public Vector3 Scale 
@@ -61,7 +70,8 @@ namespace GameEngine
             get => _scale;
             set
             {
-                Matrix = CalculateTransform(_position, _rotation, _scale = value);
+                DirtyFlag = true;
+                _scale = value;
             }
         }
 
@@ -72,24 +82,37 @@ namespace GameEngine
             Matrix4 TranslationMatrix = Matrix4.CreateTranslation(Position);
             return RotationMatrix * ScaleMatrix * TranslationMatrix;
         }
-        
+        private static Matrix4 CalculateTransform(Matrix4 Base, Vector3 Position, Quaternion Rotation, Vector3 Scale)
+        {
+            Matrix4 RotationMatrix = Matrix4.CreateFromQuaternion(Rotation);
+            Matrix4 ScaleMatrix = Matrix4.CreateScale(Scale);
+            Matrix4 TranslationMatrix = Matrix4.CreateTranslation(Position);
+            return RotationMatrix * ScaleMatrix * TranslationMatrix * Base;
+        }
+
         public sealed class UpdateSystem : Behaviour
         {
             public UpdateSystem() : base(Filter.FromType<TransformComponent>()) { }
+            
             public void Update()
             {
+                foreach(Archetype A in Archetypes)
+                {
+                    //ComponentPool<TransformComponent> CompPool1 = A.GetComponentPool<TransformComponent>();
+                    
+                }
+
 
             }
-            
         }
     }
 
     public class scene : EntityContext
     {
-        private readonly Behaviour<PointLightComponent> LightSystem;
-        private readonly Behaviour<OccluderComponent, MeshComponent> OccluderSystem;
-        private readonly Behaviour<RenderComponent, CullComponent> RenderCullSystem;
-        private readonly TransformComponent.UpdateSystem TransformSystem = new TransformComponent.UpdateSystem();
+        //private readonly Behaviour<PointLightComponent> LightSystem;
+        //private readonly Behaviour<OccluderComponent, MeshComponent> OccluderSystem;
+        //private readonly Behaviour<RenderComponent, CullComponent> RenderCullSystem;
+        //private readonly TransformComponent.UpdateSystem TransformSystem = new TransformComponent.UpdateSystem();
 
 
     }
@@ -101,9 +124,12 @@ namespace GameEngine
     {
         static public void Main(string[] args)
         {
-            var C = new scene();
-            var E1 = new thing(C);
-            E1.AddComponent<TransformComponent>();
+            var world = new scene();
+            var thing1 = new thing(world);
+            var thing2 = new thing(world);
+            var thing3 = new thing(world);
+            var thing4 = new thing(world);
+            Console.ReadLine();
         }
     }
     

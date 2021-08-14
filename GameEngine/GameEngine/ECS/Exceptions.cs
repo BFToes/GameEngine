@@ -4,13 +4,12 @@ using System.Text;
 
 namespace ECS
 {
-    class ComponentNotFound : Exception { }
-    class ComponentAlreadyExists : Exception { }
-    class DuplicateEntityException : Exception { }
-    class ComponentPoolException : Exception { }
-    class EntityNotFoundException : Exception { }
-    class IndependentEntityException : Exception { }
-    class NoCompatibleEntitiesException : Exception { }
-    class NullEntityPoolException : Exception { }
-    class EntityCachedException : Exception  { }
+    class ComponentNotFoundException : Exception { }
+    class ComponentFailedToAddException : Exception { }
+    class ComponentFailedToRegister : Exception { }
+
+    class ExceededSceneGraphMaxLayerException : Exception { }
+    class ExceededEntityArchetypeLimitException : Exception { }
+    
+    
 }
