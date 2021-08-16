@@ -89,13 +89,13 @@ namespace GameEngine
             return RotationMatrix * ScaleMatrix * TranslationMatrix * Base;
         }
 
-        public sealed class UpdateSystem : Behaviour
+        public sealed class UpdateSystem : Entity.Behaviour
         {
             public UpdateSystem() : base() { }
             
             public void Update()
             {
-                foreach(Archetype A in archetypes)
+                foreach(Entity.Archetype A in archetypes)
                 {
                     //ComponentPool<TransformComponent> CompPool1 = A.GetComponentPool<TransformComponent>();
                     

@@ -10,14 +10,14 @@ namespace ECS
     /// </summary>
     public partial class EntityContext
     {
-        protected readonly List<Archetype> _archetypes = new List<Archetype>();
-        protected readonly List<Behaviour> _behaviours = new List<Behaviour>();
+        protected readonly List<Entity.Archetype> _archetypes = new List<Entity.Archetype>();
+        protected readonly List<Entity.Behaviour> _behaviours = new List<Entity.Behaviour>();
 
-        internal Archetype EmptyArchetype;
+        internal Entity.Archetype EmptyArchetype;
 
         protected EntityContext()
         {
-            EmptyArchetype = new Archetype(this, new byte[0]);
+            EmptyArchetype = new Entity.Archetype(this, new byte[0]);
         }
 
         /// <summary>
@@ -26,16 +26,16 @@ namespace ECS
         /// </summary>
         /// <param name="Components">the array of component IDs that this archetype uses.</param>
         /// <returns>an archetype that matches the description.</returns>
-        internal Archetype FindOrCreateArchetype(byte[] Components)
+        internal Entity.Archetype FindOrCreateArchetype(byte[] Components)
         {
-            foreach (Archetype A in _archetypes)
+            foreach (Entity.Archetype A in _archetypes)
                 if (A.Equals(Components)) 
                     return A;
 
-            Archetype New = new Archetype(this, Components);
+            Entity.Archetype New = new Entity.Archetype(this, Components);
             _archetypes.Add(New);
 
-            foreach (Behaviour B in _behaviours)
+            foreach (Entity.Behaviour B in _behaviours)
                 B.AddIfApplicable(New);
             return New;
         }       

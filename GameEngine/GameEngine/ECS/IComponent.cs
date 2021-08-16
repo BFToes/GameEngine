@@ -8,7 +8,7 @@ namespace ECS
     /// A module of data that can attach to entities to provide functionality. 
     /// All data relating to an <see cref="Entity"/> is stored through an <see cref="IComponent"/>.
     /// </summary>
-    public interface IComponent : Archetype.IPoolable { }
+    public interface IComponent : Entity.Archetype.IPoolable { }
     
     /// <summary>
     /// Assigns each <see cref="IComponent"/> an ID which is used for early binding initiation
@@ -32,17 +32,17 @@ namespace ECS
         public static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
 
         internal static IComponent InitComponent(byte ID) => Initiators[ID].CreateComponent();
-        internal static Archetype.IPool InitPool(byte ID) => Initiators[ID].CreatePool();
+        internal static Entity.Archetype.IPool InitPool(byte ID) => Initiators[ID].CreatePool();
         
         private interface IInitiator
         {
             IComponent CreateComponent();
-            Archetype.IPool CreatePool();
+            Entity.Archetype.IPool CreatePool();
         }
         private class Initiator<TComponent> : IInitiator where TComponent : IComponent, new()
         {
             IComponent IInitiator.CreateComponent() => new TComponent();
-            Archetype.IPool IInitiator.CreatePool() => new Archetype.Pool<TComponent>();
+            Entity.Archetype.IPool IInitiator.CreatePool() => new Entity.Archetype.Pool<TComponent>();
         }
         private static class ComponentType<TComponent> where TComponent : IComponent, new()
         {

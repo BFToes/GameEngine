@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 using ListExtensions;
+
 namespace ECS
 {
     /// <summary>
     /// A container object for which <see cref="IComponent"/>s can be added and removed.
     /// </summary>
-    public abstract class Entity : Archetype.IPoolable
+    public abstract partial class Entity : Entity.Archetype.IPoolable
     {
         #region Events And Delegates
         /// <summary>
@@ -46,7 +47,7 @@ namespace ECS
 
         private Entity _parent;
         private List<Entity> _children;
-        internal int _poolIndex;
+        private int _poolIndex;
 
         public byte EntityLayer { get; private set; } = 0;
         public IReadOnlyCollection<Entity> Children => _children.AsReadOnly();
@@ -70,9 +71,9 @@ namespace ECS
         {
             this._children = new List<Entity>();
             this._context = Context;
+            // if Archetype null adds to empty archetype in context
             this._archetype = Archetype ?? _context.EmptyArchetype;
-            this._archetype.AddLayer(out _poolIndex, new List<Archetype.IPoolable> { this } ); // if Archetype null adds to empty archetype in context
-
+            this._archetype.InitEntity(out _poolIndex, this); // initiates entity in archetype
         }
 
         #region Component Methods
@@ -84,7 +85,7 @@ namespace ECS
         public void AddComponent<TComponent>(TComponent Component = default) where TComponent : IComponent, new()
         {
             byte CompID = ComponentManager.ID<TComponent>();
-            _archetype = _archetype.MoveEntity(ref _poolIndex, CompID, Component ?? new TComponent());
+            _archetype.MoveEntity(this, CompID, Component ?? new TComponent());
             ComponentAdded?.Invoke(this, Component);
         }
         /// <summary>
@@ -95,7 +96,7 @@ namespace ECS
         public TComponent RemoveComponent<TComponent>() where TComponent : IComponent, new()
         {
             byte CompID = ComponentManager.ID<TComponent>();
-            _archetype = _archetype.MoveEntity(ref _poolIndex, CompID, out IComponent Component);
+            _archetype.MoveEntity(this, CompID, out IComponent Component);
             ComponentRemoved?.Invoke(this, Component);
             return (TComponent)Component;
         }
@@ -106,7 +107,7 @@ namespace ECS
         public void SetComponentTypes(params byte[] Components)
         {
             Array.Sort(Components);
-            _archetype.MoveEntity(ref _poolIndex, _context.FindOrCreateArchetype(Components));
+            _archetype.MoveEntity(this, _context.FindOrCreateArchetype(Components));
         }
 
         /// <summary>
@@ -116,7 +117,7 @@ namespace ECS
         /// <returns></returns>
         public TComponent GetComponent<TComponent>() where TComponent : IComponent, new()
         {
-            return _archetype.GetPool<TComponent>()[_poolIndex];
+            return _archetype.GetComponent<TComponent>(this);
         }
 
 
