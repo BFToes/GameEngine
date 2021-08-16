@@ -10,8 +10,8 @@ namespace ECS
     /// </summary>
     public partial class EntityContext
     {
-        private readonly List<Archetype> _archetypes;
-        private readonly List<Behaviour> _behaviours;
+        protected readonly List<Archetype> _archetypes = new List<Archetype>();
+        protected readonly List<Behaviour> _behaviours = new List<Behaviour>();
 
         internal Archetype EmptyArchetype;
 
@@ -35,30 +35,9 @@ namespace ECS
             Archetype New = new Archetype(this, Components);
             _archetypes.Add(New);
 
-            return New;
-        }
-
-        internal IEnumerable<Archetype> GetArchetypes()
-        {
-            foreach (Archetype A in _archetypes)
-                yield return A;
-        }
-        internal IEnumerable<Behaviour> GetBehaviours()
-        {
             foreach (Behaviour B in _behaviours)
-                yield return B;
-        }
-        /*
-        internal IEnumerable<Entity> GetEntities()
-        {
-            foreach (Archetype A in _archetypes)
-            {
-                //IEnumerator<Entity> Ent = A.GetEnumerator<Entity>();
-                //do yield return Ent.Current;
-                //while (Ent.MoveNext());
-            }
-        }
-        */
+                B.AddIfApplicable(New);
+            return New;
+        }       
     }
-
 }

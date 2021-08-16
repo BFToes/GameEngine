@@ -66,12 +66,116 @@ namespace ListExtensions
             for (int i = 0; i < Array.Length; i++) Array[i] = value;
             return Array;
         }
-        public static T[] Slice<T>(this T[] Array, int start, int end)
+        /// <summary>
+        /// Assuming array is sorted, searches for each of the elements in <paramref name="search"/>
+        /// using an optimised binary search. 
+        /// </summary>
+        /// <param name="search">the search parameters being looked for</param>
+        /// <returns>the index of each corresponding search parameter. if no value was 
+        /// found, index will equal -1. 
+        /// </returns>
+        public static int[] BinarySearch<T>(this T[] array, params T[] search)
         {
-            T[] temp = new T[end - start];
-            Array.CopyTo(temp, -start);
-            return temp;
+            Array.Sort(search); 
+            List<KeyValuePair<T, int>> paired = new List<KeyValuePair<T, int>>();
+            for (int i = 0; i < search.Length; i++)
+                paired.Add(new KeyValuePair<T, int>(search[i], i));
+
+            int[] Indexes = new int[search.Length];
+
+            int array_L = 0;                    // array index lower
+            int array_U = array.Length;         // array index upper
+
+            int search_L = 0;                   // search index lower
+            int search_U = search.Length;       // search index upper
+            do
+            {
+                // searches for lower bound
+                array_L = Array.BinarySearch(array, array_L, array_U - array_L, paired[search_L].Key); 
                 
+                if (array_L < 0) {
+                    Indexes[paired[search_L].Value] = -1;
+                    array_L = -array_L - 1;
+                }
+                else {
+                    Indexes[paired[search_L].Value] = array_L;
+                    ++array_L;
+                }
+                search_L++;
+
+                if (search_L >= search_U || array_L >= array_U) break; // if upper and lower bound have crossed in the middle
+
+                // searches for upper bound
+                array_U = Array.BinarySearch(array, array_L, array_U - array_L, paired[search_U - 1].Key);
+                if (array_U < 0) {
+                    Indexes[paired[search_U - 1].Value] = -1;
+                    array_U = -array_U;
+                }
+                else {
+                    Indexes[paired[search_U - 1].Value] = array_U;
+                }
+                search_U--;                
+            }
+            while (search_L < search_U && array_L < array_U); // if upper and lower bound have crossed in the middle
+
+            return Indexes;
+        }
+        /// <summary>
+        /// searches for the <paramref name="search"/> parameter using a binary search
+        /// </summary>
+        public static int BinarySearch<T>(this T[] array, T search)
+        {
+            int index = Array.BinarySearch(array, search);
+            return index < 0 ? -1 : index;
+        }
+        /// <summary>
+        /// returns if all search parameters are within array 
+        /// </summary>
+        public static bool Contains<T>(this T[] array, params T[] search)
+        {
+            Array.Sort(search); 
+            List<KeyValuePair<T, int>> paired = new List<KeyValuePair<T, int>>();
+            for (int i = 0; i < search.Length; i++)
+                paired.Add(new KeyValuePair<T, int>(search[i], i));
+
+            int[] Indexes = new int[search.Length];
+
+            int array_L = 0;                    // array index lower
+            int array_U = array.Length;         // array index upper
+
+            int search_L = 0;                   // search index lower
+            int search_U = search.Length;       // search index upper
+            do
+            {
+                // searches for lower bound
+                array_L = Array.BinarySearch(array, array_L, array_U - array_L, paired[search_L].Key); 
+                
+                if (array_L < 0) return false;
+                else Indexes[paired[search_L].Value] = array_L++;
+
+                search_L++;
+
+                if (search_L >= search_U || array_L >= array_U) break; // if upper and lower bound have crossed in the middle
+
+                // searches for upper bound
+                array_U = Array.BinarySearch(array, array_L, array_U - array_L, paired[search_U - 1].Key);
+                
+                if (array_U < 0) return false;
+                else Indexes[paired[search_U - 1].Value] = array_U;
+                
+                search_U--;                
+            }
+            while (search_L < search_U && array_L < array_U); // if upper and lower bound have crossed in the middle
+
+            return true;
+        }
+        /// <summary>
+        /// returns if this array contains search parameter
+        /// </summary>
+        public static bool Contains<T>(this T[] array, T search)
+        {
+            int index = Array.BinarySearch(array, search);
+            return index >= 0;
         }
     }
 }

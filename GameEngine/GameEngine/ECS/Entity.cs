@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
+using ListExtensions;
 namespace ECS
 {
     /// <summary>
     /// A container object for which <see cref="IComponent"/>s can be added and removed.
     /// </summary>
-    public abstract class Entity : Archetype.Iitem
+    public abstract class Entity : Archetype.IPoolable
     {
         #region Events And Delegates
         /// <summary>
@@ -41,16 +41,12 @@ namespace ECS
         public event EntityHierarchyChanged ParentChanged;
         #endregion
 
-        private EntityContext _context;
+        private readonly EntityContext _context;
         private Archetype _archetype;
 
         private Entity _parent;
         private List<Entity> _children;
-
-        /// <summary>
-        /// Archetype Index
-        /// </summary>
-        public int PoolIndex { get; set; }
+        internal int _poolIndex;
 
         public byte EntityLayer { get; private set; } = 0;
         public IReadOnlyCollection<Entity> Children => _children.AsReadOnly();
@@ -75,7 +71,8 @@ namespace ECS
             this._children = new List<Entity>();
             this._context = Context;
             this._archetype = Archetype ?? _context.EmptyArchetype;
-            this._archetype.AddLayer(this); // if Archetype null adds to empty archetype in context
+            this._archetype.AddLayer(out _poolIndex, new List<Archetype.IPoolable> { this } ); // if Archetype null adds to empty archetype in context
+
         }
 
         #region Component Methods
@@ -87,7 +84,7 @@ namespace ECS
         public void AddComponent<TComponent>(TComponent Component = default) where TComponent : IComponent, new()
         {
             byte CompID = ComponentManager.ID<TComponent>();
-            _archetype.MoveEntity(this, CompID, Component ?? new TComponent());
+            _archetype = _archetype.MoveEntity(ref _poolIndex, CompID, Component ?? new TComponent());
             ComponentAdded?.Invoke(this, Component);
         }
         /// <summary>
@@ -98,50 +95,68 @@ namespace ECS
         public TComponent RemoveComponent<TComponent>() where TComponent : IComponent, new()
         {
             byte CompID = ComponentManager.ID<TComponent>();
-            _archetype.MoveEntity(this, CompID, out IComponent Component);
+            _archetype = _archetype.MoveEntity(ref _poolIndex, CompID, out IComponent Component);
             ComponentRemoved?.Invoke(this, Component);
             return (TComponent)Component;
         }
+        
+        /// <summary>
+        /// Adds batch of <see cref="IComponent"/> to <see cref="Entity"/>. 
+        /// </summary> 
+        public void SetComponentTypes(params byte[] Components)
+        {
+            Array.Sort(Components);
+            _archetype.MoveEntity(ref _poolIndex, _context.FindOrCreateArchetype(Components));
+        }
+
         /// <summary>
         /// Gets the <see cref="IComponent"/> of type <typeparamref name="TComponent"/> on this entity.
         /// </summary>
         /// <typeparam name="TComponent"></typeparam>
         /// <returns></returns>
-        public TComponent GetComponent<TComponent>() where TComponent : IComponent, new() => (TComponent)_archetype[_archetype.FindComponent<TComponent>(), PoolIndex];
+        public TComponent GetComponent<TComponent>() where TComponent : IComponent, new()
+        {
+            return _archetype.GetPool<TComponent>()[_poolIndex];
+        }
+
+
         /// <summary>
         /// If Entity Implements a <see cref="IComponent"/> of type <typeparamref name="TComponent"/> return true
         /// </summary>
-        public bool HasComponent<TComponent>() where TComponent : IComponent, new() => _archetype.FindComponent<TComponent>() != -1;
+        public bool HasComponent<TComponent>() where TComponent : IComponent, new()
+        {
+            return _archetype.GetComponentIDs().Contains(ComponentManager.ID<TComponent>());
+        }
         #endregion
 
         #region Hierarchy Methods
-        /// <summary>
-        /// associates <paramref name="Entity"/> as child in hierarchy.
-        /// Removes previous association.
-        /// </summary>
-        public virtual void AddChild(Entity Entity)
-        {
-            if (Entity.Parent != null)
-                Parent.RemoveChild(Entity);
+            /// <summary>
+            /// associates <paramref name="Entity"/> as child in hierarchy.
+            /// Removes previous association.
+            /// </summary>
+            public virtual void AddChild(Entity Entity)
+            {
+                if (Entity.Parent != null)
+                    Parent.RemoveChild(Entity);
 
-            _children.Add(Entity);
-            Entity.Parent = this;
-            ChildAdded?.Invoke(Entity);
-        }
-        /// <summary>
-        /// removes association of <paramref name="Entity"/> as child in Hierarchy.
-        /// Removes previous association.
-        /// </summary>
-        public virtual void RemoveChild(Entity Entity)
-        {
-            _children.Remove(Entity);
-            Entity.Parent = null;
-            ChildRemoved?.Invoke(Entity);
-        }
-        /// <summary>
-        /// returns the children entities associated with this entity
-        /// </summary>
-        public IEnumerable<Entity> GetChildren() => _children;
+                _children.Add(Entity);
+                Entity.Parent = this;
+                ChildAdded?.Invoke(Entity);
+            }
+            /// <summary>
+            /// removes association of <paramref name="Entity"/> as child in Hierarchy.
+            /// Removes previous association.
+            /// </summary>
+            public virtual void RemoveChild(Entity Entity)
+            {
+                _children.Remove(Entity);
+                Entity.Parent = null;
+                ChildRemoved?.Invoke(Entity);
+            }
+            /// <summary>
+            /// returns the children entities associated with this entity
+            /// </summary>
+            public IEnumerable<Entity> GetChildren() => _children;
         #endregion
     }
 }

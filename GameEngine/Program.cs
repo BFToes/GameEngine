@@ -37,10 +37,8 @@ namespace GameEngine
 
     */
 
-    public sealed class TransformComponent : IComponent 
+    public sealed class TransformComponent : IComponent
     {
-       public int PoolIndex { get; set; }
-
         private bool DirtyFlag = false;
 
         private Vector3 _position = Vector3.Zero;
@@ -93,11 +91,11 @@ namespace GameEngine
 
         public sealed class UpdateSystem : Behaviour
         {
-            public UpdateSystem() : base(Filter.FromType<TransformComponent>()) { }
+            public UpdateSystem() : base() { }
             
             public void Update()
             {
-                foreach(Archetype A in Archetypes)
+                foreach(Archetype A in archetypes)
                 {
                     //ComponentPool<TransformComponent> CompPool1 = A.GetComponentPool<TransformComponent>();
                     
@@ -108,13 +106,16 @@ namespace GameEngine
         }
     }
 
+    public struct Component1 : IComponent { }
+    public struct Component2 : IComponent { }
+    public struct Component3 : IComponent { }
+    public struct Component4 : IComponent { }
     public class scene : EntityContext
     {
         //private readonly Behaviour<PointLightComponent> LightSystem;
         //private readonly Behaviour<OccluderComponent, MeshComponent> OccluderSystem;
         //private readonly Behaviour<RenderComponent, CullComponent> RenderCullSystem;
         //private readonly TransformComponent.UpdateSystem TransformSystem = new TransformComponent.UpdateSystem();
-
 
     }
     public class thing : Entity
@@ -126,12 +127,18 @@ namespace GameEngine
     {
         static public void Main(string[] args)
         {
-            Type[] T = new Type[] { typeof(scene), typeof(thing), typeof(Entity) };
-            T.Slice(0, 2);
+            var world = new scene();
+            var thing = new thing(world);
+            thing.AddComponent<TransformComponent>();
+            thing.AddComponent<Component1>();
+            thing.AddComponent<Component2>();
+            thing.AddComponent<Component3>();
+            thing.AddComponent<Component4>();
 
+            thing.RemoveComponent<TransformComponent>();
 
-            Console.WriteLine($"{T}");
-            Console.WriteLine($"{Marshal.SizeOf<Type[]>()}");
+            thing.SetComponentTypes(new byte[] { 1, 2, 4 });
+
             Console.ReadLine();
         }
     }
