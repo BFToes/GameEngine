@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using ECS.Pool;
+
 namespace ECS
 {
     /// <summary>
@@ -10,44 +10,30 @@ namespace ECS
     /// </summary>
     public partial class EntityContext
     {
-        private readonly SinglePool<Archetype> _archetypes;
+        private readonly List<Archetype> _archetypes;
         private readonly List<Behaviour> _behaviours;
 
         internal Archetype EmptyArchetype;
 
         protected EntityContext()
         {
-            EmptyArchetype = new Archetype(this, new List<Type> { });
+            EmptyArchetype = new Archetype(this, new byte[0]);
         }
 
-        public void AddBehaviour(Behaviour Behaviour)
-        {
-            _behaviours.Add(Behaviour);
-            
-            foreach (Archetype A in _archetypes)
-                if (Behaviour._filter.Check(A.Types))
-                    Behaviour.AddArchetype(A);
-            
-        }
         /// <summary>
         /// Searches for <see cref="Archetype"/> that matches <paramref name="Components"/> and returns it.
         /// if none found creates a new archetype matching the <paramref name="Components"/>.
         /// </summary>
         /// <param name="Components">the array of component IDs that this archetype uses.</param>
         /// <returns>an archetype that matches the description.</returns>
-        internal Archetype FindOrCreateArchetype(Type[] Components)
+        internal Archetype FindOrCreateArchetype(byte[] Components)
         {
-            foreach(Archetype A in _archetypes) // very bad verry stinky linear search
-            {
+            foreach (Archetype A in _archetypes)
                 if (A.Equals(Components)) 
                     return A;
-            }
-            Archetype New = new Archetype(this, new List<Type>(Components));
-            _archetypes.Add(New);
 
-            foreach (Behaviour B in _behaviours)
-                if (B._filter.Check(Components))
-                    B.AddArchetype(New);
+            Archetype New = new Archetype(this, Components);
+            _archetypes.Add(New);
 
             return New;
         }
@@ -62,14 +48,17 @@ namespace ECS
             foreach (Behaviour B in _behaviours)
                 yield return B;
         }
+        /*
         internal IEnumerable<Entity> GetEntities()
         {
             foreach (Archetype A in _archetypes)
             {
-                for (int i = 0; i < A.Length; i++)
-                    yield return (Entity)A[0, i];
+                //IEnumerator<Entity> Ent = A.GetEnumerator<Entity>();
+                //do yield return Ent.Current;
+                //while (Ent.MoveNext());
             }
         }
+        */
     }
 
 }

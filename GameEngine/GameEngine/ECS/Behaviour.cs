@@ -1,5 +1,4 @@
-﻿using ECS.Pool;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -12,9 +11,9 @@ namespace ECS
     /// </summary>
     public sealed class Filter
     {
-        private HashSet<Type> All;
-        private HashSet<Type> Any;
-        private HashSet<Type> None;
+        private HashSet<byte> All;
+        private HashSet<byte> Any;
+        private HashSet<byte> None;
         
         #region Static Constructors
         /// <summary>
@@ -23,8 +22,8 @@ namespace ECS
         public static Filter FromType<T1>() 
             where T1 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1)
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>()
             });
         }
         /// <inheritdoc cref="FromType"/>
@@ -32,9 +31,9 @@ namespace ECS
             where T1 : IComponent, new()
             where T2 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1),
-                typeof(T2)
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
             });
         }
         /// <inheritdoc cref="FromType"/>
@@ -43,10 +42,10 @@ namespace ECS
             where T2 : IComponent, new()
             where T3 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1),
-                typeof(T2),
-                typeof(T3)
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
             });
         }
         /// <inheritdoc cref="FromType"/>
@@ -56,11 +55,11 @@ namespace ECS
             where T3 : IComponent, new()
             where T4 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1),
-                typeof(T2),
-                typeof(T3),
-                typeof(T4)
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
             });
         }
         /// <inheritdoc cref="FromType"/>
@@ -71,12 +70,12 @@ namespace ECS
             where T4 : IComponent, new()
             where T5 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1),
-                typeof(T2),
-                typeof(T3),
-                typeof(T4),
-                typeof(T5),
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
             });
         }
         /// <inheritdoc cref="FromType"/>
@@ -88,13 +87,13 @@ namespace ECS
             where T5 : IComponent, new()
             where T6 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1),
-                typeof(T2),
-                typeof(T3),
-                typeof(T4),
-                typeof(T5),
-                typeof(T6),
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
+                ComponentManager.ID<T6>(),
             });
         }
         /// <inheritdoc cref="FromType"/>
@@ -107,14 +106,14 @@ namespace ECS
             where T6 : IComponent, new()
             where T7 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1),
-                typeof(T2),
-                typeof(T3),
-                typeof(T4),
-                typeof(T5),
-                typeof(T6),
-                typeof(T7),
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
+                ComponentManager.ID<T6>(),
+                ComponentManager.ID<T7>(),
             });
         }
         /// <inheritdoc cref="FromType"/>
@@ -128,26 +127,26 @@ namespace ECS
             where T7 : IComponent, new()
             where T8 : IComponent, new()
         {
-            return new Filter(new Type[] {
-                typeof(T1),
-                typeof(T2),
-                typeof(T3),
-                typeof(T4),
-                typeof(T5),
-                typeof(T6),
-                typeof(T7),
-                typeof(T8),
+            return new Filter(new byte[] {
+                ComponentManager.ID<T1>(),
+                ComponentManager.ID<T2>(),
+                ComponentManager.ID<T3>(),
+                ComponentManager.ID<T4>(),
+                ComponentManager.ID<T5>(),
+                ComponentManager.ID<T6>(),
+                ComponentManager.ID<T7>(),
+                ComponentManager.ID<T8>(),
             });
         }
         #endregion
 
-        public Filter(Type[] All = null, Type[] Any = null, Type[] None = null)
+        public Filter(byte[] All = null, byte[] Any = null, byte[] None = null)
         {
-            this.All = All != null ? new HashSet<Type>(All) : null;
-            this.Any = Any != null ? new HashSet<Type>(Any) : null;
-            this.None = None != null ? new HashSet<Type>(None) : null;
+            this.All = All != null ? new HashSet<byte>(All) : null;
+            this.Any = Any != null ? new HashSet<byte>(Any) : null;
+            this.None = None != null ? new HashSet<byte>(None) : null;
         }
-        public bool Check(IEnumerable<Type> Items) => (All?.IsSubsetOf(Items) ?? false) && (!None?.Overlaps(Items) ?? false) && (Any?.Overlaps(Items) ?? false);
+        public bool Check(IEnumerable<byte> Items) => (All?.IsSubsetOf(Items) ?? false) && (!None?.Overlaps(Items) ?? false) && (Any?.Overlaps(Items) ?? false);
     }
 
     /// <summary>
@@ -201,7 +200,7 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
 
                 for (int i = 0; i < A.Length; i++)
                     Task.Run(() => Function(CompPool1[i]));
@@ -225,8 +224,8 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
-                BundlePool<T2> CompPool2 = A.GetPool<T2>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T2> CompPool2 = A.GetPool<T2>();
 
 
                 for (int i = 0; i < A.Length; i++)
@@ -252,9 +251,9 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
-                BundlePool<T2> CompPool2 = A.GetPool<T2>();
-                BundlePool<T3> CompPool3 = A.GetPool<T3>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T2> CompPool2 = A.GetPool<T2>();
+                Archetype.Pool<T3> CompPool3 = A.GetPool<T3>();
 
                 for (int i = 0; i < A.Length; i++)
                     Task.Run(() => Function(CompPool1[i], CompPool2[i], CompPool3[i]));
@@ -280,10 +279,10 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
-                BundlePool<T2> CompPool2 = A.GetPool<T2>();
-                BundlePool<T3> CompPool3 = A.GetPool<T3>();
-                BundlePool<T4> CompPool4 = A.GetPool<T4>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T2> CompPool2 = A.GetPool<T2>();
+                Archetype.Pool<T3> CompPool3 = A.GetPool<T3>();
+                Archetype.Pool<T4> CompPool4 = A.GetPool<T4>();
 
                 for (int i = 0; i < A.Length; i++)
                     Task.Run(() => Function(CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i]));
@@ -310,11 +309,11 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
-                BundlePool<T2> CompPool2 = A.GetPool<T2>();
-                BundlePool<T3> CompPool3 = A.GetPool<T3>();
-                BundlePool<T4> CompPool4 = A.GetPool<T4>();
-                BundlePool<T5> CompPool5 = A.GetPool<T5>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T2> CompPool2 = A.GetPool<T2>();
+                Archetype.Pool<T3> CompPool3 = A.GetPool<T3>();
+                Archetype.Pool<T4> CompPool4 = A.GetPool<T4>();
+                Archetype.Pool<T5> CompPool5 = A.GetPool<T5>();
 
                 for (int i = 0; i < A.Length; i++)
                     Task.Run(() => Function(CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i]));
@@ -342,12 +341,12 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
-                BundlePool<T2> CompPool2 = A.GetPool<T2>();
-                BundlePool<T3> CompPool3 = A.GetPool<T3>();
-                BundlePool<T4> CompPool4 = A.GetPool<T4>();
-                BundlePool<T5> CompPool5 = A.GetPool<T5>();
-                BundlePool<T6> CompPool6 = A.GetPool<T6>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T2> CompPool2 = A.GetPool<T2>();
+                Archetype.Pool<T3> CompPool3 = A.GetPool<T3>();
+                Archetype.Pool<T4> CompPool4 = A.GetPool<T4>();
+                Archetype.Pool<T5> CompPool5 = A.GetPool<T5>();
+                Archetype.Pool<T6> CompPool6 = A.GetPool<T6>();
 
                 for (int i = 0; i < A.Length; i++)
                     Task.Run(() => Function(CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i], CompPool6[i]));
@@ -376,13 +375,13 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
-                BundlePool<T2> CompPool2 = A.GetPool<T2>();
-                BundlePool<T3> CompPool3 = A.GetPool<T3>();
-                BundlePool<T4> CompPool4 = A.GetPool<T4>();
-                BundlePool<T5> CompPool5 = A.GetPool<T5>();
-                BundlePool<T6> CompPool6 = A.GetPool<T6>();
-                BundlePool<T7> CompPool7 = A.GetPool<T7>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T2> CompPool2 = A.GetPool<T2>();
+                Archetype.Pool<T3> CompPool3 = A.GetPool<T3>();
+                Archetype.Pool<T4> CompPool4 = A.GetPool<T4>();
+                Archetype.Pool<T5> CompPool5 = A.GetPool<T5>();
+                Archetype.Pool<T6> CompPool6 = A.GetPool<T6>();
+                Archetype.Pool<T7> CompPool7 = A.GetPool<T7>();
 
                 for (int i = 0; i < A.Length; i++)
                     Task.Run(() => Function(CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i], CompPool6[i], CompPool7[i]));
@@ -413,14 +412,14 @@ namespace ECS
         {
             foreach (Archetype A in Archetypes)
             {
-                BundlePool<T1> CompPool1 = A.GetPool<T1>();
-                BundlePool<T2> CompPool2 = A.GetPool<T2>();
-                BundlePool<T3> CompPool3 = A.GetPool<T3>();
-                BundlePool<T4> CompPool4 = A.GetPool<T4>();
-                BundlePool<T5> CompPool5 = A.GetPool<T5>();
-                BundlePool<T6> CompPool6 = A.GetPool<T6>();
-                BundlePool<T7> CompPool7 = A.GetPool<T7>();
-                BundlePool<T8> CompPool8 = A.GetPool<T8>();
+                Archetype.Pool<T1> CompPool1 = A.GetPool<T1>();
+                Archetype.Pool<T2> CompPool2 = A.GetPool<T2>();
+                Archetype.Pool<T3> CompPool3 = A.GetPool<T3>();
+                Archetype.Pool<T4> CompPool4 = A.GetPool<T4>();
+                Archetype.Pool<T5> CompPool5 = A.GetPool<T5>();
+                Archetype.Pool<T6> CompPool6 = A.GetPool<T6>();
+                Archetype.Pool<T7> CompPool7 = A.GetPool<T7>();
+                Archetype.Pool<T8> CompPool8 = A.GetPool<T8>();
 
                 for (int i = 0; i < A.Length; i++)
                     Task.Run(() => Function(CompPool1[i], CompPool2[i], CompPool3[i], CompPool4[i], CompPool5[i], CompPool6[i], CompPool7[i], CompPool8[i]));

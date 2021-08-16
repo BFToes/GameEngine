@@ -51,7 +51,7 @@ namespace ListExtensions
             list[index] = value;
         }
     }
-
+    
     internal static class ArrayExtensions
     {
         /// <summary>
@@ -65,6 +65,13 @@ namespace ListExtensions
         {
             for (int i = 0; i < Array.Length; i++) Array[i] = value;
             return Array;
+        }
+        public static T[] Slice<T>(this T[] Array, int start, int end)
+        {
+            T[] temp = new T[end - start];
+            Array.CopyTo(temp, -start);
+            return temp;
+                
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using ECS.Pool;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,10 +7,8 @@ namespace ECS
     /// <summary>
     /// A container object for which <see cref="IComponent"/>s can be added and removed.
     /// </summary>
-    public abstract class Entity : IPoolItem
+    public abstract class Entity : Archetype.Iitem
     {
-        public int ID { get; set; }
-
         #region Events And Delegates
         /// <summary>
         /// Delegate for ComponentAdded and ComponentRemoved.
@@ -44,19 +41,22 @@ namespace ECS
         public event EntityHierarchyChanged ParentChanged;
         #endregion
 
-        private EntityContext Context;
-        private Archetype Archetype;
+        private EntityContext _context;
+        private Archetype _archetype;
 
-        /// <summary>
-        /// Entity Layer corresponds to the scene graph hierarchy and is one layer above it's parent's Layer.
-        /// If the entity has no parent the layer equals zero.
-        /// </summary>
-        public byte EntityLayer { get; private set; } = 0;
         private Entity _parent;
         private List<Entity> _children;
+
+        /// <summary>
+        /// Archetype Index
+        /// </summary>
+        public int PoolIndex { get; set; }
+
+        public byte EntityLayer { get; private set; } = 0;
+        public IReadOnlyCollection<Entity> Children => _children.AsReadOnly();
         public Entity Parent
         {
-            get => _parent; 
+            get => _parent;
             private set
             {
                 _parent = value;
@@ -65,27 +65,30 @@ namespace ECS
                 ParentChanged?.Invoke(value);
             }
         }
-        public IReadOnlyCollection<Entity> Children => _children.AsReadOnly();
 
+
+        /// <summary>
+        /// initiates empty <see cref="Entity"/> into <see cref="Archetype"/>
+        /// </summary>
         protected Entity(EntityContext Context, Archetype Archetype = null)
         {
             this._children = new List<Entity>();
-            this.Context = Context;
-            (Archetype ?? Context.EmptyArchetype).Add(this); // if Archetype null adds to empty archetype in context
+            this._context = Context;
+            this._archetype = Archetype ?? _context.EmptyArchetype;
+            this._archetype.AddLayer(this); // if Archetype null adds to empty archetype in context
         }
-        
+
         #region Component Methods
         /// <summary>
         /// Adds a new <typeparamref name="TComponent"/> to <see cref="Entity"/>.
-        /// Moves Entity to new Archetype.
+        /// Moves Entity to new <see cref="Archetype"/>.
         /// </summary>
         /// <returns>New <typeparamref name="TComponent"/></returns>
-        public TComponent AddComponent<TComponent>() where TComponent : IComponent, new()
+        public void AddComponent<TComponent>(TComponent Component = default) where TComponent : IComponent, new()
         {
-            Archetype.MoveEntityTo(this, Archetype.FindNext(typeof(TComponent)));
-            IComponent Component = Archetype.GetItem<TComponent>(ID);
+            byte CompID = ComponentManager.ID<TComponent>();
+            _archetype.MoveEntity(this, CompID, Component ?? new TComponent());
             ComponentAdded?.Invoke(this, Component);
-            return (TComponent)Component;
         }
         /// <summary>
         /// Removes <typeparamref name="TComponent"/> from <see cref="Entity"/>. 
@@ -94,8 +97,8 @@ namespace ECS
         /// <returns>Removed <typeparamref name="TComponent"/></returns>
         public TComponent RemoveComponent<TComponent>() where TComponent : IComponent, new()
         {
-            IComponent Component = Archetype.GetItem<TComponent>(ID);
-            Archetype.MoveEntityTo(this, Archetype.FindPrior(typeof(TComponent)));
+            byte CompID = ComponentManager.ID<TComponent>();
+            _archetype.MoveEntity(this, CompID, out IComponent Component);
             ComponentRemoved?.Invoke(this, Component);
             return (TComponent)Component;
         }
@@ -104,13 +107,11 @@ namespace ECS
         /// </summary>
         /// <typeparam name="TComponent"></typeparam>
         /// <returns></returns>
-        public TComponent GetComponent<TComponent>() where TComponent : IComponent, new() => (TComponent)Archetype.GetItem<TComponent>(ID);
+        public TComponent GetComponent<TComponent>() where TComponent : IComponent, new() => (TComponent)_archetype[_archetype.FindComponent<TComponent>(), PoolIndex];
         /// <summary>
         /// If Entity Implements a <see cref="IComponent"/> of type <typeparamref name="TComponent"/> return true
         /// </summary>
-        public bool HasComponent<TComponent>() where TComponent : IComponent, new() => Archetype.Has<TComponent>();
-        /// <inheritdoc cref="HasComponent"/>
-        public bool HasComponent<TComponent>(out TComponent Component) where TComponent : IComponent, new() => Archetype.Has(ID, out Component);
+        public bool HasComponent<TComponent>() where TComponent : IComponent, new() => _archetype.FindComponent<TComponent>() != -1;
         #endregion
 
         #region Hierarchy Methods
@@ -118,12 +119,12 @@ namespace ECS
         /// associates <paramref name="Entity"/> as child in hierarchy.
         /// Removes previous association.
         /// </summary>
-        public virtual void AddChild(Entity Entity) 
+        public virtual void AddChild(Entity Entity)
         {
             if (Entity.Parent != null)
                 Parent.RemoveChild(Entity);
-            
-            _children.Add(Entity);            
+
+            _children.Add(Entity);
             Entity.Parent = this;
             ChildAdded?.Invoke(Entity);
         }

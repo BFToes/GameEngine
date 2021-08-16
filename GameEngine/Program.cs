@@ -4,7 +4,8 @@ using System.Threading;
 using OpenTK.Mathematics;
 using System.Collections.Generic;
 using System.Linq;
-using ECS.Pool;
+using System.Runtime.InteropServices;
+using ListExtensions;
 
 namespace GameEngine
 {
@@ -38,7 +39,7 @@ namespace GameEngine
 
     public sealed class TransformComponent : IComponent 
     {
-        int IPoolItem.ID { get; set; }
+       public int PoolIndex { get; set; }
 
         private bool DirtyFlag = false;
 
@@ -120,15 +121,17 @@ namespace GameEngine
     {
         public thing(EntityContext C) : base(C) { }
     }
+
     class Program
     {
         static public void Main(string[] args)
         {
-            var world = new scene();
-            var thing1 = new thing(world);
-            var thing2 = new thing(world);
-            var thing3 = new thing(world);
-            var thing4 = new thing(world);
+            Type[] T = new Type[] { typeof(scene), typeof(thing), typeof(Entity) };
+            T.Slice(0, 2);
+
+
+            Console.WriteLine($"{T}");
+            Console.WriteLine($"{Marshal.SizeOf<Type[]>()}");
             Console.ReadLine();
         }
     }
