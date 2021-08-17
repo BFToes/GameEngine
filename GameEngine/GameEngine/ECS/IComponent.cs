@@ -21,7 +21,7 @@ namespace ECS
         
         private static byte RegisterID<TComponent>() where TComponent : IComponent, new()
         {
-            if (Count == byte.MaxValue) 
+            if (Count == byte.MaxValue)
                 throw new Exception();
 
             Types[Count] = typeof(TComponent);
@@ -30,6 +30,42 @@ namespace ECS
         }
         
         public static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
+        public static byte[] ID<T1, T2>()
+            where T1 : IComponent, new()
+            where T2 : IComponent, new()
+        {
+            return new byte[]
+            {
+                ComponentType<T1>.ID,
+                ComponentType<T2>.ID,
+            };
+        }
+        public static byte[] ID<T1, T2, T3>()
+            where T1 : IComponent, new()
+            where T2 : IComponent, new()
+            where T3 : IComponent, new()
+        {
+            return new byte[]
+            {
+                ComponentType<T1>.ID,
+                ComponentType<T2>.ID,
+                ComponentType<T3>.ID,
+            };
+        }
+        public static byte[] ID<T1, T2, T3, T4>()
+            where T1 : IComponent, new()
+            where T2 : IComponent, new()
+            where T3 : IComponent, new()
+            where T4 : IComponent, new()
+        {
+            return new byte[]
+            {
+                ComponentType<T1>.ID,
+                ComponentType<T2>.ID,
+                ComponentType<T3>.ID,
+                ComponentType<T4>.ID,
+            };
+        }
 
         internal static IComponent InitComponent(byte ID) => Initiators[ID].CreateComponent();
         internal static Entity.Archetype.IPool InitPool(byte ID) => Initiators[ID].CreatePool();

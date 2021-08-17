@@ -34,10 +34,15 @@ namespace ECS
 
             Entity.Archetype New = new Entity.Archetype(this, Components);
             _archetypes.Add(New);
+            
 
-            foreach (Entity.Behaviour B in _behaviours)
-                B.AddIfApplicable(New);
+            // ToDo: BEHAVIOUR SEARCH
+            //     if Archetype stores Behaviours we can do a more optimised search for 
+            //     behaviours. how specific do we need search parameters. we could do a
+            //     binary search array on the behaviours quite easily
+            //foreach (Entity.Behaviour B in _behaviours)
+            //    B.AddIfApplicable(New);
             return New;
-        }       
+        }
     }
 }

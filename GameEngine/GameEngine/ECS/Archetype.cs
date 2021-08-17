@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
-using ListExtensions;
 
 namespace ECS
 {
@@ -11,16 +10,29 @@ namespace ECS
         /// <summary>
         /// A collection of <see cref="Entity"/> which all share the same types of <see cref="IComponent"/>.
         /// </summary>
-        public class Archetype : IEnumerable<Entity>
+        public partial class Archetype
         {
+            public delegate void EntityMoved(Archetype archeype, Entity entity);
+
+            public event EntityMoved EntityRemoved;
+            public event EntityMoved EntityAdded;
+
+
             private const int DEFAULT_ARRAY_SIZE = 128;
             private readonly EntityContext _context;
             private readonly IPool[] _pools;
-            private readonly byte[] _compIDs;
+
+            private readonly IReadOnlyList<byte> _compIDs;
+            private readonly IReadOnlyList<byte> _compIDLookUp;
+
             private readonly Archetype[] _next = new Archetype[byte.MaxValue];
             private readonly Archetype[] _prev = new Archetype[byte.MaxValue];
+            
 
             private int _arraySize = DEFAULT_ARRAY_SIZE;
+            /// <summary>
+            /// The number of <see cref="Entity">Entities</see> stored in this <see cref="Archetype"/>
+            /// </summary>
             public int Length { get; private set; }
 
             public Archetype(EntityContext Context, params byte[] CompIDs)
@@ -28,30 +40,41 @@ namespace ECS
                 Array.Sort(CompIDs);
                 this._context = Context;
                 this._compIDs = CompIDs;
+
+                byte[] table = CompIDs.Length > 0 ? new byte[CompIDs[CompIDs.Length - 1] + 1] : new byte[0];
+                for (byte i = 0; i < CompIDs.Length;)
+                    table[CompIDs[i]] = ++i;
+                this._compIDLookUp = table;
+                
+                // Create Pools
                 this._pools = new IPool[CompIDs.Length + 1];
                 this._pools[0] = new Pool<Entity>(); // set entity pool
                 for (int i = 0; i < CompIDs.Length; i++) // set component pool
                     _pools[i + 1] = ComponentManager.InitPool(CompIDs[i]);
             }
 
-
+            /// <summary>
+            /// Gets <see cref="Entity">Entities'</see> <see cref="Pool{T}"/>.
+            /// </summary>
+            public Pool<Entity> GetEntityPool()
+            {
+                return (Pool<Entity>)_pools[0];
+            }
+            /// <summary>
+            /// Gets <typeparamref name="TComponent"/> of type T and casts <see cref="IPool"/> to <see cref="Pool{T}"><typeparamref name="TComponent"/> Pool</see>.
+            /// </summary>
+            public Pool<TComponent> GetComponentPool<TComponent>() where TComponent : IComponent, new()
+            {
+                int ID = ComponentManager.ID<TComponent>();
+                return (Pool<TComponent>)_pools[_compIDLookUp[ID]];
+            }
 
             #region Move Entity
             /// <summary>
-            /// Initiates Entity with components into archetype. Exposes <see cref="AddLayer(out int, IList{IPoolable})"/>
+            /// Adds a layer of <see cref="Entity"/> and <see cref="IComponent">Components</see> into corresponding 
+            /// <see cref="IPool"/>.
             /// </summary>
-            internal void InitEntity(out int PoolIndex, Entity Entity)
-            {
-                AddLayer(out PoolIndex, new List<IPoolable>() { Entity });
-            }
-            
-            /// <summary>
-            /// Adds a layer of <see cref="Entity"/> and <see cref="IComponent"/> into corresponding 
-            /// <see cref="IPool"/>. Called privately and in <see cref="Entity"/> only.
-            /// </summary>
-            /// <param name="Layer">an entity followed by the individual components.
-            /// <see cref="null"/> can be applied to any component which requires initiating.</param>
-            private void AddLayer(out int index, IList<IPoolable> Layer)
+            private void AddLayer(out int index, IList<IPoolable> layer)
             {
                 // resize if neccessary
                 if (_arraySize == Length)
@@ -61,9 +84,9 @@ namespace ECS
                         _pools[i].Resize(Length);
                 }
 
-                _pools[0][Length] = Layer[0]; // set entity
+                _pools[0][Length] = layer[0]; // set entity
                 for (int i = 1; i < _pools.Length; i++) // set components
-                    _pools[i][Length] = Layer[i] ?? ComponentManager.InitComponent(_compIDs[i]);
+                    _pools[i][Length] = layer[i];
 
                 index = Length++;
             }
@@ -71,7 +94,6 @@ namespace ECS
             /// <summary>
             /// Removes a layer of <see cref="Entity"/> and <see cref="IComponent"/> from corresponding <see cref="IPool"/>.
             /// </summary>
-            /// <param name="index">the index of the layer.</param>
             /// <returns>an array of <see cref="IPoolable"/> corresponding to the removed layer</returns>
             private List<IPoolable> RemoveLayer(int index)
             {
@@ -103,49 +125,67 @@ namespace ECS
             
             
             
-            
+
+            /// <summary>
+            /// Initiates <paramref name="Entity"/> with components into <see cref="Archetype"/>. 
+            /// </summary>
+            internal void InitEntity(Entity entity)
+            {
+                //Kinda unneccessary I could just exposes AddLayer() but i thought that looked messy. 
+                // If this is done when the entity is already stored in an Archetype it will never 
+                // get removed and would be a pretty serious memory leak. so like... dont?
+                AddLayer(out entity._poolIndex, new List<IPoolable>() { entity });
+                EntityAdded?.Invoke(this, entity);
+            }
+
             /// <summary>
             /// Moves <see cref="Entity"/> from this <see cref="Archetype"/> to an <see cref="Archetype"/> 
             /// with the added <see cref="IComponent"/> <paramref name="AddedComponent"/>
             /// </summary>
-            internal void MoveEntity(in Entity Entity, in byte CompID, IComponent Component)
+            internal void MoveEntity(in Entity entity, in byte compID, IComponent component)
             {
-                List<IPoolable> Layer = RemoveLayer(Entity._poolIndex);
+                List<IPoolable> Layer = RemoveLayer(entity._poolIndex);
                 List<byte> new_compIDs = new List<byte>(_compIDs);
 
-                int index = new_compIDs.BinarySearch(CompID);
+                int index = new_compIDs.BinarySearch(compID);
                 if (index < 0) index = ~index;
-                new_compIDs.Insert(index, CompID);
-                Layer.Insert(index + 1, Component);
+                new_compIDs.Insert(index, compID);
+                Layer.Insert(index + 1, component);
 
 
                 // look up
-                if (_next[CompID] == null) // if look up doesnt exist
-                    _next[CompID] = _context.FindOrCreateArchetype(new_compIDs.ToArray()); // expensive look up
-                _next[CompID].AddLayer(out Entity._poolIndex, Layer);
-                Entity._archetype = _next[CompID];
+                if (_next[compID] == null) // if look up doesnt exist
+                    _next[compID] = _context.FindOrCreateArchetype(new_compIDs.ToArray()); // expensive look up
+                _next[compID].AddLayer(out entity._poolIndex, Layer);
+                entity._archetype = _next[compID];
+                
+                EntityRemoved?.Invoke(this, entity);
+                EntityAdded?.Invoke(_next[compID], entity);
             }
             
             /// <summary>
             /// Moves <see cref="Entity"/> from this <see cref="Archetype"/> to an <see cref="Archetype"/> 
-            /// with the removed <see cref="IComponent"/> <paramref name="AddedComponent"/>
+            /// without the removed <see cref="IComponent"/> <paramref name="RemovedComponent"/>
             /// </summary>
-            internal void MoveEntity(in Entity Entity, in byte CompID, out IComponent RemovedComponent)
+            internal void MoveEntity(in Entity entity, in byte compID, out IComponent component)
             {
-                IList<IPoolable> Layer = RemoveLayer(Entity._poolIndex);
+                IList<IPoolable> Layer = RemoveLayer(entity._poolIndex);
                 List<byte> new_compIDs = new List<byte>(_compIDs);
 
                 // re-structure _compIDs and Layer
-                int comp_index = new_compIDs.BinarySearch(CompID);
-                RemovedComponent = (IComponent)Layer[comp_index + 1];
+                int comp_index = new_compIDs.BinarySearch(compID);
+                component = (IComponent)Layer[comp_index + 1];
                 Layer.RemoveAt(comp_index + 1);
                 new_compIDs.RemoveAt(comp_index);
 
                 // look up
-                if (_prev[CompID] == null) // if look up doesnt exist 
-                    _prev[CompID] = _context.FindOrCreateArchetype(new_compIDs.ToArray()); // expensive look up
-                _prev[CompID].AddLayer(out Entity._poolIndex, Layer);
-                Entity._archetype = _prev[CompID];
+                if (_prev[compID] == null) // if look up doesnt exist 
+                    _prev[compID] = _context.FindOrCreateArchetype(new_compIDs.ToArray()); // expensive look up
+                _prev[compID].AddLayer(out entity._poolIndex, Layer);
+                entity._archetype = _prev[compID];
+
+                EntityRemoved?.Invoke(this, entity);
+                EntityAdded?.Invoke(_prev[compID], entity);
             }
             
             /// <summary>
@@ -153,176 +193,48 @@ namespace ECS
             /// The <see cref="IComponent"/> are copied over. Any <see cref="IComponent"/> not in the new <see cref="Archetype"/>
             /// are removed. Any <see cref="IComponent"/> not in the old <see cref="Archetype"/> are set to default
             /// </summary>
-            internal void MoveEntity(in Entity Entity, in Archetype NewArchetype)
+            internal void MoveEntity(in Entity entity, in Archetype newArchetype, out List<IComponent> removedComponents, out List<IComponent> addedComponents)
             {
-                IList<IPoolable> oldLayer = RemoveLayer(Entity._poolIndex);
-                IPoolable[] newLayer = new IPoolable[NewArchetype._compIDs.Length + 1];
+                List<IPoolable> oldLayer = RemoveLayer(entity._poolIndex);
+                List<IPoolable> newLayer = new List<IPoolable>();
 
-                newLayer[0] = oldLayer[0]; // set entity
+                removedComponents = new List<IComponent>();
+                addedComponents = new List<IComponent>();
 
-                int new_i = 0, old_i = 0;
+                newLayer.Add(oldLayer[0]); // set entity
+
+                int new_i = 0, old_i = 0;  // component index
                 do
                 {
-                    while (_compIDs[old_i] < NewArchetype._compIDs[new_i]) old_i++;
-                    if (_compIDs[old_i] == NewArchetype._compIDs[new_i])
-                        newLayer[new_i + 1] = oldLayer[old_i + 1];
+                    IPoolable nextComp;
+                    // because both arrays are sorted if one index overtakes the other
+                    // the values inbetween can be ignored
+                    while (_compIDs[old_i] < newArchetype._compIDs[new_i])
+                        removedComponents.Add((IComponent)oldLayer[++old_i]); 
+                        // components lost from old
+                    
+                    if (_compIDs[old_i] == newArchetype._compIDs[new_i])
+                    {   // copied components from old to new
+                        nextComp = oldLayer[old_i + 1]; 
+                    }
+                    else
+                    {   // components in new missing from old
+                        nextComp = ComponentManager.InitComponent(_compIDs[new_i]);
+                        addedComponents.Add((IComponent)nextComp);
+                    }
+                    newLayer.Add(nextComp);
                 }
-                while (++new_i < NewArchetype._compIDs.Length && old_i < _compIDs.Length);
+                while (++new_i < newArchetype._compIDs.Count && old_i < _compIDs.Count);
 
 
-                NewArchetype.AddLayer(out Entity._poolIndex, newLayer);
+                newArchetype.AddLayer(out entity._poolIndex, newLayer);
+                entity._archetype = newArchetype;
+
+                EntityRemoved?.Invoke(this, entity);
+                EntityAdded?.Invoke(newArchetype, entity);
+
             }
             #endregion
-
-            #region Get Pools
-            /// <summary>
-            /// Gets the Entity Pool
-            /// </summary>
-            public Pool<Entity> GetPool()
-            {
-                return (Pool<Entity>)_pools[0];
-            }
-            
-            /// <summary>
-            /// Gets a single <see cref="Pool{T}"/> where T is <typeparamref name="TComponent"/>
-            /// </summary>
-            public Pool<Entity> GetPool<T1>(out Pool<T1> C1) 
-                where T1 : IComponent, new()
-            {
-                C1 = (Pool<T1>)_pools[_compIDs.BinarySearch(ComponentManager.ID<T1>())];
-                return (Pool<Entity>)_pools[0];
-            }
-
-            /// <inheritdoc cref="GetPools{T1, T2, T3, T4}"/>
-            public Pool<Entity> GetPools<T1, T2>(out Pool<T1> C1, out Pool<T2> C2)
-                where T1 : IComponent, new()
-                where T2 : IComponent, new()
-            {
-                int[] indexes = _compIDs.BinarySearch(
-                    ComponentManager.ID<T1>(),
-                    ComponentManager.ID<T2>());
-
-                C1 = (Pool<T1>)_pools[indexes[0]];
-                C2 = (Pool<T2>)_pools[indexes[0]];
-                
-                return (Pool<Entity>)_pools[0];
-            }
-
-            /// <inheritdoc cref="GetPools{T1, T2, T3, T4}"/>
-            public Pool<Entity> GetPools<T1, T2, T3>(out Pool<T1> C1, out Pool<T2> C2, out Pool<T3> C3)
-                where T1 : IComponent, new()
-                where T2 : IComponent, new()
-                where T3 : IComponent, new()
-            {
-                int[] indexes = _compIDs.BinarySearch(
-                    ComponentManager.ID<T1>(),
-                    ComponentManager.ID<T2>(),
-                    ComponentManager.ID<T3>());
-
-                C1 = (Pool<T1>)_pools[indexes[0]];
-                C2 = (Pool<T2>)_pools[indexes[0]];
-                C3 = (Pool<T3>)_pools[indexes[0]];
-
-                return (Pool<Entity>)_pools[0];
-            }
-
-            /// <summary>
-            /// Gets multiple Component Pools with multi-parameter binary search. 
-            /// </summary>
-            public Pool<Entity> GetPools<T1, T2, T3, T4>(out Pool<T1> C1, out Pool<T2> C2, out Pool<T3> C3, out Pool<T4> C4)
-                where T1 : IComponent, new()
-                where T2 : IComponent, new()
-                where T3 : IComponent, new()
-                where T4 : IComponent, new()
-            {
-                int[] indexes = _compIDs.BinarySearch(
-                    ComponentManager.ID<T1>(), 
-                    ComponentManager.ID<T2>(), 
-                    ComponentManager.ID<T3>(), 
-                    ComponentManager.ID<T4>());
-
-                C1 = (Pool<T1>)_pools[indexes[0]];
-                C2 = (Pool<T2>)_pools[indexes[0]];
-                C3 = (Pool<T3>)_pools[indexes[0]];
-                C4 = (Pool<T4>)_pools[indexes[0]];
-
-                return (Pool<Entity>)_pools[0];
-            }
-            #endregion
-
-            #region Get Components
-            /// <summary>
-            /// Gets a single <see cref="Pool{T}"/> where T is <typeparamref name="TComponent"/>
-            /// </summary>
-            public T1 GetComponent<T1>(Entity Entity)
-                where T1 : IComponent, new()
-            {
-                return (T1)_pools[_compIDs.BinarySearch(ComponentManager.ID<T1>())][Entity._poolIndex];
-            }
-
-            /// <inheritdoc cref="GetPools{T1, T2, T3, T4}"/>
-            public void GetComponents<T1, T2>(Entity Entity, out T1 C1, out T2 C2)
-                where T1 : IComponent, new()
-                where T2 : IComponent, new()
-            {
-                int[] indexes = _compIDs.BinarySearch(
-                    ComponentManager.ID<T1>(),
-                    ComponentManager.ID<T2>());
-
-                C1 = (T1)_pools[indexes[0]][Entity._poolIndex];
-                C2 = (T2)_pools[indexes[0]][Entity._poolIndex];
-            }
-
-            /// <inheritdoc cref="GetPools{T1, T2, T3, T4}"/>
-            public void GetComponents<T1, T2, T3>(Entity Entity, out T1 C1, out T2 C2, out T3 C3)
-                where T1 : IComponent, new()
-                where T2 : IComponent, new()
-                where T3 : IComponent, new()
-            {
-                int[] indexes = _compIDs.BinarySearch(
-                    ComponentManager.ID<T1>(),
-                    ComponentManager.ID<T2>(),
-                    ComponentManager.ID<T3>());
-
-                C1 = (T1)_pools[indexes[0]][Entity._poolIndex];
-                C2 = (T2)_pools[indexes[0]][Entity._poolIndex];
-                C3 = (T3)_pools[indexes[0]][Entity._poolIndex];
-            }
-
-            /// <summary>
-            /// Gets multiple Component Pools with multi-parameter binary search. 
-            /// </summary>
-            public void GetComponents<T1, T2, T3, T4>(Entity Entity, out T1 C1, out T2 C2, out T3 C3, out T4 C4)
-                where T1 : IComponent, new()
-                where T2 : IComponent, new()
-                where T3 : IComponent, new()
-                where T4 : IComponent, new()
-            {
-                int[] indexes = _compIDs.BinarySearch(
-                    ComponentManager.ID<T1>(),
-                    ComponentManager.ID<T2>(),
-                    ComponentManager.ID<T3>(),
-                    ComponentManager.ID<T4>());
-
-                C1 = (T1)_pools[indexes[0]][Entity._poolIndex];
-                C2 = (T2)_pools[indexes[0]][Entity._poolIndex];
-                C3 = (T3)_pools[indexes[0]][Entity._poolIndex];
-                C4 = (T4)_pools[indexes[0]][Entity._poolIndex];
-            }
-            #endregion
-
-            /// <summary>
-            /// Gets the componentIDs of this <see cref="Archetype"/>
-            /// </summary>
-            public byte[] GetComponentIDs() => _compIDs;
-
-            public IEnumerator<Entity> GetEnumerator()
-            {
-                Pool<Entity> EntPool = (Pool<Entity>)_pools[0];
-                for (int i = 0; i < Length; i++)
-                    yield return EntPool[i];
-            }
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             /// <summary>
             /// <see cref="IPoolable"/> is an object thats stored in an <see cref="Pool{T}"/>.
@@ -332,7 +244,7 @@ namespace ECS
             /// <summary>
             /// A simple array collection used in archetype. 
             /// </summary>
-            public interface IPool
+            public interface IPool 
             {
                 IPoolable this[int index] { get; set; }
                 internal void Resize(int newSize);
@@ -345,15 +257,11 @@ namespace ECS
             public class Pool<T> : IPool where T : IPoolable
             {
                 private T[] _array = new T[DEFAULT_ARRAY_SIZE];
+                public ref T this[int index] => ref _array[index];
                 IPoolable IPool.this[int index]
                 {
-                    get => _array[index];
+                    get => _array[index]; 
                     set => _array[index] = (T)value;
-                }
-                public T this[int index]
-                {
-                    get => _array[index];
-                    set => _array[index] = value;
                 }
                 void IPool.Remove(int index) => _array[index] = default;
                 void IPool.Resize(int newSize) => Array.Resize(ref _array, newSize);

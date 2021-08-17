@@ -37,13 +37,13 @@ namespace GameEngine
 
     */
 
-    public sealed class TransformComponent : IComponent
+    public struct TransformComponent : IComponent
     {
-        private bool DirtyFlag = false;
-
-        private Vector3 _position = Vector3.Zero;
-        private Quaternion _rotation = Quaternion.Identity;
-        private Vector3 _scale = Vector3.One;
+        private bool _dirtyFlag; 
+        
+        private Vector3 _position;
+        private Quaternion _rotation;
+        private Vector3 _scale;
 
         public Matrix4 Matrix { get; private set; }
         public Vector3 Position 
@@ -51,7 +51,7 @@ namespace GameEngine
             get => _position;
             set
             {
-                DirtyFlag = true;
+                _dirtyFlag = true;
                 _position = value;
             }
         }
@@ -60,7 +60,7 @@ namespace GameEngine
             get => _rotation;
             set
             {
-                DirtyFlag = true;
+                _dirtyFlag = true;
                 _rotation = value;
             }
         }
@@ -69,9 +69,18 @@ namespace GameEngine
             get => _scale;
             set
             {
-                DirtyFlag = true;
+                _dirtyFlag = true;
                 _scale = value;
             }
+        }
+
+        public TransformComponent(Vector3 Scale, Quaternion Rotation, Vector3 Position)
+        {
+            _dirtyFlag = false;
+            _scale = Scale;
+            _rotation = Rotation;
+            _position = Position;
+            Matrix = Matrix4.Identity;
         }
 
         private static Matrix4 CalculateTransform(Vector3 Position, Quaternion Rotation, Vector3 Scale)
@@ -100,16 +109,14 @@ namespace GameEngine
                     //ComponentPool<TransformComponent> CompPool1 = A.GetComponentPool<TransformComponent>();
                     
                 }
-
-
             }
         }
     }
 
-    public struct Component1 : IComponent { }
-    public struct Component2 : IComponent { }
-    public struct Component3 : IComponent { }
-    public struct Component4 : IComponent { }
+    public struct Component0 : IComponent { public string value { get; set; } }
+    public struct Component1 : IComponent { public string value { get; set; } }
+    public struct Component2 : IComponent { public string value { get; set; } }
+    public struct Component3 : IComponent { public string value { get; set; } }
     public class scene : EntityContext
     {
         //private readonly Behaviour<PointLightComponent> LightSystem;
@@ -120,7 +127,18 @@ namespace GameEngine
     }
     public class thing : Entity
     {
-        public thing(EntityContext C) : base(C) { }
+        public ref Component1 C1 => ref GetComponent<Component1>();
+
+        public thing(EntityContext C) : base(C) 
+        {
+            AddComponent<TransformComponent>();
+            AddComponent<Component0>();
+            AddComponent<Component1>();
+            AddComponent<Component2>();
+            AddComponent<Component3>();
+
+            RemoveComponent<TransformComponent>();
+        }
     }
 
     class Program
@@ -129,19 +147,11 @@ namespace GameEngine
         {
             var world = new scene();
             var thing = new thing(world);
-            thing.AddComponent<TransformComponent>();
-            thing.AddComponent<Component1>();
-            thing.AddComponent<Component2>();
-            thing.AddComponent<Component3>();
-            thing.AddComponent<Component4>();
+            
 
-            thing.RemoveComponent<TransformComponent>();
-
-            thing.SetComponentTypes(new byte[] { 1, 2, 4 });
-
+            thing.SetComponents(ComponentManager.ID<Component1, Component2, Component0>());
+            thing.C1.value = "POOO";
             Console.ReadLine();
         }
     }
-    
-
 }
