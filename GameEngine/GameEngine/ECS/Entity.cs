@@ -8,7 +8,7 @@ namespace ECS
     /// <summary>
     /// A container object for which <see cref="IComponent"/>s can be added and removed.
     /// </summary>
-    public abstract partial class Entity : Entity.Archetype.IPoolable
+    public abstract class Entity : Archetype.IPoolable
     {
         #region Events And Delegates
         /// <summary>
@@ -42,15 +42,14 @@ namespace ECS
         public event EntityHierarchyChanged ParentChanged;
         #endregion
 
-        private readonly EntityContext _context;
-        private Archetype _archetype;
-
+        internal Archetype _archetype { get; private set; } // the archetype it belongs to
+        internal int _poolIndex { get; private set; } // the index in the archetype of itself and all its components
+        
         private Entity _parent;
         private List<Entity> _children;
-        private int _poolIndex;
 
-        public byte EntityLayer { get; private set; } = 0;
-        public IReadOnlyCollection<Entity> Children => _children.AsReadOnly();
+        public byte EntityLayer { get; private set; } // the priority the transforms should be updated in
+        public IReadOnlyList<Entity> Children => _children.AsReadOnly();
         public Entity Parent
         {
             get => _parent;
@@ -67,16 +66,25 @@ namespace ECS
         /// <summary>
         /// initiates empty <see cref="Entity"/> into <see cref="Archetype"/>
         /// </summary>
-        protected Entity(EntityContext Context, Archetype Archetype = null)
+        protected Entity(Archetype Archetype = null)
         {
             this._children = new List<Entity>();
-            this._context = Context;
+
             // if Archetype null adds to empty archetype in context
-            this._archetype = Archetype ?? _context.EmptyArchetype;
+            this._archetype = Archetype ?? Archetype.Empty;
             this._archetype.InitEntity(this); // initiates entity in archetype
         }
 
         #region Component Methods
+        /// <summary>
+        /// Sets the archetype object reference in the Entity
+        /// </summary>
+        internal void SetArchetype(Archetype archetpye, int poolIndex) 
+        {   // makes sure pool index is set at the same time as archetype
+            _archetype = archetpye;
+            _poolIndex = poolIndex;
+        }
+        
         /// <summary>
         /// Adds a new <typeparamref name="TComponent"/> to <see cref="Entity"/>.
         /// Moves Entity to new <see cref="Archetype"/>.
@@ -104,18 +112,16 @@ namespace ECS
 
         /// <summary>
         /// Sets all <see cref="IComponent"/>s related to this <see cref="Entity"/> to different <see cref="IComponent"/>s.
-        /// matching <see cref="IComponent"/>s in <see cref="Entity"/> before function call will copied over. 
+        /// Matching <see cref="IComponent"/>s will be copied over. 
         /// Use <see cref="ComponentManager.ID{T1, T2, T3, T4}"/> to get <see cref="IComponent"/>'s ID.
         /// </summary> 
         public void SetComponents(params byte[] compIDs)
         {
             Array.Sort(compIDs);
-            List<IComponent> RemoveComponents, AddedComponents;
-            _archetype.MoveEntity(this, _context.FindOrCreateArchetype(compIDs), out RemoveComponents, out AddedComponents);
-            foreach(IComponent C in RemoveComponents)
-                ComponentRemoved?.Invoke(this, C);
-            foreach(IComponent C in AddedComponents)
-                ComponentAdded?.Invoke(this, C);
+            List<IComponent> RemovedComps, AddedComps;
+            _archetype.MoveEntity(this, Archetype.Get(compIDs), out RemovedComps, out AddedComps);
+            foreach(IComponent C in RemovedComps) ComponentRemoved?.Invoke(this, C);
+            foreach(IComponent C in AddedComps)  ComponentAdded?.Invoke(this, C);
         }
 
         /// <summary>
@@ -123,14 +129,14 @@ namespace ECS
         /// </summary>
         public ref TComponent GetComponent<TComponent>() where TComponent : IComponent, new()
         {
-            return ref _archetype.GetComponentPool<TComponent>()[_poolIndex];
+            return ref _archetype.GetPool<TComponent>()[_poolIndex];
         }
         /// <summary>
         /// sets <typeparamref name="TComponent"/>. 
         /// </summary>
         public void SetComponent<TComponent>(in TComponent value) where TComponent : IComponent, new()
         {
-            _archetype.GetComponentPool<TComponent>()[_poolIndex] = value;
+            _archetype.GetPool<TComponent>()[_poolIndex] = value;
         }
         #endregion
 

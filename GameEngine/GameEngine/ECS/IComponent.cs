@@ -8,10 +8,10 @@ namespace ECS
     /// A module of data that can attach to entities to provide functionality. 
     /// All data relating to an <see cref="Entity"/> is stored through an <see cref="IComponent"/>.
     /// </summary>
-    public interface IComponent : Entity.Archetype.IPoolable { }
+    public interface IComponent : Archetype.IPoolable { }
     
     /// <summary>
-    /// Assigns each <see cref="IComponent"/> an ID which is used for early binding initiation
+    /// Assigns each <see cref="IComponent"/> an ID used for early binding initiation
     /// </summary>
     public static class ComponentManager
     {
@@ -19,6 +19,9 @@ namespace ECS
         private static Type[] Types = new Type[byte.MaxValue];
         private static IInitiator[] Initiators = new IInitiator[byte.MaxValue];
         
+        /// <summary>
+        /// stores 
+        /// </summary>
         private static byte RegisterID<TComponent>() where TComponent : IComponent, new()
         {
             if (Count == byte.MaxValue)
@@ -68,17 +71,17 @@ namespace ECS
         }
 
         internal static IComponent InitComponent(byte ID) => Initiators[ID].CreateComponent();
-        internal static Entity.Archetype.IPool InitPool(byte ID) => Initiators[ID].CreatePool();
+        internal static Archetype.IPool InitPool(byte ID) => Initiators[ID].CreatePool();
         
         private interface IInitiator
         {
             IComponent CreateComponent();
-            Entity.Archetype.IPool CreatePool();
+            Archetype.IPool CreatePool();
         }
         private class Initiator<TComponent> : IInitiator where TComponent : IComponent, new()
         {
             IComponent IInitiator.CreateComponent() => new TComponent();
-            Entity.Archetype.IPool IInitiator.CreatePool() => new Entity.Archetype.Pool<TComponent>();
+            Archetype.IPool IInitiator.CreatePool() => new Archetype.Pool<TComponent>();
         }
         private static class ComponentType<TComponent> where TComponent : IComponent, new()
         {

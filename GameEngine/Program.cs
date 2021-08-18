@@ -98,42 +98,23 @@ namespace GameEngine
             return RotationMatrix * ScaleMatrix * TranslationMatrix * Base;
         }
 
-        public sealed class UpdateSystem : Entity.Behaviour
-        {
-            public UpdateSystem() : base() { }
-            
-            public void Update()
-            {
-                foreach(Entity.Archetype A in archetypes)
-                {
-                    //ComponentPool<TransformComponent> CompPool1 = A.GetComponentPool<TransformComponent>();
-                    
-                }
-            }
-        }
+        
     }
+
+    public struct RenderComponent : IComponent { }
 
     public struct Component0 : IComponent { public string value { get; set; } }
     public struct Component1 : IComponent { public string value { get; set; } }
     public struct Component2 : IComponent { public string value { get; set; } }
     public struct Component3 : IComponent { public string value { get; set; } }
-    public class scene : EntityContext
-    {
-        //private readonly Behaviour<PointLightComponent> LightSystem;
-        //private readonly Behaviour<OccluderComponent, MeshComponent> OccluderSystem;
-        //private readonly Behaviour<RenderComponent, CullComponent> RenderCullSystem;
-        //private readonly TransformComponent.UpdateSystem TransformSystem = new TransformComponent.UpdateSystem();
 
-    }
     public class thing : Entity
     {
         public ref Component1 C1 => ref GetComponent<Component1>();
 
-        public thing(EntityContext C) : base(C) 
+        public thing() : base(Archetype.Get(ComponentManager.ID<Component0, Component1, Component2>())) 
         {
             AddComponent<TransformComponent>();
-            AddComponent<Component0>();
-            AddComponent<Component1>();
             AddComponent<Component2>();
             AddComponent<Component3>();
 
@@ -145,8 +126,7 @@ namespace GameEngine
     {
         static public void Main(string[] args)
         {
-            var world = new scene();
-            var thing = new thing(world);
+            var thing = new thing();
             
 
             thing.SetComponents(ComponentManager.ID<Component1, Component2, Component0>());

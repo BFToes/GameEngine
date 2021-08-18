@@ -3,180 +3,98 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ListExtensions;
-
+using System.Linq;
 namespace ECS
 {
-    public abstract partial class Entity
+    /// <summary>
+    /// A collection of <see cref="Archetype"/>s containing a specification of components.
+    /// Used to perform logic over a filtered collection of <see cref="Entity"/>.
+    /// </summary>
+    public abstract class Behaviour
     {
-        /// <summary>
-        /// A collection of <see cref="Archetype"/>s containing a specification of components.
-        /// Used to perform logic over a filtered collection of <see cref="Entity"/>.
-        /// </summary>
-        public abstract class Behaviour
-        {
-            protected List<Archetype> archetypes;
-            private readonly byte[] _filter;
-            public int Count
-            {
-                get
-                {
-                    int count = 0;
-                    foreach (Entity.Archetype A in archetypes)
-                        count += A.Length;
-                    return count;
-                }
-            }
-            public int ArchetypeCount => archetypes.Count;
-           
-            public Behaviour(params byte[] Filter)
-            {
-                this._filter = Filter;
-                this.archetypes = new List<Archetype>();
-            }
+        public static List<Behaviour> All;
 
-            public void TestFunction<T1, T2>(Entity Entity, T1 C1, T2 C2)
-                where T1 : IComponent, new()
-                where T2 : IComponent, new() 
-            {
-
-            }
-
+        static Behaviour() {
+            All = new List<Behaviour>();
         }
 
 
-        public class Behaviour<T1> : Behaviour
+        protected List<Archetype> archetypes;
+        private readonly byte[] _filter;
+        public int ArchetypeCount => archetypes.Count;
+        
+        public Behaviour(params byte[] Filter)
+        {
+            this._filter = Filter;
+            this.archetypes = new List<Archetype>();
+        }
+        public void AddArchetype() 
+        {
+
+        }
+        public void TestFunction<T1, T2>(Entity Entity, T1 C1, T2 C2)
             where T1 : IComponent, new()
+            where T2 : IComponent, new() 
         {
-            public delegate void BehaviourFunc(Entity E, T1 C1);
-            public delegate int  BehaviourSort(Entity E, T1 C1);
-            private readonly BehaviourFunc _function;
-            private readonly BehaviourSort _sortFunc;
-            
-            public Behaviour(BehaviourFunc Function, BehaviourSort SortFunc) : base(ComponentManager.ID<T1>())
-            {
-                this._function = Function;
-                this._sortFunc = SortFunc;
-            }
 
-            public void Update()
-            {
-                foreach (Archetype A in archetypes)
-                {
-                    var P0 = A.GetEntityPool();
-                    var P1 = A.GetComponentPool<T1>();
-                    for (int i = 0; i < A.Length; i++)
-                        Task.Run(() => _function(P0[i], P1[i]));
-                    Task.WaitAll();
-                }
-            }
         }
 
-        public abstract class SortedBehaviour : Behaviour
-        {
-            
+    }
 
+
+    public class Behaviour<T1> : Behaviour
+        where T1 : IComponent, new()
+    {
+        public delegate void BehaviourFunc(ref Entity E, ref T1 C1);
+        private readonly BehaviourFunc _function;
+        
+        
+        public Behaviour(BehaviourFunc Function) : base(ComponentManager.ID<T1>())
+        {
+            this._function = Function;
         }
         
-        /*
-        /// <inheritdoc cref="Behaviour"/>
-        public sealed class Behaviour<T1> : Behaviour
-            where T1 : IComponent, new()
+        public virtual void Update()
         {
-            public delegate void FunctionDelegate(Entity E, T1 C1);
-            public readonly FunctionDelegate Function;
-            public Behaviour(FunctionDelegate Function) : base(ComponentManager.ID<T1>())
+            foreach (Archetype A in archetypes)
             {
-                this.Function = Function;
-            }
-
-            public void Update()
-            {
-                foreach (Archetype A in archetypes)
-                {
-                    
-                    Archetype.Pool<Entity> P0 = (Archetype.Pool<Entity>)A[0];
-                    Archetype.Pool<T1> P1 = (Archetype.Pool<T1>)A[ComponentManager.ID<T1>()];
-                    for (int i = 0; i < A.Length; i++)
-                        Task.Run(() => Function(P0[i], P1[i]));
-                    Task.WaitAll();
-                }
+                var En = A.GetPool();
+                var C1 = A.GetPool<T1>();
+                for (int i = 0; i < A.Length; i++)
+                    Task.Run(() => _function(ref En[i], ref C1[i]));
+                Task.WaitAll();
             }
         }
-        /// <inheritdoc cref="Behaviour"/>
-        public sealed class Behaviour<T1, T2> : Behaviour
-            where T1 : IComponent, new()
-            where T2 : IComponent, new()
+    }
+
+    public class SortedBehaviour<T1> : Behaviour<T1>
+        where T1 : IComponent, new()
+    {
+        public delegate int  BehaviourSort(Entity E, T1 C1);
+        private readonly BehaviourSort _sortFunc;
+        private List<KeyValuePair<int, int>> _sortedIndexes;
+        
+        private bool ReSortFlag = true;
+
+        public SortedBehaviour(BehaviourFunc Function, BehaviourSort SortFunc) : base(Function)
         {
-            public delegate void FunctionDelegate(Entity E, T1 C1, T2 C2);
-            public readonly FunctionDelegate Function;
-            public Behaviour(FunctionDelegate Function) : base(ComponentManager.ID<T1>(), ComponentManager.ID<T2>())
-            {
-                this.Function = Function;
-            }
-
-            public void Update()
-            {
-                foreach (Archetype A in archetypes)
-                {
-                    var P0 = A.GetPools<T1, T2>(out var P1, out var P2);
-                    for (int i = 0; i < A.Length; i++)
-                        Task.Run(() => Function(P0[i], P1[i], P2[i]));
-                    Task.WaitAll();
-                }
-            }
+            this._sortFunc = SortFunc;
         }
-        /// <inheritdoc cref="Behaviour"/>
-        public sealed class Behaviour<T1, T2, T3> : Behaviour
-            where T1 : IComponent, new()
-            where T2 : IComponent, new()
-            where T3 : IComponent, new()
+        public override void Update()
         {
-            public delegate void FunctionDelegate(Entity E, T1 C1, T2 C2, T3 C3);
-            public readonly FunctionDelegate Function;
-            public Behaviour(FunctionDelegate Function) : base(ComponentManager.ID<T1>(), ComponentManager.ID<T2>(), ComponentManager.ID<T3>())
-            {
-                this.Function = Function;
-            }
-
-            public void Update()
-            {
-                foreach (Archetype A in archetypes)
-                {
-                    var P0 = A.GetPools<T1, T2, T3>(out var P1, out var P2, out var P3);
-
-                    for (int i = 0; i < A.Length; i++)
-                        Task.Run(() => Function(P0[i], P1[i], P2[i], P3[i]));
-                    Task.WaitAll();
-                }
-            }
+            // sorty stuff
+            
         }
-        /// <inheritdoc cref="Behaviour"/>
-        public sealed class Behaviour<T1, T2, T3, T4> : Behaviour
-            where T1 : IComponent, new()
-            where T2 : IComponent, new()
-            where T3 : IComponent, new()
-            where T4 : IComponent, new()
+        public virtual void Sort() 
         {
-            public delegate void FunctionDelegate(Entity E, T1 C1, T2 C2, T3 C3, T4 C4);
-            public readonly FunctionDelegate Function;
-            public Behaviour(FunctionDelegate Function) : base(ComponentManager.ID<T1>(), ComponentManager.ID<T2>(), ComponentManager.ID<T3>(), ComponentManager.ID<T4>())
-            {
-                this.Function = Function;
-            }
+            if (!ReSortFlag) return;
+            _sortedIndexes = archetypes
+                .SelectMany((A, i1) => Enumerable.Range(0, archetypes[i1].Length)
+                .Select(i2 => new KeyValuePair<int, int>(i1, i2)))
+                .OrderBy((i) => _sortFunc(archetypes[i.Key].GetPool()[i.Value], 
+                                            archetypes[i.Key].GetPool<T1>()[i.Value]))
+                .ToList();
 
-            public void Update()
-            {
-                foreach (Archetype A in archetypes)
-                {
-                    var P0 = A.GetPools<T1, T2, T3, T4>(out var P1, out var P2, out var P3, out var P4);
-
-                    for (int i = 0; i < A.Length; i++)
-                        Task.Run(() => Function(P0[i], P1[i], P2[i], P3[i], P4[i]));
-                    Task.WaitAll();
-                }
-            }
         }
-        */
     }
 }

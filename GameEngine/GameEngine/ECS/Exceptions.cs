@@ -4,7 +4,8 @@ using System.Text;
 
 namespace ECS
 {
-    class ComponentNotFoundException : Exception { }
-   
-    
+    class ComponentNotFound : Exception { }
+    class ComponentAlreadyExist : Exception { }
+    class MaxComponentLimitExceeded : Exception { }
+
 }
