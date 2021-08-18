@@ -21,8 +21,8 @@ namespace ECS
 
         static Archetype()
         {
-            Empty = new Archetype();
             All = new List<Archetype>();
+            Empty = new Archetype();
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace ECS
             // set up look up table
             byte[] table = CompIDs.Length > 0 ? new byte[CompIDs[CompIDs.Length - 1] + 1] : new byte[0];
             for (byte i = 0; i < CompIDs.Length;)
-                table[CompIDs[i]] = ++i;
+                table[CompIDs[i]] = ++i; // the index in the pool not the ID
             this._compIDLookUp = table;
 
             // set up pools
@@ -95,16 +95,26 @@ namespace ECS
         /// </summary>
         public Pool<TComponent> GetPool<TComponent>() where TComponent : IComponent, new()
         {
-            int index = _compIDLookUp[ComponentManager.ID<TComponent>()];
-            if (index == 0) throw new ComponentNotFound();
-            return (Pool<TComponent>)_pools[index];
+            if (Contains(ComponentManager.ID<TComponent>(), out int index))
+                return (Pool<TComponent>)_pools[index];
+            else throw new ComponentNotFound();
+            
         }
 
-        /// <summary>
-        /// gets all pools inside archetype
-        /// </summary>
-        /// <returns></returns>
-        public IPool[] GetPools() => _pools;
+        private bool Contains(byte value, out int index) 
+        {
+            // re-structure _compIDs and Layer
+            if (value >= _compIDLookUp.Count) 
+            {
+                index = -1;
+                return false;
+            }
+
+            index = _compIDLookUp[value]; // -1 because of entity pool -> happy coincidence
+            if (index == 0) return false;
+            else return true;
+        }
+
 
         #region Component set operations
         /// <summary>
@@ -115,7 +125,7 @@ namespace ECS
         {
             if (CompIDs == null) return true;
             foreach (byte ID in CompIDs)
-                if (_compIDLookUp[ID] == 0) return false;
+                if (!Contains(ID, out _)) return false;
             return true;
         }
         /// <summary>
@@ -126,7 +136,7 @@ namespace ECS
         {
             if (CompIDs == null) return true;
             foreach (byte ID in CompIDs)
-                if (_compIDLookUp[ID] != 0) return true;
+                if (Contains(ID, out _)) return true;
             return false;
         }
         /// <summary>
@@ -137,7 +147,7 @@ namespace ECS
         {
             if (CompIDs == null) return true;
             foreach (byte ID in CompIDs)
-                if (_compIDLookUp[ID] != 0) return false;
+                if (Contains(ID, out _)) return false;
             return false;
         }
         #endregion
@@ -202,7 +212,11 @@ namespace ECS
 
         internal void InitEntity(Entity entity, out int poolIndex)
         {
-            AddLayer(out poolIndex, new List<IPoolable>() { entity });
+            IPoolable[] layer = new IPoolable[_pools.Length];
+            layer[0] = entity;
+            for (int i = 1; i < _pools.Length; i++)
+                layer[i] = ComponentManager.InitComponent(_compIDs[i - 1]);
+            AddLayer(out poolIndex, layer);
         }
 
         internal void MoveEntity(byte compID, IComponent component, ref int poolIndex, out Archetype archetype)
@@ -227,27 +241,26 @@ namespace ECS
 
         internal void MoveEntity(byte compID, out IComponent component, ref int poolIndex, out Archetype archetype)
         {
-            List<IPoolable> Layer = RemoveLayer(poolIndex);
-            List<byte> new_compIDs = new List<byte>(_compIDs);
+            List<IPoolable> newLayer = RemoveLayer(poolIndex);
+            List<byte> newcompIDs = new List<byte>(_compIDs);
 
-            // re-structure _compIDs and Layer
-            int comp_index = _compIDLookUp[compID] - 1; // -1 because of entity pool -> happy coincidence
-            if (comp_index < 0) throw new ComponentNotFound();
+            if (!Contains(compID, out int index)) 
+                throw new ComponentNotFound();
 
-            component = (IComponent)Layer[comp_index + 1];
-            Layer.RemoveAt(comp_index + 1);
-            new_compIDs.RemoveAt(comp_index);
+            component = (IComponent)newLayer[index];
+            newLayer.RemoveAt(index);
+            newcompIDs.RemoveAt(index - 1);
 
             // look up
             if (_prev[compID] == null) // if look up doesnt exist 
-                _prev[compID] = Get(new_compIDs.ToArray()); // expensive look up
-            _prev[compID].AddLayer(out poolIndex, Layer);
+                _prev[compID] = Get(newcompIDs.ToArray()); // expensive look up
+            _prev[compID].AddLayer(out poolIndex, newLayer);
             archetype = _prev[compID];
         }
 
-        internal void MoveEntity(byte[] CompIDs, ref int poolIndex, out Archetype archetype)
+        internal void MoveEntity(byte[] newCompIDs, ref int poolIndex, out Archetype archetype)
         {
-            archetype = Get(CompIDs);
+            archetype = Get(newCompIDs);
 
             List<IPoolable> oldLayer = RemoveLayer(poolIndex);
             List<IPoolable> newLayer = new List<IPoolable>();
@@ -260,12 +273,12 @@ namespace ECS
                 IPoolable nextComp;
                 // because both arrays are sorted if one index overtakes the other
                 // the values inbetween can be ignored
-                while (_compIDs[old_i] < archetype._compIDs[new_i]) old_i++; // components lost from old
+                while (_compIDs[old_i] < newCompIDs[new_i]) old_i++; // components lost from old
 
-                if (_compIDs[old_i] == archetype._compIDs[new_i])
+                if (_compIDs[old_i] == newCompIDs[new_i])
                     nextComp = oldLayer[old_i + 1];
                 else
-                    nextComp = ComponentManager.InitComponent(_compIDs[new_i]);
+                    nextComp = ComponentManager.InitComponent(newCompIDs[new_i]);
 
                 newLayer.Add(nextComp);
             }

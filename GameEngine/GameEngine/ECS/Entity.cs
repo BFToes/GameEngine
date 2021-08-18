@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 
 namespace ECS
 {
@@ -11,7 +11,7 @@ namespace ECS
     {
         private Archetype _archetype; // the archetype it belongs to
         private int _poolIndex; // the index in the archetype of itself and all its components
-
+        
         /// <summary>
         /// initiates empty <see cref="Entity"/> into <see cref="Archetype"/>
         /// </summary>
@@ -22,7 +22,7 @@ namespace ECS
             this._archetype.InitEntity(this, out _poolIndex); // initiates entity in archetype
         }
 
-
+       
         /// <summary>
         /// Adds a new <typeparamref name="TComponent"/> to <see cref="Entity"/>.
         /// Moves Entity to new <see cref="Archetype"/>.
@@ -30,7 +30,8 @@ namespace ECS
         /// <returns>New <typeparamref name="TComponent"/></returns>
         public void AddComponent<TComponent>(TComponent Component = default) where TComponent : IComponent, new()
         {
-            _archetype.MoveEntity(ComponentManager.ID<TComponent>(), Component ?? new TComponent(), ref _poolIndex, out _archetype);
+            if (Component == null) Component = new TComponent();
+            _archetype.MoveEntity(ComponentManager.ID<TComponent>(), Component, ref _poolIndex, out _archetype);
         }
 
         /// <summary>

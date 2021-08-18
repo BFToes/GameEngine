@@ -114,8 +114,8 @@ namespace GameEngine
 
         public thing() : base(Archetype.Get(ComponentManager.ID<Component0, Component1, Component2>())) 
         {
+            RemoveComponent<Component2>();
             AddComponent<TransformComponent>();
-            AddComponent<Component2>();
             AddComponent<Component3>();
 
             RemoveComponent<TransformComponent>();
