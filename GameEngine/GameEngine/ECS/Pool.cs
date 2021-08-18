@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace ECS
 {
@@ -10,7 +12,7 @@ namespace ECS
         public interface IPoolable { }
 
         /// <summary>
-        /// A resizable contiguous collection used in archetype. 
+        /// A resizable contiguous collection used in <see cref="Archetype"/>. 
         /// </summary>
         /// <remark>
         /// Resizing arrays is still kinda a dumb idea
@@ -34,6 +36,7 @@ namespace ECS
                 get => _array[index];
                 set => _array[index] = (T)value;
             }
+
             void IPool.Remove(int index) => _array[index] = default;
             void IPool.Resize(int newSize) => Array.Resize(ref _array, newSize);
         }
