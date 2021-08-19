@@ -1,163 +1,199 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using ListExtensions;
+using System.Linq;
 
-namespace GameEngine.Geometry.Noise
+namespace DelaunatorSharp
 {
-    /* Thing To do
-     * voronoi cells
-     * comments -> attempts to understand
-     * 
-     * 
-     */
-    
-    public class Triangulator
+    // Half the problems i have with this library is the lack of use of the given types. you have the types use them.
+    // it makes code easier to read and more concise.
+    public class Delaunator
     {
-        
-        public List<float> Positions;
-        public List<int> TriangleIndexes, halfedges, ConvexHullIndexes;
-        private List<int> hullPrev, hullNext, hullTri, EdgeStack;
-        private int _hashSize,  hullStart, trianglesLen;
-        private float _cx, _cy;
-        /*
-        public List<T1> ToVoronoi<T1>(Func<float, float, T1> PointPacker) 
+        public struct Edge
         {
-            List<T1> Voronois = new List<T1>();
+            public Point P { get; set; }
+            public Point Q { get; set; }
+            public int Index { get; set; }
 
-        }
-        */
-
-        #region Custom Constructors
-        public static Triangulator From<T>(List<T> points, Func<T, float> xExtractor, Func<T, float> yExtractor)
-        {
-            int n = points.Count;
-            var coords = new List<float>(n * 2);
-            for (int i = 0; i < n; i++)
+            public Edge(int e, Point p, Point q)
             {
-                var p = points[i];
-                coords.Add(xExtractor(p));
-                coords.Add(yExtractor(p));
+                Index = e;
+                P = p;
+                Q = q;
             }
-            return new Triangulator(coords);
         }
 
-        public T1[] ToTriangles<T1>(Func<float, float, T1> PointPacker)
+        public struct Point
         {
-            //triangles.ForEach((i) => Console.WriteLine($"X: {coords[i]} Y: {coords[i + 1]}"));
-            List<T1> Tris = new List<T1>();
-            for (int i = TriangleIndexes.Count - 1; i >= 0; i--) // reverse winding to make forward facing in openGl
+            public float X { get; set; }
+            public float Y { get; set; }
+
+            public Point(float x, float y)
             {
-                Tris.Add(PointPacker(Positions[TriangleIndexes[i] * 2], Positions[TriangleIndexes[i] * 2 + 1]));
+                X = x;
+                Y = y;
             }
-            return Tris.ToArray();
+            public override string ToString() => $"{X},{Y}";
         }
-        #endregion
-        public Triangulator(List<float> coords)
-        {
-            EdgeStack = new List<int>(512).Fill();
-            int n = coords.Count >> 1;
-            this.Positions = coords;
 
-            #region arrays that will store the triangulation graph
+        public struct Triangle
+        {
+            public int Index { get; set; }
+
+            public IEnumerable<Point> Points { get; set; }
+
+            public Triangle(int t, IEnumerable<Point> points)
+            {
+                Points = points;
+                Index = t;
+            }
+        }
+
+        public struct VoronoiCell
+        {
+            public Point[] Points { get; set; }
+            public int Index { get; set; }
+            public VoronoiCell(int triangleIndex, Point[] points)
+            {
+                Points = points;
+                Index = triangleIndex;
+            }
+        }
+
+
+
+        private readonly float EPSILON = float.Epsilon;
+        private readonly int[] EDGE_STACK = new int[512];
+
+        public int[] Triangles { get; private set; } // wtf is this
+        public int[] Halfedges { get; private set; } // wtf is this
+        public Point[] Points { get; private set; } 
+
+        private readonly int hashSize;
+        private readonly int[] hullPrev;
+        private readonly int[] hullNext;
+        private readonly int[] hullTri;
+        private readonly int[] hullHash;
+
+        private float cx, cy; // could be using a Point
+
+        private int trianglesLen;
+        private readonly float[] coords;
+        private readonly int hullStart;
+        private readonly int hullSize;
+        private readonly int[] hull;
+
+        public Delaunator(Point[] points)
+        {
+            if (points.Length < 3)
+            {
+                throw new ArgumentOutOfRangeException("Need at least 3 points");
+            }
+
+            Points = points;
+            coords = new float[Points.Length * 2];
+
+            for (var i = 0; i < Points.Length; i++)
+            {
+                var p = Points[i];
+                coords[2 * i] = p.X;
+                coords[2 * i + 1] = p.Y;
+            }
+
+            var n = coords.Length >> 1;
             var maxTriangles = 2 * n - 5;
-            var triangles = this.TriangleIndexes = new List<int>(maxTriangles * 3);
-            var halfedges = this.halfedges = new List<int>(maxTriangles * 3);
-            #endregion
 
-            #region temporary arrays for tracking the edges of the advancing convex hull
-            this._hashSize = (int)MathF.Ceiling(MathF.Sqrt(n));
-            var hullPrev = this.hullPrev = new List<int>(n); // edge to prev edge
-            var hullNext = this.hullNext = new List<int>(n); // edge to next edge
-            var hullTri = this.hullTri = new List<int>(n); // edge to adjacent triangle
-            var hullHash = new List<int>(this._hashSize).Fill(-1); // angular edge hash
-            #endregion
+            Triangles = new int[maxTriangles * 3];
 
-            #region populate an array of point indices; calculate input data box
-            var IDs = new List<int>(n);
-            float minX = float.PositiveInfinity; float minY = float.PositiveInfinity;
-            float maxX = float.NegativeInfinity; float maxY = float.NegativeInfinity;
+            Halfedges = new int[maxTriangles * 3];
+            hashSize = (int)Math.Ceiling(Math.Sqrt(n));
 
-            for (int i = 0; i < n; i++)
+            hullPrev = new int[n];
+            hullNext = new int[n];
+            hullTri = new int[n];
+            hullHash = new int[hashSize];
+
+            var ids = new int[n];
+
+            var minX = float.PositiveInfinity;
+            var minY = float.PositiveInfinity;
+            var maxX = float.NegativeInfinity;
+            var maxY = float.NegativeInfinity;
+
+            for (var i = 0; i < n; i++)
             {
-                float x = coords[2 * i]; float y = coords[2 * i + 1];
+                var x = coords[2 * i];
+                var y = coords[2 * i + 1];
                 if (x < minX) minX = x;
                 if (y < minY) minY = y;
                 if (x > maxX) maxX = x;
                 if (y > maxY) maxY = y;
-
-                IDs.Add(i); //ids.SetSafely(i, i); //ids[i] = i;
+                ids[i] = i;
             }
-            float cx = (minX + maxX) / 2f;
-            float cy = (minY + maxY) / 2f;
 
-            float minDist = float.PositiveInfinity;
-            int i0 = 0, i1 = 0, i2 = 0;
-            #endregion
+            var cx = (minX + maxX) / 2;
+            var cy = (minY + maxY) / 2;
 
-            #region pick a seed point close to the center
+            var minDist = float.PositiveInfinity;
+            var i0 = 0;
+            var i1 = 0;
+            var i2 = 0;
+
+            // pick a seed point close to the center
             for (int i = 0; i < n; i++)
             {
-                float d = Distance(cx, cy, coords[2 * i], coords[2 * i + 1]);
+                var d = Dist(cx, cy, coords[2 * i], coords[2 * i + 1]);
                 if (d < minDist)
                 {
                     i0 = i;
                     minDist = d;
                 }
             }
-            float i0x = coords[2 * i0];
-            float i0y = coords[2 * i0 + 1];
+            var i0x = coords[2 * i0];
+            var i0y = coords[2 * i0 + 1];
 
             minDist = float.PositiveInfinity;
-            #endregion
 
-            #region find the point closest to the seed
+            // find the point closest to the seed
             for (int i = 0; i < n; i++)
             {
                 if (i == i0) continue;
-
-                float d = Distance(i0x, i0y, coords[2 * i], coords[2 * i + 1]);
+                var d = Dist(i0x, i0y, coords[2 * i], coords[2 * i + 1]);
                 if (d < minDist && d > 0)
                 {
                     i1 = i;
                     minDist = d;
                 }
             }
-            float i1x = coords[2 * i1];
-            float i1y = coords[2 * i1 + 1];
 
-            float minRadius = float.PositiveInfinity;
-            #endregion
+            var i1x = coords[2 * i1];
+            var i1y = coords[2 * i1 + 1];
 
-            #region find the third point which forms the smallest circumcircle with the first two
+            var minRadius = float.PositiveInfinity;
+
+            // find the third point which forms the smallest circumcircle with the first two
             for (int i = 0; i < n; i++)
             {
-                if (i == i0 || i == i1)
-                {
-                    continue;
-                }
-                float r = Circumradius(i0x, i0y, i1x, i1y, coords[2 * i], coords[2 * i + 1]);
+                if (i == i0 || i == i1) continue;
+                var r = Circumradius(i0x, i0y, i1x, i1y, coords[2 * i], coords[2 * i + 1]);
                 if (r < minRadius)
                 {
                     i2 = i;
                     minRadius = r;
                 }
             }
-            float i2x = coords[2 * i2];
-            float i2y = coords[2 * i2 + 1];
+            var i2x = coords[2 * i2];
+            var i2y = coords[2 * i2 + 1];
 
             if (minRadius == float.PositiveInfinity)
             {
-                throw new Exception("No Delaunay triangulation exists for this input");
+                throw new Exception("No Delaunay triangulation exists for this input.");
             }
-            #endregion
 
-            #region swap the order of the seed points for counter-clockwise orientation
             if (Orient(i0x, i0y, i1x, i1y, i2x, i2y))
             {
-                int i = i1;
-                float x = i1x;
-                float y = i1y;
+                var i = i1;
+                var x = i1x;
+                var y = i1y;
                 i1 = i2;
                 i1x = i2x;
                 i1y = i2y;
@@ -166,34 +202,30 @@ namespace GameEngine.Geometry.Noise
                 i2y = y;
             }
 
-            ValueTuple<float, float> center = Circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
-            this._cx = center.Item1;
-            this._cy = center.Item2;
+            var center = Circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
+            this.cx = center.X;
+            this.cy = center.Y;
 
-            List<float> dists = new List<float>(n);
-            for (int i = 0; i < n; i++)
+            var dists = new float[n];
+            for (var i = 0; i < n; i++)
             {
-                dists.Add(Distance(coords[2 * i], coords[2 * i + 1], center.Item1, center.Item2));
+                dists[i] = Dist(coords[2 * i], coords[2 * i + 1], center.X, center.Y);
             }
-            #endregion
 
-            Quicksort(IDs, dists, 0, n - 1); // sort the points by distance from the seed triangle circumcenter
+            // sort the points by distance from the seed triangle circumcenter
+            Quicksort(ids, dists, 0, n - 1);
 
-            #region set up the seed triangle as the starting hull
-            this.hullStart = i0;
-            int hullSize = 3;
+            // set up the seed triangle as the starting hull
+            hullStart = i0;
+            hullSize = 3;
 
-            hullNext.SetSafely(i0, i1);
-            hullNext.SetSafely(i1, i2);
-            hullNext.SetSafely(i2, i0);
+            hullNext[i0] = hullPrev[i2] = i1;
+            hullNext[i1] = hullPrev[i0] = i2;
+            hullNext[i2] = hullPrev[i1] = i0;
 
-            hullPrev.SetSafely(i2, i1);
-            hullPrev.SetSafely(i0, i2);
-            hullPrev.SetSafely(i1, i0);
-
-            hullTri.SetSafely(i0, 0);
-            hullTri.SetSafely(i1, 1);
-            hullTri.SetSafely(i2, 2);
+            hullTri[i0] = 0;
+            hullTri[i1] = 1;
+            hullTri[i2] = 2;
 
             hullHash[HashKey(i0x, i0y)] = i0;
             hullHash[HashKey(i1x, i1y)] = i1;
@@ -201,174 +233,164 @@ namespace GameEngine.Geometry.Noise
 
             trianglesLen = 0;
             AddTriangle(i0, i1, i2, -1, -1, -1);
-            #endregion
-            
-            
-            float xp = 0, yp = 0;
-            for (int k = 0; k < IDs.Count; k++)
+
+            float xp = 0;
+            float yp = 0;
+
+            for (var k = 0; k < ids.Length; k++)
             {
-                #region Check if skip and setup variables
-                int i = IDs[k];
-                float x = coords[2 * i];
-                float y = coords[2 * i + 1];
+                var i = ids[k];
+                var x = coords[2 * i];
+                var y = coords[2 * i + 1];
 
                 // skip near-duplicate points
-                if (k > 0 && MathF.Abs(x - xp) <= float.Epsilon && MathF.Abs(y - yp) <= float.Epsilon)  continue;
+                if (k > 0 && Math.Abs(x - xp) <= EPSILON && Math.Abs(y - yp) <= EPSILON) continue;
                 xp = x;
                 yp = y;
 
                 // skip seed triangle points
                 if (i == i0 || i == i1 || i == i2) continue;
-                #endregion
 
-                #region find a visible edge on the convex hull using edge hash
-                int start = 0;
-                for (int j = 0, key = this.HashKey(x, y); j < this._hashSize; j++)
+                // find a visible edge on the convex hull using edge hash
+                var start = 0;
+                for (var j = 0; j < hashSize; j++)
                 {
-                    start = hullHash[(key + j) % this._hashSize];
-                    if (start != -1 && start != hullNext[start])
-                        break;
+                    var key = HashKey(x, y);
+                    start = hullHash[(key + j) % hashSize];
+                    if (start != -1 && start != hullNext[start]) break;
                 }
 
+
                 start = hullPrev[start];
-                int e = start;
-                int q = hullNext[e];
+                var e = start;
+                var q = hullNext[e];
+
                 while (!Orient(x, y, coords[2 * e], coords[2 * e + 1], coords[2 * q], coords[2 * q + 1]))
                 {
                     e = q;
                     if (e == start)
                     {
-                        e = -1;
+                        e = int.MaxValue;
                         break;
                     }
+
                     q = hullNext[e];
                 }
-                if (e == -1) continue; // likely a near-duplicate point; skip it
-                #endregion
 
-                #region add the first triangle from the point
-                int t = this.AddTriangle(e, i, hullNext[e], -1, -1, hullTri[e]);
+                if (e == int.MaxValue) continue; // likely a near-duplicate point; skip it
 
-                hullTri.SetSafely(i, this.Legalize(t + 2));
-                hullTri.SetSafely(e, t); // keep track of boundary triangles on the hull
+                // add the first triangle from the point
+                var t = AddTriangle(e, i, hullNext[e], -1, -1, hullTri[e]);
+
+                // recursively flip triangles from the point until they satisfy the Delaunay condition
+                hullTri[i] = Legalize(t + 2);
+                hullTri[e] = t; // keep track of boundary triangles on the hull
                 hullSize++;
-                #endregion
 
-                #region walk forward through the hull, adding more triangles and flipping recursively
-                n = hullNext[e];
-                q = hullNext[n];
-                while (Orient(x, y, coords[2 * n], coords[2 * n + 1], coords[2 * q], coords[2 * q + 1]))
+                // walk forward through the hull, adding more triangles and flipping recursively
+                var next = hullNext[e];
+                q = hullNext[next];
+
+                while (Orient(x, y, coords[2 * next], coords[2 * next + 1], coords[2 * q], coords[2 * q + 1]))
                 {
-                    t = this.AddTriangle(n, i, q, hullTri[i], -1, hullTri[n]);
-                    //hullTri[i] = this.Legalize(t + 2);
-                    //hullNext[n] = n; // mark as removed
-                    hullTri.SetSafely(i, this.Legalize(t + 2));
-                    hullNext.SetSafely(n, n); // mark as removed
+                    t = AddTriangle(next, i, q, hullTri[i], -1, hullTri[next]);
+                    hullTri[i] = Legalize(t + 2);
+                    hullNext[next] = next; // mark as removed
                     hullSize--;
-                    n = q;
-                    q = hullNext[n];
+                    next = q;
+
+                    q = hullNext[next];
                 }
-                #endregion
-                
-                #region walk backward from the other side, adding more triangles and flipping
+
+                // walk backward from the other side, adding more triangles and flipping
                 if (e == start)
                 {
                     q = hullPrev[e];
+
                     while (Orient(x, y, coords[2 * q], coords[2 * q + 1], coords[2 * e], coords[2 * e + 1]))
                     {
-                        t = this.AddTriangle(q, i, e, -1, hullTri[e], hullTri[q]);
-                        this.Legalize(t + 2);
-                        hullTri.SetSafely(q, t);
-                        hullNext.SetSafely(e, e); // mark as removed
+                        t = AddTriangle(q, i, e, -1, hullTri[e], hullTri[q]);
+                        Legalize(t + 2);
+                        hullTri[q] = t;
+                        hullNext[e] = e; // mark as removed
                         hullSize--;
                         e = q;
+
                         q = hullPrev[e];
                     }
                 }
-                #endregion
 
-                #region set hull next, previous, hash
-                this.hullStart = e;
-                hullPrev.SetSafely(i, e);
-                hullNext.SetSafely(e, i);
-                hullPrev.SetSafely(n, i);
-                hullNext.SetSafely(i, n);
+                // update the hull indices
+                hullStart = hullPrev[i] = e;
+                hullNext[e] = hullPrev[next] = i;
+                hullNext[i] = next;
 
-                hullHash.SetSafely(this.HashKey(x, y), i);
-                hullHash.SetSafely(this.HashKey(coords[2 * e], coords[2 * e + 1]), e);
-                #endregion
+                // save the two new edges in the hash table
+                hullHash[HashKey(x, y)] = i;
+                hullHash[HashKey(coords[2 * e], coords[2 * e + 1])] = e;
             }
 
-            #region Identify ConvexHull
-            this.ConvexHullIndexes = new List<int>(hullSize);
-            for (int i = 0, e = this.hullStart; i < hullSize; i++)
+            hull = new int[hullSize];
+            var s = hullStart;
+            for (var i = 0; i < hullSize; i++)
             {
-                this.ConvexHullIndexes.SetSafely(i, e);
-                e = hullNext[e];
+                hull[i] = s;
+                s = hullNext[s];
             }
-            this.hullPrev = this.hullNext = this.hullTri = this.EdgeStack = null; // get rid of temporary arrays
-            #endregion
 
-            #region trim typed triangle mesh arrays
-            this.TriangleIndexes = triangles.GetRange(0, this.trianglesLen);
-            this.halfedges = halfedges.GetRange(0, this.trianglesLen);
-            #endregion
+            hullPrev = hullNext = hullTri = null; // get rid of temporary arrays
+
+            //// trim typed triangle mesh arrays
+            Triangles = Triangles.Take(trianglesLen).ToArray();
+            Halfedges = Halfedges.Take(trianglesLen).ToArray();
         }
-        
-        #region methods
-        private int AddTriangle(int i0, int i1, int i2, int a, int b, int c)
-        {
-            int t = this.trianglesLen;
 
-            TriangleIndexes.SetSafely(t, i0);
-            TriangleIndexes.SetSafely(t + 1, i1);
-            TriangleIndexes.SetSafely(t + 2, i2);
-
-            Link(t, a);
-            Link(t + 1, b);
-            Link(t + 2, c);
-
-            trianglesLen += 3;
-
-            return t;
-        }
+        #region CreationLogic
         private int Legalize(int a)
         {
-            var triangles = this.TriangleIndexes;
-            var coords = this.Positions;
-            var halfedges = this.halfedges;
-
-            int i = 0;
-            int ar = 0;
+            var i = 0;
+            int ar;
 
             // recursion eliminated with a fixed-size stack
             while (true)
             {
-                int b = halfedges[a];
+                var b = Halfedges[a];
 
+                /* if the pair of triangles doesn't satisfy the Delaunay condition
+                 * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
+                 * then do the same check/flip recursively for the new pair of triangles
+                 *
+                 *           pl                    pl
+                 *          /||\                  /  \
+                 *       al/ || \bl            al/    \a
+                 *        /  ||  \              /      \
+                 *       /  a||b  \    flip    /___ar___\
+                 *     p0\   ||   /p1   =>   p0\---bl---/p1
+                 *        \  ||  /              \      /
+                 *       ar\ || /br             b\    /br
+                 *          \||/                  \  /
+                 *           pr                    pr
+                 */
                 int a0 = a - a % 3;
                 ar = a0 + (a + 2) % 3;
 
                 if (b == -1)
                 { // convex hull edge
-                    if (i == 0)
-                    {
-                        break;
-                    }
-                    a = EdgeStack[--i];
+                    if (i == 0) break;
+                    a = EDGE_STACK[--i];
                     continue;
                 }
 
-                int b0 = b - b % 3;
-                int al = a0 + (a + 1) % 3;
-                int bl = b0 + (b + 2) % 3;
+                var b0 = b - b % 3;
+                var al = a0 + (a + 1) % 3;
+                var bl = b0 + (b + 2) % 3;
 
-                int p0 = triangles[ar];
-                int pr = triangles[a];
-                int pl = triangles[al];
-                int p1 = triangles[bl];
+                var p0 = Triangles[ar];
+                var pr = Triangles[a];
+                var pl = Triangles[al];
+                var p1 = Triangles[bl];
 
-                bool illegal = InCircle(
+                var illegal = InCircle(
                     coords[2 * p0], coords[2 * p0 + 1],
                     coords[2 * pr], coords[2 * pr + 1],
                     coords[2 * pl], coords[2 * pl + 1],
@@ -376,146 +398,119 @@ namespace GameEngine.Geometry.Noise
 
                 if (illegal)
                 {
-                    triangles[a] = p1;
-                    triangles[b] = p0;
+                    Triangles[a] = p1;
+                    Triangles[b] = p0;
 
-                    int hbl = halfedges[bl];
+                    var hbl = Halfedges[bl];
 
                     // edge swapped on the other side of the hull (rare); fix the halfedge reference
                     if (hbl == -1)
                     {
-                        int e = this.hullStart;
+                        var e = hullStart;
                         do
                         {
-                            if (this.hullTri[e] == bl)
+                            if (hullTri[e] == bl)
                             {
-                                this.hullTri[e] = a;
+                                hullTri[e] = a;
                                 break;
                             }
-                            e = this.hullNext[e];
-                        } while (e != this.hullStart);
+                            e = hullPrev[e];
+                        } while (e != hullStart);
                     }
-                    this.Link(a, hbl);
-                    this.Link(b, halfedges[ar]);
-                    this.Link(ar, bl);
+                    Link(a, hbl);
+                    Link(b, Halfedges[ar]);
+                    Link(ar, bl);
 
-                    int br = b0 + (b + 1) % 3;
+                    var br = b0 + (b + 1) % 3;
 
                     // don't worry about hitting the cap: it can only happen on extremely degenerate input
-                    if (i < EdgeStack.Count)
+                    if (i < EDGE_STACK.Length)
                     {
-                        EdgeStack[i++] = br;
+                        EDGE_STACK[i++] = br;
                     }
                 }
                 else
                 {
-                    if (i == 0)
-                    {
-                        break;
-                    }
-                    a = EdgeStack[--i];
+                    if (i == 0) break;
+                    a = EDGE_STACK[--i];
                 }
             }
 
             return ar;
         }
+        private bool InCircle(float ax, float ay, float bx, float by, float cx, float cy, float px, float py)
+        {
+            var dx = ax - px;
+            var dy = ay - py;
+            var ex = bx - px;
+            var ey = by - py;
+            var fx = cx - px;
+            var fy = cy - py;
 
-        
+            var ap = dx * dx + dy * dy;
+            var bp = ex * ex + ey * ey;
+            var cp = fx * fx + fy * fy;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            return dx * (ey * cp - bp * fy) -
+                   dy * (ex * cp - bp * fx) +
+                   ap * (ex * fy - ey * fx) < 0;
+        }
+        private int AddTriangle(int i0, int i1, int i2, int a, int b, int c)
+        {
+            var t = trianglesLen;
+
+            Triangles[t] = i0;
+            Triangles[t + 1] = i1;
+            Triangles[t + 2] = i2;
+
+            Link(t, a);
+            Link(t + 1, b);
+            Link(t + 2, c);
+
+            trianglesLen += 3;
+            return t;
+        }
         private void Link(int a, int b)
         {
-            halfedges.SetSafely(a, b);
-            if (b != -1) halfedges.SetSafely(b, a);
+            Halfedges[a] = b;
+            if (b != -1) Halfedges[b] = a;
         }
-
-        private static float Circumradius(float ax, float ay, float bx, float by, float cx, float cy)
+        private int HashKey(float x, float y) => (int)(Math.Floor(PseudoAngle(x - cx, y - cy) * hashSize) % hashSize);
+        private float PseudoAngle(float dx, float dy)
         {
-            float dx = bx - ax;
-            float dy = by - ay;
-            float ex = cx - ax;
-            float ey = cy - ay;
-
-            float bl = dx * dx + dy * dy;
-            float cl = ex * ex + ey * ey;
-            float d = 0.5f / (dx * ey - dy * ex);
-
-            float x = (ey * bl - dy * cl) * d;
-            float y = (dx * cl - ex * bl) * d;
-
-            return x * x + y * y;
+            var p = dx / (Math.Abs(dx) + Math.Abs(dy));
+            return (dy > 0 ? 3 - p : 1 + p) / 4; // [0..1]
         }
-
-        private static ValueTuple<float, float> Circumcenter(float ax, float ay, float bx, float by, float cx, float cy)
-        {
-            float dx = bx - ax;
-            float dy = by - ay;
-            float ex = cx - ax;
-            float ey = cy - ay;
-
-            float bl = dx * dx + dy * dy;
-            float cl = ex * ex + ey * ey;
-            float d = 0.5f / (dx * ey - dy * ex);
-
-            float x = ax + (ey * bl - dy * cl) * d;
-            float y = ay + (dx * cl - ex * bl) * d;
-
-            return ValueTuple.Create(x, y);
-        }
-
-        private static void Quicksort(List<int> ids, List<float> dists, int left, int right)
+        private void Quicksort(int[] ids, float[] dists, int left, int right)
         {
             if (right - left <= 20)
             {
-                for (int i = left + 1; i <= right; i++)
+                for (var i = left + 1; i <= right; i++)
                 {
-                    int temp = ids[i];
-                    float tempDist = dists[temp];
-                    int j = i - 1;
-                    while (j >= left && dists[ids[j]] > tempDist)
-                    {
-                        ids[j + 1] = ids[j--];
-                    }
+                    var temp = ids[i];
+                    var tempDist = dists[temp];
+                    var j = i - 1;
+                    while (j >= left && dists[ids[j]] > tempDist) ids[j + 1] = ids[j--];
                     ids[j + 1] = temp;
                 }
             }
             else
             {
-                int median = (left + right) >> 1;
-                int i = left + 1;
-                int j = right;
+                var median = (left + right) >> 1;
+                var i = left + 1;
+                var j = right;
                 Swap(ids, median, i);
-                if (dists[ids[left]] > dists[ids[right]])
-                {
-                    Swap(ids, left, right);
-                }
-                if (dists[ids[i]] > dists[ids[right]])
-                {
-                    Swap(ids, i, right);
-                }
-                if (dists[ids[left]] > dists[ids[i]])
-                {
-                    Swap(ids, left, i);
-                }
+                if (dists[ids[left]] > dists[ids[right]]) Swap(ids, left, right);
+                if (dists[ids[i]] > dists[ids[right]]) Swap(ids, i, right);
+                if (dists[ids[left]] > dists[ids[i]]) Swap(ids, left, i);
 
-                int temp = ids[i];
-                float tempDist = dists[temp];
+                var temp = ids[i];
+                var tempDist = dists[temp];
                 while (true)
                 {
-                    do
-                    {
-                        i++;
-                    }
-                    while (dists[ids[i]] < tempDist);
-                    do
-                    {
-                        j--;
-                    }
-                    while (dists[ids[j]] > tempDist);
-                    if (j < i)
-                    {
-                        break;
-                    }
+                    do i++; while (dists[ids[i]] < tempDist);
+                    do j--; while (dists[ids[j]] > tempDist);
+                    if (j < i) break;
                     Swap(ids, i, j);
                 }
                 ids[left + 1] = ids[j];
@@ -533,54 +528,226 @@ namespace GameEngine.Geometry.Noise
                 }
             }
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float Distance(float ax, float ay, float bx, float by)
-        {
-            float dx = ax - bx;
-            float dy = ay - by;
-            return dx * dx + dy * dy;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool Orient(float px, float py, float qx, float qy, float rx, float ry)
-        {
-            return (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void Swap<T>(List<T> arr, int i, int j)
+        private void Swap(int[] arr, int i, int j)
         {
             var tmp = arr[i];
             arr[i] = arr[j];
             arr[j] = tmp;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int HashKey(float x, float y)
+        private bool Orient(float px, float py, float qx, float qy, float rx, float ry) => (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0;
+        private float Circumradius(float ax, float ay, float bx, float by, float cx, float cy)
         {
-            return (int)MathF.Floor(PseudoAngle(x - _cx, y - _cy) * _hashSize) % _hashSize;
+            var dx = bx - ax;
+            var dy = by - ay;
+            var ex = cx - ax;
+            var ey = cy - ay;
+            var bl = dx * dx + dy * dy;
+            var cl = ex * ex + ey * ey;
+            var d = 0.5f / (dx * ey - dy * ex);
+            var x = (ey * bl - dy * cl) * d;
+            var y = (dx * cl - ex * bl) * d;
+            return x * x + y * y;
+        }
+        private Point Circumcenter(float ax, float ay, float bx, float by, float cx, float cy)
+        {
+            var dx = bx - ax;
+            var dy = by - ay;
+            var ex = cx - ax;
+            var ey = cy - ay;
+            var bl = dx * dx + dy * dy;
+            var cl = ex * ex + ey * ey;
+            var d = 0.5f / (dx * ey - dy * ex);
+            var x = ax + (ey * bl - dy * cl) * d;
+            var y = ay + (dx * cl - ex * bl) * d;
+
+            return new Point(x, y);
+        }
+        private float Dist(float ax, float ay, float bx, float by)
+        {
+            var dx = ax - bx;
+            var dy = ay - by;
+            return dx * dx + dy * dy;
+        }
+        #endregion CreationLogic
+
+        #region GetMethods
+        public IEnumerable<Triangle> GetTriangles()
+        {
+            for (var t = 0; t < Triangles.Length / 3; t++)
+            {
+                yield return new Triangle(t, GetTrianglePoints(t));
+            }
+        }
+        public IEnumerable<Edge> GetEdges()
+        {
+            for (var e = 0; e < Triangles.Length; e++)
+            {
+                if (e > Halfedges[e])
+                {
+                    var p = Points[Triangles[e]];
+                    var q = Points[Triangles[NextHalfedge(e)]];
+                    yield return new Edge(e, p, q);
+                }
+            }
+        }
+        public IEnumerable<Edge> GetVoronoiEdges(Func<int, Point> triangleVerticeSelector = null)
+        {
+            if (triangleVerticeSelector == null) triangleVerticeSelector = x => GetCentroid(x);
+            for (var e = 0; e < Triangles.Length; e++)
+            {
+                if (e < Halfedges[e])
+                {
+                    var p = triangleVerticeSelector(TriangleOfEdge(e));
+                    var q = triangleVerticeSelector(TriangleOfEdge(Halfedges[e]));
+                    yield return new Edge(e, p, q);
+                }
+            }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float PseudoAngle(float dx, float dy)
+        public IEnumerable<Edge> GetVoronoiEdgesBasedOnCircumCenter() => GetVoronoiEdges(GetTriangleCircumcenter);
+        public IEnumerable<Edge> GetVoronoiEdgesBasedOnCentroids() => GetVoronoiEdges(GetCentroid);
+
+        public IEnumerable<VoronoiCell> GetVoronoiCells(Func<int, Point> triangleVerticeSelector = null)
         {
-            float p = dx / (MathF.Abs(dx) + MathF.Abs(dy));
-            return (dy > 0 ? 3 - p : 1 + p) / 4; // [0..1]
+            if (triangleVerticeSelector == null) triangleVerticeSelector = x => GetCentroid(x);
+
+            var seen = new HashSet<int>();
+            for (var triangleId = 0; triangleId < Triangles.Length; triangleId++)
+            {
+                var id = Triangles[NextHalfedge(triangleId)];
+                if (!seen.Any(x => x == id))
+                {
+                    seen.Add(id);
+                    var edges = EdgesAroundPoint(triangleId);
+                    var triangles = edges.Select(x => TriangleOfEdge(x));
+                    var vertices = triangles.Select(triangleVerticeSelector).ToArray();
+                    yield return new VoronoiCell(id, vertices);
+                }
+            }
         }
 
-        private static bool InCircle(float ax, float ay, float bx, float by, float cx, float cy, float px, float py)
+        public IEnumerable<VoronoiCell> GetVoronoiCellsBasedOnCircumcenters() => GetVoronoiCells(GetTriangleCircumcenter);
+        public IEnumerable<VoronoiCell> GetVoronoiCellsBasedOnCentroids() => GetVoronoiCells(GetCentroid);
+
+        public IEnumerable<Edge> GetHullEdges() => CreateHull(GetHullPoints());
+        public Point[] GetHullPoints() => hull.Select(x => Points[x]).ToArray();
+        public Point[] GetTrianglePoints(int t) => PointsOfTriangle(t).Select(p => Points[p]).ToArray();
+        public Point[] GetRellaxedPoints() => GetVoronoiCellsBasedOnCircumcenters().Select(x => GetCentroid(x.Points)).ToArray();
+        public IEnumerable<Edge> GetEdgesOfTriangle(int t) => CreateHull(EdgesOfTriangle(t).Select(p => Points[p]));
+        public IEnumerable<Edge> CreateHull(IEnumerable<Point> points) => points.Zip(points.Skip(1).Append(points.FirstOrDefault()), (a, b) => new Edge(0, a, b));
+        public Point GetTriangleCircumcenter(int t)
         {
-            float dx = ax - px; float dy = ay - py;
-            float ex = bx - px; float ey = by - py;
-            float fx = cx - px; float fy = cy - py;
-
-            float ap = dx * dx + dy * dy;
-            float bp = ex * ex + ey * ey;
-            float cp = fx * fx + fy * fy;
-
-            return dx * (ey * cp - bp * fy) - dy * (ex * cp - bp * fx) + ap * (ex * fy - ey * fx) < 0;
+            var vertices = GetTrianglePoints(t);
+            return GetCircumcenter(vertices[0], vertices[1], vertices[2]);
         }
-        #endregion region
+        public Point GetCentroid(int t)
+        {
+            var vertices = GetTrianglePoints(t);
+            return GetCentroid(vertices);
+        }
+        public Point GetCircumcenter(Point a, Point b, Point c) => Circumcenter(a.X, a.Y, b.X, b.Y, c.X, c.Y);
+        public Point GetCentroid(Point[] points)
+        {
+            float accumulatedArea = 0.0f;
+            float centerX = 0.0f;
+            float centerY = 0.0f;
+
+            for (int i = 0, j = points.Count() - 1; i < points.Count(); j = i++)
+            {
+                var temp = points[i].X * points[j].Y - points[j].X * points[i].Y;
+                accumulatedArea += temp;
+                centerX += (points[i].X + points[j].X) * temp;
+                centerY += (points[i].Y + points[j].Y) * temp;
+            }
+
+            if (Math.Abs(accumulatedArea) < 1E-7f)
+                return new Point();
+
+            accumulatedArea *= 3f;
+            return new Point(centerX / accumulatedArea, centerY / accumulatedArea);
+        }
+
+        #endregion GetMethods
+
+        #region ForEachMethods
+        public void ForEachTriangle(Action<Triangle> callback)
+        {
+            foreach (var triangle in GetTriangles())
+            {
+                callback?.Invoke(triangle);
+            }
+        }
+        public void ForEachTriangleEdge(Action<Edge> callback)
+        {
+            foreach (var edge in GetEdges())
+            {
+                callback?.Invoke(edge);
+            }
+        }
+        public void ForEachVoronoiEdge(Action<Edge> callback)
+        {
+            foreach (var edge in GetVoronoiEdges())
+            {
+                callback?.Invoke(edge);
+            }
+        }
+        public void ForEachVoronoiCellBasedOnCentroids(Action<VoronoiCell> callback)
+        {
+            foreach (var cell in GetVoronoiCellsBasedOnCentroids())
+            {
+                callback?.Invoke(cell);
+            }
+        }
+
+        public void ForEachVoronoiCellBasedOnCircumcenters(Action<VoronoiCell> callback)
+        {
+            foreach (var cell in GetVoronoiCellsBasedOnCircumcenters())
+            {
+                callback?.Invoke(cell);
+            }
+        }
+
+        public void ForEachVoronoiCell(Action<VoronoiCell> callback, Func<int, Point> triangleVertexSelector = null)
+        {
+            foreach (var cell in GetVoronoiCells(triangleVertexSelector))
+            {
+                callback?.Invoke(cell);
+            }
+        }
+
+        #endregion ForEachMethods
+
+        #region Methods based on index
+        public IEnumerable<int> EdgesAroundPoint(int start)
+        {
+            var incoming = start;
+            do
+            {
+                yield return incoming;
+                var outgoing = NextHalfedge(incoming);
+                incoming = Halfedges[outgoing];
+            } while (incoming != -1 && incoming != start);
+        }
+        public IEnumerable<int> PointsOfTriangle(int t) => EdgesOfTriangle(t).Select(e => Triangles[e]);
+        public IEnumerable<int> TrianglesAdjacentToTriangle(int t)
+        {
+            var adjacentTriangles = new List<int>();
+            var triangleEdges = EdgesOfTriangle(t);
+            foreach (var e in triangleEdges)
+            {
+                var opposite = Halfedges[e];
+                if (opposite >= 0)
+                {
+                    adjacentTriangles.Add(TriangleOfEdge(opposite));
+                }
+            }
+            return adjacentTriangles;
+        }
+
+        public int NextHalfedge(int e) => (e % 3 == 2) ? e - 2 : e + 1;
+        public int PreviousHalfedge(int e) => (e % 3 == 0) ? e + 2 : e - 1;
+        public int[] EdgesOfTriangle(int t) => new int[] { 3 * t, 3 * t + 1, 3 * t + 2 };
+        public int TriangleOfEdge(int e) => (int)Math.Floor((float)(e / 3));
+        #endregion Methods based on index
     }
 }

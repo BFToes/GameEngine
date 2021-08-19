@@ -103,10 +103,15 @@ namespace GameEngine
 
     public struct RenderComponent : IComponent { }
 
-    public struct Component0 : IComponent { public string value { get; set; } }
-    public struct Component1 : IComponent { public string value { get; set; } }
-    public struct Component2 : IComponent { public string value { get; set; } }
-    public struct Component3 : IComponent { public string value { get; set; } }
+    public struct Component0 : IComponent { public string data { get; set; } }
+    public struct Component1 : IComponent { public string data { get; set; } }
+    public struct Component2 : IComponent { public string data { get; set; } }
+    public struct Component3 : IComponent { public string data { get; set; } }
+    public struct Component4 : IComponent { public string data { get; set; } }
+    public struct Component5 : IComponent { public string data { get; set; } }
+    public struct Component6 : IComponent { public string data { get; set; } }
+    public struct Component7 : IComponent { public string data { get; set; } }
+    public struct Component8 : IComponent { public string data { get; set; } }
 
     public class thing : Entity
     {
@@ -126,11 +131,30 @@ namespace GameEngine
     {
         static public void Main(string[] args)
         {
-            var thing = new thing();
+            Random rnd = new Random();
+            byte[] comps = ComponentManager.ID<Component0, Component1, Component2, Component3>();
+            List<Entity> list = new List<Entity>();
             
+            Console.WriteLine("begin");
 
-            thing.SetComponents(ComponentManager.ID<Component1, Component2, Component0>());
-            thing.C1.value = "POOO";
+            for (int i = 0; i < 200000; i++)
+            {
+                var Entity = new thing();
+                Entity.SetComponents(comps.Where(x => rnd.Next(256) > 128).OrderBy(x => rnd.Next()).ToArray());
+                list.Add(Entity);
+            }
+
+            Console.WriteLine("finished constructing in random order");
+
+            foreach (thing thing in list)
+                if (!thing.Has<Component1>())
+                    thing.AddComponent<Component1>();
+
+            foreach (thing thing in list)
+                thing.C1.data = rnd.Next().ToString();
+
+            Console.WriteLine("finished adding random data");
+
             Console.ReadLine();
         }
     }

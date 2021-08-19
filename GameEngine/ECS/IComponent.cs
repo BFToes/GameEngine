@@ -15,21 +15,18 @@ namespace ECS
     /// </summary>
     public static class ComponentManager
     {
-        private static byte Count;
-        private static Type[] Types = new Type[byte.MaxValue];
-        private static IInitiator[] Initiators = new IInitiator[byte.MaxValue];
+        private static byte _count;
+        private static Type[] _types = new Type[byte.MaxValue];
+        private static IInitiator[] _initiators = new IInitiator[byte.MaxValue];
         
-        /// <summary>
-        /// stores 
-        /// </summary>
         private static byte RegisterID<TComponent>() where TComponent : IComponent, new()
         {
-            if (Count == byte.MaxValue)
+            if (_count == byte.MaxValue)
                 throw new Exception();
 
-            Types[Count] = typeof(TComponent);
-            Initiators[Count] = new Initiator<TComponent>();
-            return Count++;
+            _types[_count] = typeof(TComponent);
+            _initiators[_count] = new Initiator<TComponent>();
+            return _count++;
         }
         
         public static byte ID<T>() where T : IComponent, new() => ComponentType<T>.ID;
@@ -70,8 +67,8 @@ namespace ECS
             };
         }
 
-        internal static IComponent InitComponent(byte ID) => Initiators[ID].CreateComponent();
-        internal static Archetype.IPool InitPool(byte ID) => Initiators[ID].CreatePool();
+        internal static IComponent InitComponent(byte ID) => _initiators[ID].CreateComponent();
+        internal static Archetype.IPool InitPool(byte ID) => _initiators[ID].CreatePool();
         
         private interface IInitiator
         {

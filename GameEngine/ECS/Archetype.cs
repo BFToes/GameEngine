@@ -1,7 +1,9 @@
 ﻿﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+//using ListExtensions;
 
 namespace ECS
 {
@@ -41,8 +43,8 @@ namespace ECS
         private readonly Archetype[] _next = new Archetype[byte.MaxValue]; // a graph to find the next archetype
         private readonly Archetype[] _prev = new Archetype[byte.MaxValue]; // a graph to find the prev archetype
 
-
-        internal Archetype(params byte[] CompIDs)
+        // constructor can be private because archetype its only called from Archetype.Get()
+        private Archetype(params byte[] CompIDs)
         {
             Archetype.All.Add(this); // Add self to list of all archetypes
             this._compIDs = CompIDs; // should already be sorted
@@ -73,13 +75,13 @@ namespace ECS
         /// <returns>an archetype that matches the description.</returns>
         public static Archetype Get(byte[] ComponentIDs)
         {
+            // ToDo: Insertion Sort for arrays and behaviours
+            //      then binary search instead of this VVV
             foreach (Archetype A in All) // we can do a better search than this
-                if (A._compIDs == ComponentIDs)
+                if (ComponentIDs.SequenceEqual(A._compIDs)) // sequenceEqual bad
                     return A;
-
-            Archetype newArchetype = new Archetype(ComponentIDs);
-            All.Add(newArchetype);
-            return newArchetype;
+            
+            return new Archetype(ComponentIDs);
         }
 
         /// <summary>
@@ -91,7 +93,7 @@ namespace ECS
         }
 
         /// <summary>
-        /// Gets <typeparamref name="TComponent"/> of type T and casts <see cref="IPool"/> to <see cref="Pool{T}"><typeparamref name="TComponent"/> Pool</see>.
+        /// Gets <typeparamref name="TComponent"/> pool and casts.
         /// </summary>
         public Pool<TComponent> GetPool<TComponent>() where TComponent : IComponent, new()
         {
@@ -101,6 +103,10 @@ namespace ECS
             
         }
 
+        /// <summary>
+        /// Returns true if <paramref name="value"/> is contained within compIDs. 
+        /// The <paramref name="index"/> is set to the index in <see cref="_pools"/>.
+        /// </summary>
         private bool Contains(byte value, out int index) 
         {
             // re-structure _compIDs and Layer
@@ -115,8 +121,7 @@ namespace ECS
             else return true;
         }
 
-
-        #region Component set operations
+        #region Component Compare Operations
         /// <summary>
         /// returns true if All of the Components in <paramref name="CompIDs"/> appear in this archetype. 
         /// to skip check set <paramref name="CompIDs"/> to null.
@@ -163,9 +168,9 @@ namespace ECS
             // resize if neccessary
             if (_arraySize == Length)
             {
-                _arraySize = Length << 1;
+                _arraySize = Length * 2;
                 for (int i = 0; i < _pools.Length; i++)
-                    _pools[i].Resize(Length);
+                    _pools[i].Resize(_arraySize);
             }
 
             _pools[0][Length] = layer[0]; // set entity
@@ -186,18 +191,20 @@ namespace ECS
             for (int i = 0; i < _pools.Length; i++)
                 Layer.Add(_pools[i][index]);
 
-            // move layer to end of pools
+            // move end of pool to overwrite layer
             if (index != --Length)
                 for (int i = 0; i < _pools.Length; i++)
                     _pools[i][index] = _pools[i][Length];
+            // entity has been moved so index must be updated 
+            (_pools[0][index] as Entity)._poolIndex = index; 
 
             // remove layer at end of pools
             for (int i = 0; i < _pools.Length; i++)
                 _pools[i].Remove(Length);
 
             // resize if neccessary
-            int newSize = _arraySize >> 1;
-            if (Length < newSize && Length > DEFAULT_ARRAY_SIZE)
+            int newSize = _arraySize / 2;
+            if (DEFAULT_ARRAY_SIZE  < Length && Length < newSize)
             {
                 _arraySize = newSize;
                 for (int i = 0; i < _pools.Length; i++)
@@ -208,8 +215,7 @@ namespace ECS
         }
 
 
-        // should only be called by entity
-
+        
         internal void InitEntity(Entity entity, out int poolIndex)
         {
             IPoolable[] layer = new IPoolable[_pools.Length];
@@ -265,25 +271,22 @@ namespace ECS
             List<IPoolable> oldLayer = RemoveLayer(poolIndex);
             List<IPoolable> newLayer = new List<IPoolable>();
 
-            newLayer.Add(oldLayer[0]); // set entity
+            newLayer.Add(oldLayer[0]); // copy entity over
 
             int new_i = 0, old_i = 0;  // component index
-            do
+            while (new_i < archetype._compIDs.Count)
             {
-                IPoolable nextComp;
                 // because both arrays are sorted if one index overtakes the other
                 // the values inbetween can be ignored
-                while (_compIDs[old_i] < newCompIDs[new_i]) old_i++; // components lost from old
+                while (++old_i < _compIDs.Count && _compIDs[old_i] < newCompIDs[new_i]); // components lost from old
 
-                if (_compIDs[old_i] == newCompIDs[new_i])
-                    nextComp = oldLayer[old_i + 1];
+                if (old_i < _compIDs.Count && _compIDs[old_i] == newCompIDs[new_i])
+                    newLayer.Add(oldLayer[old_i + 1]);
                 else
-                    nextComp = ComponentManager.InitComponent(newCompIDs[new_i]);
+                    newLayer.Add(ComponentManager.InitComponent(newCompIDs[new_i]));
 
-                newLayer.Add(nextComp);
+                new_i++;
             }
-            while (++new_i < archetype._compIDs.Count && old_i < _compIDs.Count);
-
 
             archetype.AddLayer(out poolIndex, newLayer);
         }

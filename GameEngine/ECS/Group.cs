@@ -10,6 +10,12 @@ namespace ECS
         /// </summary>
         public abstract class Group
         {
+            internal static List<Group> All;
+            static Group()
+            {
+                All = new List<Group>();
+            }
+
             protected List<Archetype> archetypes { get; private set; }
             private readonly byte[] _anyFilter;
             private readonly byte[] _allFilter;
@@ -17,10 +23,15 @@ namespace ECS
 
             protected Group(byte[] All, byte[] Any, byte[] None, bool thing_to_differentiate_constructors)
             {
+                Group.All.Add(this);
                 this._allFilter = All;
                 this._anyFilter = Any;
                 this._noneFilter = None;
                 this.archetypes = new List<Archetype>();
+
+                // ToDo: SEARCH ARCHETYPES FOR APPLICABLE
+                //      archetypes and groups should be sorted for a binary search. use
+                //      insertion sort because its nearly sorted
             }
             protected Group(params byte[] All)
             {
@@ -34,26 +45,6 @@ namespace ECS
                     archetype.HasNone(_noneFilter))
                 {
                     archetypes.Add(archetype);
-                }
-
-            }
-            public IEnumerable<Entity> GetEntities()
-            {
-                foreach (Archetype A in archetypes)
-                {
-                    Pool<Entity> EntityPool = A.GetPool();
-                    for (int i = 0; i < A.Length; i++)
-                        yield return EntityPool[i];
-                }
-
-            }
-            public IEnumerable<TComponent> GetComponents<TComponent>() where TComponent : IComponent, new()
-            {
-                foreach (Archetype A in archetypes)
-                {
-                    Pool<TComponent> EntityPool = A.GetPool<TComponent>();
-                    for (int i = 0; i < A.Length; i++)
-                        yield return EntityPool[i];
                 }
 
             }

@@ -7,15 +7,15 @@ namespace ECS
     /// <see cref="Entity"/> stores methods to access <see cref="IComponent"/>s but doesn't
     /// store the <see cref="IComponent"/> themselves
     /// </summary>
-    public abstract class Entity : Archetype.IPoolable
+    public class Entity : Archetype.IPoolable
     {
-        private Archetype _archetype; // the archetype it belongs to
-        private int _poolIndex; // the index in the archetype of itself and all its components
+        internal Archetype _archetype; // the archetype it belongs to
+        internal int _poolIndex; // the index in the archetype of itself and all its components
         
         /// <summary>
         /// initiates empty <see cref="Entity"/> into <see cref="Archetype"/>
         /// </summary>
-        protected Entity(Archetype Archetype = null)
+        public Entity(Archetype Archetype = null)
         {
             // if Archetype null adds to empty archetype in context
             this._archetype = Archetype ?? Archetype.Empty;

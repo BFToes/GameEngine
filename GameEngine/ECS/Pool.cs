@@ -17,7 +17,7 @@ namespace ECS
         /// <remark>
         /// Resizing arrays is still kinda a dumb idea
         /// </remark>
-        public interface IPool
+        internal interface IPool
         {
             IPoolable this[int index] { get; set; }
             internal void Resize(int newSize);

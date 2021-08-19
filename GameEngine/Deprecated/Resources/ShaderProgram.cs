@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using ListExtensions;
 
 namespace GameEngine.Resources
 {
@@ -191,7 +190,7 @@ namespace GameEngine.Resources
         #endregion
         #region Sampler Uniforms
         // texture unit management
-        private int[] ProgTex = new int[MaxUnits].Fill(-1); // texture unit
+        private int[] ProgTex = new int[MaxUnits].Select(i => -1).ToArray(); // texture unit
         private int[] SamplerUseCount = new int[MaxUnits]; // number of times texture used
         private static int[] SamplerUnits = new int[MaxUnits]; // bound texture units
         /// <summary>
@@ -346,7 +345,7 @@ namespace GameEngine.Resources
         }
         private void FloatPrint(int i, int Location, string Name, ActiveUniformType UniformType, int DataLength)
         {
-            float[] Data = new float[DataLength].Fill(-1);
+            float[] Data = new float[DataLength].Select(i => -1f).ToArray();
             GL.GetUniform(Handle, Location, Data);
             Console.Write($"Uniform - {i}: {Location} = {UniformType} {Name} -> ");
             Data.Select((f) => { Console.Write($"{f}, "); return f; }).ToArray();
