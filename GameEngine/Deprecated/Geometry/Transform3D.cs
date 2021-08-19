@@ -3,12 +3,14 @@ using System;
 
 namespace GameEngine.Geometry.Transform
 {
+    [Obsolete]
     public interface ITransform
     {
         public Matrix4 Matrix { get; }
         public event Action<Matrix4> SetTransform;
         public void Extract(Matrix4 Matrix);
     }
+    [Obsolete]
     public abstract class AbstractTransform3D : ITransform
     {
         protected Matrix3 RotMatrix = Matrix3.Identity;
@@ -64,6 +66,7 @@ namespace GameEngine.Geometry.Transform
             RotMatrix = Matrix3.CreateFromQuaternion(Q);
         }
     }
+    [Obsolete]
     public class Transform3D : AbstractTransform3D
     {
         public override Vector3 Rotation
@@ -116,6 +119,7 @@ namespace GameEngine.Geometry.Transform
             return Tmat;
         }
     }
+    [Obsolete]
     public class InverseTransform3D : AbstractTransform3D
     {
         public override Vector3 Rotation
@@ -170,6 +174,7 @@ namespace GameEngine.Geometry.Transform
             throw new NotImplementedException();
         }
     }
+    [Obsolete]
     public class TransformAligned3D : AbstractTransform3D
     {
         public override Vector3 Scale

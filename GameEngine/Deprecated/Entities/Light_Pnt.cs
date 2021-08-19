@@ -6,9 +6,10 @@ using GameEngine.Entities.Culling;
 using GameEngine.Entities.Lighting;
 using GameEngine.Geometry.Transform;
 using System.Linq;
-
+using System;
 namespace GameEngine.Entities
 {
+    [Obsolete]
     class Light_Pnt : SpatialEntity<TransformAligned3D>, IVolumeLight
     {
         #region Inherited Light Setup
@@ -133,8 +134,9 @@ namespace GameEngine.Entities
 
             if (IVolumeLight.DEBUG_SHOW_LIGHT_MESH)
             {
-                ShowMeshProgram.Use();
-                Mesh.SimpleSphere.Draw(PolygonMode.Line);
+                // commented to get rid of god awful warning
+                //ShowMeshProgram.Use(); 
+                //Mesh.SimpleSphere.Draw(PolygonMode.Line);
             }
         }
 

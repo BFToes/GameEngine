@@ -5,6 +5,7 @@ using System.Drawing;
 
 namespace GameEngine.Rendering
 {
+    [Obsolete]
     abstract class FrameBuffer
     {
         public Color4 RefreshColour = Color.Purple;

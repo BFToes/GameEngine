@@ -88,6 +88,7 @@ namespace GameEngine
      * 1 -> Light
      * ...
      */
+     [Obsolete]
     class Scene
     {
         public Camera Camera;

@@ -15,7 +15,7 @@ namespace GameEngine.Entities
         public Vector2 ScreenSize; // + 8
      */
 
-
+    [Obsolete]
     class Camera : SpatialEntity<AbstractTransform3D>, ICullObserver<Frustum>
     {
         private readonly Frustum Frustum = new Frustum();

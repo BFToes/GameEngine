@@ -5,6 +5,7 @@ using OpenTK.Mathematics;
 using GameEngine.Geometry.Transform;
 namespace GameEngine.Entities
 {
+    [Obsolete]
     class Entity
     {
         private event Action<float> Process = delegate { };
@@ -36,12 +37,14 @@ namespace GameEngine.Entities
         }
     }
 
+    [Obsolete]
     interface ISpatial
     {
         public event Action<Matrix4> SetWorldMatrix;
         public Matrix4 WorldMatrix { get; }
     }
 
+    [Obsolete]
     class SpatialEntity<TransformType> : Entity, ISpatial where TransformType : ITransform
     {
         private Matrix4 BaseMatrix = Matrix4.Identity; 

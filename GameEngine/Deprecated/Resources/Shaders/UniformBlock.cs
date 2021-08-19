@@ -4,6 +4,7 @@ using OpenTK.Graphics.OpenGL4;
 
 namespace GameEngine.Resources.Shaders
 {
+    [Obsolete]
     public class UniformBlock
     {
         private int UniformBuffer;

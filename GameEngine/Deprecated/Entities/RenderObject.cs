@@ -1,13 +1,16 @@
 ﻿using GameEngine.Resources;
 using GameEngine.Entities.Culling;
 using GameEngine.Geometry.Transform;
+using System;
 namespace GameEngine.Entities
 {
+    [Obsolete]
     interface IRenderable : ICullable<Sphere>
     {
         public void Render();
     }
-
+    
+    [Obsolete]
     /// <summary>
     /// An Object that renders onto the screen.
     /// </summary>

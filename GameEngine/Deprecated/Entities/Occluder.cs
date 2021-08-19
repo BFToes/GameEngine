@@ -3,9 +3,10 @@ using OpenTK.Graphics.OpenGL4;
 using GameEngine.Geometry.Transform;
 using GameEngine.Entities.Lighting;
 using GameEngine.Entities.Culling;
-
+using System;
 namespace GameEngine.Entities
 {
+    [Obsolete]
     class Occluder : SpatialEntity<AbstractTransform3D>, IOccluder
     {
         private readonly Mesh<Simple3D> OccMesh;

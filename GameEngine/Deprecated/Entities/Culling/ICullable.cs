@@ -3,6 +3,7 @@ using System;
 
 namespace GameEngine.Entities.Culling
 {
+    [Obsolete]
     /// <summary>
     /// Can check if Culling object is inside itself
     /// </summary>
@@ -14,6 +15,7 @@ namespace GameEngine.Entities.Culling
         public bool Detects(ICullable<Sphere> Entity);
         public bool Detects(ICullable<Box> Entity);
     }
+    [Obsolete]
     /// <summary>
     /// can be found within cull observers and is an observer itself
     /// </summary>
@@ -22,14 +24,16 @@ namespace GameEngine.Entities.Culling
     {
         public CullType CullShape { get; }
     }
-
+    [Obsolete]
     interface IObserverShape 
     {
         public bool Intersect(Sphere Sphere);
         public bool Intersect(Box Volume);
     }
+    [Obsolete]
     interface ICullShape : IObserverShape { }
 
+    [Obsolete]
     /// <summary>
     /// An axis aligned bounding box 
     /// </summary>
@@ -105,6 +109,7 @@ namespace GameEngine.Entities.Culling
             return new Box(Min, Max);
         }
     }
+    [Obsolete]
     /// <summary>
     /// A Sphere
     /// </summary>
@@ -143,6 +148,7 @@ namespace GameEngine.Entities.Culling
             return distSQ > 0;
         }
     }
+    [Obsolete]
     /// <summary>
     /// A view frustum built from a projection matrix
     /// </summary>

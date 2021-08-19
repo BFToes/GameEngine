@@ -6,6 +6,7 @@ using System.Text;
 
 namespace GameEngine.Entities.Culling
 {
+    [Obsolete]
     class CullTree
     {
         private Node Root = new Node(Vector3.NegativeInfinity, Vector3.PositiveInfinity); // everything is inside this values dont actually matter becuase its not checked
@@ -18,6 +19,7 @@ namespace GameEngine.Entities.Culling
         public IEnumerable<ICullable<ICullShape>> InViewOf(IObserver<Frustum> Observer) => throw new NotImplementedException();
         public IEnumerable<ICullable<ICullShape>> InViewOf(IObserver<Sphere> Observer) => throw new NotImplementedException();
 
+        [Obsolete]
         private class Node : Box, ICullable<Box>, ICullObserver<Box>
         {
             ICullable<ICullShape> Child1;

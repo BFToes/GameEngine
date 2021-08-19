@@ -7,6 +7,7 @@ using System.Linq;
 
 namespace GameEngine.Resources
 {
+    [Obsolete]
     public class ShaderProgram
     {
         private const int MaxUnits = 32;

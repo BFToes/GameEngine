@@ -1,11 +1,8 @@
 ﻿using System;
 using ECS;
-using System.Threading;
 using OpenTK.Mathematics;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using ListExtensions;
 
 namespace GameEngine
 {
@@ -137,14 +134,14 @@ namespace GameEngine
             
             Console.WriteLine("begin");
 
-            for (int i = 0; i < 200000; i++)
+            for (int i = 0; i < 2000000; i++)
             {
                 var Entity = new thing();
                 Entity.SetComponents(comps.Where(x => rnd.Next(256) > 128).OrderBy(x => rnd.Next()).ToArray());
                 list.Add(Entity);
             }
 
-            Console.WriteLine("finished constructing in random order");
+            Console.WriteLine("finished constructing from random order");
 
             foreach (thing thing in list)
                 if (!thing.Has<Component1>())

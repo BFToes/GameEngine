@@ -10,7 +10,7 @@ namespace ECS
     /// <summary>
     /// A collection of <see cref="Entity"/> which all share the same types of <see cref="IComponent"/>.
     /// </summary>
-    public partial class Archetype
+    public partial class Archetype : IComparable<Archetype>, IComparable<byte[]>
     {
         /// <summary>
         /// the archetype for an entity with no components
@@ -19,7 +19,7 @@ namespace ECS
         /// <summary>
         /// a list of all archetypes currently in use
         /// </summary>
-        internal readonly static List<Archetype> All;
+        private readonly static List<Archetype> All;
 
         static Archetype()
         {
@@ -46,9 +46,8 @@ namespace ECS
         // constructor can be private because archetype its only called from Archetype.Get()
         private Archetype(params byte[] CompIDs)
         {
-            Archetype.All.Add(this); // Add self to list of all archetypes
             this._compIDs = CompIDs; // should already be sorted
-
+            
             // set up look up table
             byte[] table = CompIDs.Length > 0 ? new byte[CompIDs[CompIDs.Length - 1] + 1] : new byte[0];
             for (byte i = 0; i < CompIDs.Length;)
@@ -75,13 +74,13 @@ namespace ECS
         /// <returns>an archetype that matches the description.</returns>
         public static Archetype Get(byte[] ComponentIDs)
         {
-            // ToDo: Insertion Sort for arrays and behaviours
-            //      then binary search instead of this VVV
-            foreach (Archetype A in All) // we can do a better search than this
-                if (ComponentIDs.SequenceEqual(A._compIDs)) // sequenceEqual bad
-                    return A;
-            
-            return new Archetype(ComponentIDs);
+            int index = All.BinarySearch(ComponentIDs);
+            if (index >= 0) return All[index];
+
+            Archetype newArchetype = new Archetype(ComponentIDs);
+            All.Insert(~index, newArchetype);
+
+            return newArchetype;
         }
 
         /// <summary>
@@ -155,8 +154,35 @@ namespace ECS
                 if (Contains(ID, out _)) return false;
             return false;
         }
-        #endregion
+        
+        public int CompareTo(Archetype that)
+        {
+            int min = this._compIDs.Count < that._compIDs.Count ? this._compIDs.Count : that._compIDs.Count;
+            for (int i = 0; i < min; i++)
+            {
+                if (this._compIDs[i] > that._compIDs[i]) return 1;
+                if (this._compIDs[i] < that._compIDs[i]) return -1;
+            }
+            // if a1 longer than a2 and all elements equal
+            return this._compIDs.Count.CompareTo(that._compIDs.Count);
+        }
+        
+        public int CompareTo(byte[] that)
+        {
+            int min = _compIDs.Count < that.Length ? _compIDs.Count : that.Length;
+            for (int i = 0; i < min; i++)
+            {
 
+                if (_compIDs[i] > that[i]) return 1;
+                else if (_compIDs[i] < that[i]) return -1;
+                else continue;
+            }
+            // if a1 longer than a2 and all elements equal
+            if (_compIDs.Count > that.Length) return 1;
+            if (_compIDs.Count < that.Length) return -1;
+            return 0;
+        }
+        #endregion
 
         #region Adding and Removing Components
         /// <summary>
@@ -183,7 +209,6 @@ namespace ECS
         /// <summary>
         /// Removes a layer of <see cref="Entity"/> and <see cref="IComponent"/> from corresponding <see cref="IPool"/>.
         /// </summary>
-        /// <returns>an array of <see cref="IPoolable"/> corresponding to the removed layer</returns>
         private List<IPoolable> RemoveLayer(int index)
         {
             // copy layer
@@ -214,8 +239,9 @@ namespace ECS
             return Layer;
         }
 
-
-        
+        /// <summary>
+        /// Adds <see cref="Entity"/> into this Archetype
+        /// </summary>
         internal void InitEntity(Entity entity, out int poolIndex)
         {
             IPoolable[] layer = new IPoolable[_pools.Length];
@@ -225,6 +251,10 @@ namespace ECS
             AddLayer(out poolIndex, layer);
         }
 
+        /// <summary>
+        /// Moves an <see cref="Entity"/> in this <see cref="Archetype"/> at <paramref name="poolIndex"/> to a
+        /// new <see cref="Archetype"/> with the same <see cref="IComponent"/>s plus the addition of <paramref name="component"/>
+        /// </summary>
         internal void MoveEntity(byte compID, IComponent component, ref int poolIndex, out Archetype archetype)
         {
             List<IPoolable> Layer = RemoveLayer(poolIndex);
@@ -244,7 +274,11 @@ namespace ECS
             _next[compID].AddLayer(out poolIndex, Layer);
             archetype = _next[compID];
         }
-
+        
+        /// <summary>
+        /// Moves an <see cref="Entity"/> in this <see cref="Archetype"/> at <paramref name="poolIndex"/> to a
+        /// new <see cref="Archetype"/> with the same <see cref="IComponent"/>s minus the addition of <paramref name="component"/>
+        /// </summary>
         internal void MoveEntity(byte compID, out IComponent component, ref int poolIndex, out Archetype archetype)
         {
             List<IPoolable> newLayer = RemoveLayer(poolIndex);
@@ -264,9 +298,13 @@ namespace ECS
             archetype = _prev[compID];
         }
 
-        internal void MoveEntity(byte[] newCompIDs, ref int poolIndex, out Archetype archetype)
+        /// <summary>
+        /// Moves <see cref="Entity"/> in this <see cref="Archetype"/> at <paramref name="poolIndex"/> to a
+        /// new <paramref name="archetype"/> with no relation to this <see cref="Archetype"/>
+        /// </summary>
+        internal void MoveEntity(byte[] compIDs, ref int poolIndex, out Archetype archetype)
         {
-            archetype = Get(newCompIDs);
+            archetype = Get(compIDs);
 
             List<IPoolable> oldLayer = RemoveLayer(poolIndex);
             List<IPoolable> newLayer = new List<IPoolable>();
@@ -278,12 +316,12 @@ namespace ECS
             {
                 // because both arrays are sorted if one index overtakes the other
                 // the values inbetween can be ignored
-                while (++old_i < _compIDs.Count && _compIDs[old_i] < newCompIDs[new_i]); // components lost from old
+                while (++old_i < _compIDs.Count && _compIDs[old_i] < compIDs[new_i]); // components lost from old
 
-                if (old_i < _compIDs.Count && _compIDs[old_i] == newCompIDs[new_i])
+                if (old_i < _compIDs.Count && _compIDs[old_i] == compIDs[new_i])
                     newLayer.Add(oldLayer[old_i + 1]);
                 else
-                    newLayer.Add(ComponentManager.InitComponent(newCompIDs[new_i]));
+                    newLayer.Add(ComponentManager.InitComponent(compIDs[new_i]));
 
                 new_i++;
             }
@@ -291,5 +329,26 @@ namespace ECS
             archetype.AddLayer(out poolIndex, newLayer);
         }
         #endregion
+    }
+
+    internal static class ListExtensions
+    {
+        public static int BinarySearch(this List<Archetype> list, byte[] value)
+        {
+            int index = 0;
+            int lower = 0;
+            int upper = list.Count - 1;
+
+            while (lower < upper)
+            {
+                index = (upper + lower + 1) / 2;
+                
+                int diff = list[index].CompareTo(value);
+                if (diff > 0) upper = index - 1;
+                else if (diff < 0) lower = index + 1;
+                else return index;
+            }
+            return ~index;
+        }
     }
 }

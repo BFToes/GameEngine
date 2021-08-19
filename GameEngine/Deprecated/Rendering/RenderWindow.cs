@@ -1,9 +1,10 @@
 ﻿using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.Common;
 using OpenTK.Mathematics;
-
+using System;
 namespace GameEngine.Rendering
 {
+    [Obsolete]
     class RenderWindow : GameWindow
     {
         private Scene scene;

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 namespace GameEngine.Resources
 {
+    [Obsolete]
     static class Texture
     {
         private static Dictionary<string, int> SamplerDict = new Dictionary<string, int>();

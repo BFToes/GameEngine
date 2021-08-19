@@ -6,6 +6,7 @@ using GameEngine.Resources.Shaders;
 
 namespace GameEngine.Entities.Lighting
 {
+    [Obsolete]
     interface IVolumeLight : ICullable<Sphere>, ICullObserver<Sphere>
     {
         #region Static Light Settings

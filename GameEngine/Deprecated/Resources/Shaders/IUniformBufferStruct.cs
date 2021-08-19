@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using OpenTK.Mathematics;
-
+using System;
 namespace GameEngine.Resources.Shaders
 {
     /* To maintain std140 layout all fields must be a multiple of vec4
@@ -9,11 +9,12 @@ namespace GameEngine.Resources.Shaders
      * 
      * there are more rules than this.. just go look it up.
      */
+     [Obsolete]
     public interface IUniformBufferStruct
     {
         public int SizeInBytes { get; }
     }
-
+    [Obsolete]
     [StructLayout(LayoutKind.Explicit)]
     struct CameraData : IUniformBufferStruct
     {
@@ -35,6 +36,7 @@ namespace GameEngine.Resources.Shaders
         }
     }
     
+    [Obsolete]
     [StructLayout(LayoutKind.Explicit)]
     struct PointLightData : IUniformBufferStruct
     {
@@ -65,6 +67,7 @@ namespace GameEngine.Resources.Shaders
         }
     }
 
+    [Obsolete]
     [StructLayout(LayoutKind.Explicit)]
     struct DirectionalLightData : IUniformBufferStruct
     {

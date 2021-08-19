@@ -15,6 +15,7 @@ namespace GameEngine.Resources
      * MESH MANAGEMENT ->       like with sampler2Ds and it would be good to like idk merge that kinda resource
      *                          management. hard to know if this is a good idea.
      */
+     [Obsolete]
     public abstract class Mesh
     {
         public int VertexCount { get; private set; }
@@ -195,7 +196,7 @@ namespace GameEngine.Resources
 
 
     }
-
+    [Obsolete]
     public class Mesh<Vertex> : Mesh where Vertex : struct, IVertex
     {
         protected PrimitiveType RenderType;

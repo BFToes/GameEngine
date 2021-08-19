@@ -3,9 +3,10 @@ using GameEngine.Resources.Shaders;
 using GameEngine.Resources;
 using GameEngine.Entities.Lighting;
 using GameEngine.Entities.Culling;
-
+using System;
 namespace GameEngine.Entities
 {
+    [Obsolete]
     class Light_Dir : Entity, IVolumeLight
     {
         #region inherited Light Setup

@@ -1,10 +1,13 @@
 ﻿using OpenTK.Mathematics;
+using System;
 namespace GameEngine.Resources
 {
+    [Obsolete]
     public interface IVertex
     {
         public int SizeInBytes { get; }
     }
+    [Obsolete]
     public struct Vertex2D : IVertex
     {
         public int SizeInBytes { get => 16; }
@@ -23,6 +26,7 @@ namespace GameEngine.Resources
             this.TextureUV = new Vector2(TextureU, TextureV);
         }
     }
+    [Obsolete]
     public struct Simple2D : IVertex
     {
         public int SizeInBytes { get => 8; }
@@ -38,6 +42,8 @@ namespace GameEngine.Resources
         }
         public override string ToString() =>  $"{Position.X}, {Position.Y}";
     }
+
+    [Obsolete]
     public struct Simple3D : IVertex
     {
         public int SizeInBytes { get => 12; }
@@ -52,6 +58,8 @@ namespace GameEngine.Resources
         }
         public override string ToString() => $"{Position.X}, {Position.Y}, {Position.Z}";
     }
+
+    [Obsolete]
     public struct Vertex3D : IVertex
     {
         public int SizeInBytes { get => 32; }
