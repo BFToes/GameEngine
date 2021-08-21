@@ -2,7 +2,9 @@
 using ECS;
 using OpenTK.Mathematics;
 using System.Collections.Generic;
+using System.Threading;
 using System.Linq;
+
 
 namespace GameEngine
 {
@@ -100,15 +102,15 @@ namespace GameEngine
 
     public struct RenderComponent : IComponent { }
 
-    public struct Component0 : IComponent { public string data { get; set; } }
-    public struct Component1 : IComponent { public string data { get; set; } }
-    public struct Component2 : IComponent { public string data { get; set; } }
-    public struct Component3 : IComponent { public string data { get; set; } }
-    public struct Component4 : IComponent { public string data { get; set; } }
-    public struct Component5 : IComponent { public string data { get; set; } }
-    public struct Component6 : IComponent { public string data { get; set; } }
-    public struct Component7 : IComponent { public string data { get; set; } }
-    public struct Component8 : IComponent { public string data { get; set; } }
+    public struct Component0 : IComponent { public long data { get; set; } }
+    public struct Component1 : IComponent { public long data { get; set; } }
+    public struct Component2 : IComponent { public long data { get; set; } }
+    public struct Component3 : IComponent { public long data { get; set; } }
+    public struct Component4 : IComponent { public long data { get; set; } }
+    public struct Component5 : IComponent { public long data { get; set; } }
+    public struct Component6 : IComponent { public long data { get; set; } }
+    public struct Component7 : IComponent { public long data { get; set; } }
+    public struct Component8 : IComponent { public long data { get; set; } }
 
     public class thing : Entity
     {
@@ -116,11 +118,11 @@ namespace GameEngine
 
         public thing() : base(Archetype.Get(ComponentManager.ID<Component0, Component1, Component2>())) 
         {
-            RemoveComponent<Component2>();
-            AddComponent<TransformComponent>();
-            AddComponent<Component3>();
+            RemoveComponent<Component2>(); // moves component +20000
+            AddComponent<Component3>();    // moves component +20000
 
-            RemoveComponent<TransformComponent>();
+            AddComponent<TransformComponent>(); // moves component +20000
+            //RemoveComponent<TransformComponent>();
         }
     }
 
@@ -129,29 +131,37 @@ namespace GameEngine
         static public void Main(string[] args)
         {
             Random rnd = new Random();
+
+            rnd = rnd.Search();
+
+
             byte[] comps = ComponentManager.ID<Component0, Component1, Component2, Component3>();
             List<Entity> list = new List<Entity>();
             
             Console.WriteLine("begin");
 
             for (int i = 0; i < 2000000; i++)
-            {
-                var Entity = new thing();
-                Entity.SetComponents(comps.Where(x => rnd.Next(256) > 128).OrderBy(x => rnd.Next()).ToArray());
-                list.Add(Entity);
-            }
+                new thing();
 
-            Console.WriteLine("finished constructing from random order");
+            Console.WriteLine("Press Enter");
+            Console.ReadLine();
 
             foreach (thing thing in list)
                 if (!thing.Has<Component1>())
                     thing.AddComponent<Component1>();
 
+            Console.WriteLine("Press Enter");
+            Console.ReadLine();
+
             foreach (thing thing in list)
-                thing.C1.data = rnd.Next().ToString();
+                thing.C1.data = rnd.Next();
+            
+            Console.WriteLine("Press Enter");
+            Console.ReadLine();
 
-            Console.WriteLine("finished adding random data");
 
+
+            Console.WriteLine("Press Enter");
             Console.ReadLine();
         }
     }

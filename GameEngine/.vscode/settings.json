@@ -18,5 +18,6 @@
         "GameEngine.csproj": true,
         "**/*.csproj": true
     },
-    "explorerExclude.backup": null
+    "explorerExclude.backup": null,
+    "debug.onTaskErrors": "showErrors"
 }

@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/bin/Debug/netcoreapp3.1/GameEngine.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
-            "console": "internalConsole",
+            "console": "integratedTerminal",
             "stopAtEntry": false
         },
         {

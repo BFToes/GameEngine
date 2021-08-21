@@ -8,8 +8,4 @@ namespace ECS
     public class ComponentAlreadyExist : Exception { }
     public class MaxComponentLimitExceeded : Exception { }
 
-#if DEBUG
-    public class ArchetypeAlreadyExists : Exception { }
-#endif  
-
 }

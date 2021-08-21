@@ -2,6 +2,10 @@
 using System.Collections.Generic;
 namespace ECS
 {
+    
+
+
+
     public partial class Archetype
     {
         /// <summary>
@@ -17,35 +21,30 @@ namespace ECS
             }
 
             protected List<Archetype> archetypes { get; private set; }
-            private readonly byte[] _anyFilter;
-            private readonly byte[] _allFilter;
-            private readonly byte[] _noneFilter;
+            
+            internal readonly ComponentSet _allFilter; // sorted by all filter
+            internal readonly ComponentSet _anyFilter;
+            internal readonly ComponentSet _noneFilter;
 
-            protected Group(byte[] All, byte[] Any, byte[] None, bool thing_to_differentiate_constructors)
+            protected Group(byte[] allFilter, byte[] anyFilter, byte[] noneFilter)
             {
-                Group.All.Add(this);
-                this._allFilter = All;
-                this._anyFilter = Any;
-                this._noneFilter = None;
+                this._allFilter = new ComponentSet(allFilter);
+                this._anyFilter = new ComponentSet(anyFilter);
+                this._noneFilter = new ComponentSet(noneFilter);
                 this.archetypes = new List<Archetype>();
+
+                int index = All.Search(_allFilter);
+                if (index < 0) index = ~index;
+                All.Insert(index, this);
 
                 // ToDo: SEARCH ARCHETYPES FOR APPLICABLE
                 //      archetypes and groups should be sorted for a binary search. use
                 //      insertion sort because its nearly sorted
             }
-            protected Group(params byte[] All)
+            internal void AddArchetype(Archetype archetype)
             {
-                this._allFilter = All;
-                this.archetypes = new List<Archetype>();
-            }
-            public void AddArchetype(Archetype archetype)
-            {
-                if (archetype.HasAll(_allFilter) &&
-                    archetype.HasAny(_anyFilter) &&
-                    archetype.HasNone(_noneFilter))
-                {
-                    archetypes.Add(archetype);
-                }
+                throw new NotImplementedException();
+                // ToDo: CHECK IF ARCHETYPE APPLICABLE AND ADD TO LIST
 
             }
         }
