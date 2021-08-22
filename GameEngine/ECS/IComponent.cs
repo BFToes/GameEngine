@@ -8,7 +8,7 @@ namespace ECS
     /// A module of data that can attach to entities to provide functionality. 
     /// All data relating to an <see cref="Entity"/> is stored through an <see cref="IComponent"/>.
     /// </summary>
-    public interface IComponent : Archetype.IPoolable { }
+    public interface IComponent : IPoolable { }
     
 
 
@@ -91,127 +91,121 @@ namespace ECS
                 ID = RegisterID<TComponent>();
             }
         }
-    } 
+    }
 
 
 
 
     /// <summary>
-    /// a 256 bit number that represents a unique of <see cref="byte"/>s. 
+    /// a 256 bit number that represents a unique of set of <see cref="IComponent"/>s. 
     /// </summary>
-    internal struct ComponentSet : IComparable<ComponentSet>
+    internal struct ComponentSet : IComparable<ComponentSet>, IEnumerable<byte>
     {
-        // 256 bits = 32 bytes
-        private readonly ulong[] bits;
+        // 256 _bits = 32 bytes
+        private readonly ulong[] _bits;
+        private readonly byte[] _compIDs;
+
+        public int Count => _compIDs.Length;
 
         public ComponentSet(byte[] IDs)
         {
-            // doesnt need to be sorted
-            bits = new ulong[4];
+            _compIDs = IDs;
+            _bits = new ulong[4]; // doesnt need to be sorted
             for (byte j = 0; j < IDs.Length; j++)
-                bits[IDs[j] / 64] = bits[IDs[j] / 64] | (1ul << (IDs[j] % 64));
+                _bits[IDs[j] / 64] = _bits[IDs[j] / 64] | (1ul << (IDs[j] % 64));
         }
-
-        #region Comparison operators
-        public static bool operator >(ComponentSet ID_A, ComponentSet ID_B)
+        private ComponentSet(ulong[] _bits, byte[] compIDs)
         {
-            if (ID_A.bits[3] != ID_B.bits[3]) return ID_A.bits[3] > ID_B.bits[3];
-            if (ID_A.bits[2] != ID_B.bits[2]) return ID_A.bits[2] > ID_B.bits[2];
-            if (ID_A.bits[1] != ID_B.bits[1]) return ID_A.bits[1] > ID_B.bits[1];
-            if (ID_A.bits[0] != ID_B.bits[0]) return ID_A.bits[0] > ID_B.bits[0];
-            return false;
-        }
-        public static bool operator <(ComponentSet ID_A, ComponentSet ID_B)
-        {
-            if (ID_A.bits[3] != ID_B.bits[3]) return ID_A.bits[3] < ID_B.bits[3];
-            if (ID_A.bits[2] != ID_B.bits[2]) return ID_A.bits[2] < ID_B.bits[2];
-            if (ID_A.bits[1] != ID_B.bits[1]) return ID_A.bits[1] < ID_B.bits[1];
-            if (ID_A.bits[0] != ID_B.bits[0]) return ID_A.bits[0] < ID_B.bits[0];
-            return false;
-        }
-        public static bool operator >=(ComponentSet ID_A, ComponentSet ID_B)
-        {
-            if (ID_A.bits[3] != ID_B.bits[3]) return ID_A.bits[3] > ID_B.bits[3];
-            if (ID_A.bits[2] != ID_B.bits[2]) return ID_A.bits[2] > ID_B.bits[2];
-            if (ID_A.bits[1] != ID_B.bits[1]) return ID_A.bits[1] > ID_B.bits[1];
-            if (ID_A.bits[0] != ID_B.bits[0]) return ID_A.bits[0] > ID_B.bits[0];
-            return true;
-        }
-        public static bool operator <=(ComponentSet ID_A, ComponentSet ID_B)
-        {
-            if (ID_A.bits[3] != ID_B.bits[3]) return ID_A.bits[3] < ID_B.bits[3];
-            if (ID_A.bits[2] != ID_B.bits[2]) return ID_A.bits[2] < ID_B.bits[2];
-            if (ID_A.bits[1] != ID_B.bits[1]) return ID_A.bits[1] < ID_B.bits[1];
-            if (ID_A.bits[0] != ID_B.bits[0]) return ID_A.bits[0] < ID_B.bits[0];
-            return true;
-        }
-        public static bool operator ==(ComponentSet ID_A, ComponentSet ID_B)
-        {
-            return (ID_A.bits[0] == ID_B.bits[0]) &&
-                   (ID_A.bits[1] == ID_B.bits[2]) &&
-                   (ID_A.bits[2] == ID_B.bits[2]) &&
-                   (ID_A.bits[3] == ID_B.bits[3]);
-        }
-        public static bool operator !=(ComponentSet ID_A, ComponentSet ID_B)
-        {
-            return (ID_A.bits[0] != ID_B.bits[0]) ||
-                   (ID_A.bits[1] != ID_B.bits[2]) ||
-                   (ID_A.bits[2] != ID_B.bits[2]) ||
-                   (ID_A.bits[3] != ID_B.bits[3]);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return (obj is ComponentSet && (ComponentSet)obj == this);
-        }
-        public override int GetHashCode()
-        {
-            throw new Exception("Cannot Hash SetIDs");
-            // The Set ID could store all 256 different components and in that case
-            // it would need every single bit therefore the 32 bit compression of 
-            // the hash would lose data and therefore.
+            this._bits = _bits;
+            this._compIDs = compIDs;
         }
 
         public int CompareTo(ComponentSet that)
         {
-            if (this.bits[0] != that.bits[0]) return this.bits[0].CompareTo(that.bits[0]);
-            if (this.bits[1] != that.bits[2]) return this.bits[1].CompareTo(that.bits[1]);
-            if (this.bits[2] != that.bits[2]) return this.bits[2].CompareTo(that.bits[2]);
-            return this.bits[3].CompareTo(that.bits[3]);
+            if (this._bits[3] != that._bits[3]) return this._bits[3].CompareTo(that._bits[3]);
+            if (this._bits[2] != that._bits[2]) return this._bits[2].CompareTo(that._bits[2]);
+            if (this._bits[1] != that._bits[1]) return this._bits[1].CompareTo(that._bits[1]);
+            return this._bits[0].CompareTo(that._bits[0]);
+        }
+
+        #region Add/Remove Component
+        /// <summary>
+        /// adds a single component and returns the new Set
+        /// </summary>
+        public ComponentSet Add(byte newComp)
+        {
+            ulong[] newBits = new ulong[4];
+            _bits.CopyTo(newBits, 0);
+            newBits[newComp / 64] = (newBits[newComp / 64]) | (1ul << (newComp % 64));
+
+            byte[] newCompIDs = new byte[_compIDs.Length + 1];
+            _compIDs.CopyTo(newCompIDs, 0);
+            newCompIDs[_compIDs.Length] = newComp;
+
+            return new ComponentSet(newBits, newCompIDs);
+        }
+        /// <summary>
+        /// removes a single component and returns the new Set
+        /// </summary>
+        public ComponentSet Remove(byte oldComp)
+        {
+            ulong[] newBits = new ulong[4];
+            _bits.CopyTo(newBits, 0);
+            newBits[oldComp / 64] = (newBits[oldComp / 64]) & ~(1ul << (oldComp % 64));
+
+            int i = 0;
+            byte[] newCompIDs = new byte[_compIDs.Length - 1];
+            foreach (byte compID in _compIDs)
+                if (compID != oldComp)
+                    newCompIDs[i++] = compID;
+
+            return new ComponentSet(newBits, newCompIDs);
         }
         #endregion
 
         #region Any/All/None Operations
+        /// <summary>
+        /// Checks if this sets overlaps with <paramref name="Mask"/>.
+        /// </summary>
         public bool Overlaps(ComponentSet Mask)
         {
-            // Must have atleast 1 but from Mask
-            return ((Mask.bits[0] & bits[0]) > 0) &&
-                   ((Mask.bits[1] & bits[1]) > 0) &&
-                   ((Mask.bits[2] & bits[2]) > 0) &&
-                   ((Mask.bits[3] & bits[3]) > 0);
+            // Must have atleast 1 bit from Mask
+            return ((Mask._bits[0] & _bits[0]) > 0) ||
+                   ((Mask._bits[1] & _bits[1]) > 0) ||
+                   ((Mask._bits[2] & _bits[2]) > 0) ||
+                   ((Mask._bits[3] & _bits[3]) > 0);
 
         }
-        public bool Contains(ComponentSet Mask)
+        /// <summary>
+        /// Checks if this set is a sub-set of the <paramref name="Mask"/>.
+        /// </summary>
+        public bool IsSubset(ComponentSet Mask)
         {
-            return ((Mask.bits[0] & bits[0]) == Mask.bits[0]) &&
-                   ((Mask.bits[1] & bits[1]) == Mask.bits[1]) &&
-                   ((Mask.bits[2] & bits[2]) == Mask.bits[2]) &&
-                   ((Mask.bits[3] & bits[3]) == Mask.bits[3]);
+            return ((Mask._bits[0] & _bits[0]) == _bits[0]) &&
+                   ((Mask._bits[1] & _bits[1]) == _bits[1]) &&
+                   ((Mask._bits[2] & _bits[2]) == _bits[2]) &&
+                   ((Mask._bits[3] & _bits[3]) == _bits[3]);
         }
-        
-        public bool Contains(byte CompID) 
+        /// <summary>
+        /// Checks if this set contains <paramref name="CompID"/>.
+        /// </summary>
+        public bool Contains(byte CompID)
         {
-            return (bits[CompID / 64] & (1ul << (CompID % 64))) > 0;
+            return (_bits[CompID / 64] & (1ul << (CompID % 64))) > 0;
         }
         #endregion
 
+
         public override string ToString()
         {
-            return $"{BitConverter.ToString(BitConverter.GetBytes(bits[0]))}   " +
-                   $"{BitConverter.ToString(BitConverter.GetBytes(bits[1]))}   " +
-                   $"{BitConverter.ToString(BitConverter.GetBytes(bits[2]))}   " +
-                   $"{BitConverter.ToString(BitConverter.GetBytes(bits[3]))}";
+            return $"{BitConverter.ToString(BitConverter.GetBytes(_bits[0]))}   " +
+                   $"{BitConverter.ToString(BitConverter.GetBytes(_bits[1]))}   " +
+                   $"{BitConverter.ToString(BitConverter.GetBytes(_bits[2]))}   " +
+                   $"{BitConverter.ToString(BitConverter.GetBytes(_bits[3]))}";
         }
+
+        public IEnumerator<byte> GetEnumerator() => ((IEnumerable<byte>)_compIDs).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _compIDs.GetEnumerator();
     }
 
 
@@ -220,38 +214,45 @@ namespace ECS
     public static class ListExtensions 
     {
         internal static int Search(this List<Archetype> list, ComponentSet compSet)
-        {        
+        {
             int index = 0;
             int lower = 0;
             int upper = list.Count - 1;
 
-            while (lower < upper)
+            while (lower <= upper)
             {
-                index = (upper + lower + 1) / 2;
-                
-                int diff = list[index]._compSet.CompareTo(compSet);
+                index = (upper + lower) / 2;
+
+                int diff = list[index].compSet.CompareTo(compSet);
                 if (diff > 0) upper = index - 1;
                 else if (diff < 0) lower = index + 1;
                 else return index;
             }
-            return ~index;
+            if (index == upper) index += 1;
+            return ~index; 
         }
-        internal static int Search(this List<Archetype.Group> list, ComponentSet compSet)
-        {        
+        internal static int Search(this List<Group> list, ComponentSet compSet)
+        {
             int index = 0;
             int lower = 0;
             int upper = list.Count - 1;
 
-            while (lower < upper)
+            while (lower <= upper)
             {
-                index = (upper + lower + 1) / 2;
-                
+                index = (upper + lower) / 2;
+
                 int diff = list[index]._allFilter.CompareTo(compSet);
                 if (diff > 0) upper = index - 1;
                 else if (diff < 0) lower = index + 1;
                 else return index;
             }
+            if (index == list.Count - 1) index += 1;
             return ~index;
         }
+
+        // TODO: First and Last Search
+        //      current only first search but if i can get first and last I can more easily find applicable
+        //      Archetypes for the groups
+    
     }
 }

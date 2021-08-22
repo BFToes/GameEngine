@@ -114,15 +114,10 @@ namespace GameEngine
 
     public class thing : Entity
     {
-        public ref Component1 C1 => ref GetComponent<Component1>();
+        public ref Component1 C1 => ref Get<Component1>();
 
-        public thing() : base(Archetype.Get(ComponentManager.ID<Component0, Component1, Component2>())) 
+        public thing() : base(ComponentManager.ID<Component0, Component1, Component2>()) 
         {
-            RemoveComponent<Component2>(); // moves component +20000
-            AddComponent<Component3>();    // moves component +20000
-
-            AddComponent<TransformComponent>(); // moves component +20000
-            //RemoveComponent<TransformComponent>();
         }
     }
 
@@ -130,36 +125,20 @@ namespace GameEngine
     {
         static public void Main(string[] args)
         {
-            Random rnd = new Random();
-
-            rnd = rnd.Search();
-
-
-            byte[] comps = ComponentManager.ID<Component0, Component1, Component2, Component3>();
             List<Entity> list = new List<Entity>();
             
             Console.WriteLine("begin");
 
             for (int i = 0; i < 2000000; i++)
-                new thing();
+                list.Add(new thing());
 
+            
             Console.WriteLine("Press Enter");
             Console.ReadLine();
 
             foreach (thing thing in list)
                 if (!thing.Has<Component1>())
                     thing.AddComponent<Component1>();
-
-            Console.WriteLine("Press Enter");
-            Console.ReadLine();
-
-            foreach (thing thing in list)
-                thing.C1.data = rnd.Next();
-            
-            Console.WriteLine("Press Enter");
-            Console.ReadLine();
-
-
 
             Console.WriteLine("Press Enter");
             Console.ReadLine();
