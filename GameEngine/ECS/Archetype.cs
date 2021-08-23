@@ -102,15 +102,14 @@ namespace ECS
         }
 
         /// <summary>
-        /// moves the <see cref="Entity"/> in this <see cref="Archetype"/> 
-        /// to the given <paramref name="newArchetype"/>. 
+        /// moves the <see cref="Entity"/> in this <see cref="Archetype"/> to the given <paramref name="newArchetype"/>. 
         /// Copies <see cref="IComponent"/>s over. 
         /// Does not initialize any missing <see cref="IComponent"/>s. 
         /// </summary>
         public void MoveEntity(Entity entity, Archetype newArchetype)
         {
             if (entities[entity.poolIndex] != entity) throw new EntityNotFound();
-            if (entity.archetype == newArchetype) throw new EntityAlreadyExist();
+            if (this == newArchetype) return; // cant move entity to archetype it already belongs to
 
             // increase size of new archetype if necessary
             if (newArchetype.Length == newArchetype._arraySize)
@@ -206,6 +205,6 @@ namespace ECS
         #endregion
 
         public int CompareTo(ComponentSet other) => compSet.CompareTo(other);
-        public override string ToString() => compSet.ToHexString();
+        public override string ToString() => compSet.ToBinString();
     }
 }
