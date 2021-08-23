@@ -9,9 +9,6 @@ namespace ECS
     /// All data relating to an <see cref="Entity"/> is stored through an <see cref="IComponent"/>.
     /// </summary>
     public interface IComponent : IPoolable { }
-    
-
-
 
     /// <summary>
     /// Assigns each <see cref="IComponent"/> an ID used for early binding initiation
@@ -25,7 +22,7 @@ namespace ECS
         private static byte RegisterID<TComponent>() where TComponent : IComponent, new()
         {
             if (_count == byte.MaxValue)
-                throw new Exception();
+                throw new MaxComponentLimitExceeded();
 
             _types[_count] = typeof(TComponent);
             _initiators[_count] = new Initiator<TComponent>();
@@ -70,6 +67,7 @@ namespace ECS
             };
         }
 
+        internal static Type GetType(byte ID) => _types[ID];
         internal static IComponent InitComponent(byte ID) => _initiators[ID].CreateComponent();
         internal static Archetype.IPool InitPool(byte ID) => _initiators[ID].CreatePool();
         
@@ -93,20 +91,22 @@ namespace ECS
         }
     }
 
-
-
-
     /// <summary>
     /// a 256 bit number that represents a unique of set of <see cref="IComponent"/>s. 
     /// </summary>
-    internal struct ComponentSet : IComparable<ComponentSet>, IEnumerable<byte>
+    public struct ComponentSet : IEnumerable<byte>, IComparable<ComponentSet>
     {
-        // 256 _bits = 32 bytes
-        private readonly ulong[] _bits;
-        private readonly byte[] _compIDs;
+        
+        private readonly ulong[] _bits; // 256 bits = 32 bytes
+        private readonly byte[] _compIDs; // 8 * 255 bits = 255bytes
 
         public int Count => _compIDs.Length;
 
+
+        /// <summary>
+        /// constructs from byte IDs. Use <see cref="ComponentManager.ID{T1, T2, T3, T4}"/>.
+        /// </summary>
+        /// <param name="IDs"></param>
         public ComponentSet(byte[] IDs)
         {
             _compIDs = IDs;
@@ -120,17 +120,18 @@ namespace ECS
             this._compIDs = compIDs;
         }
 
-        public int CompareTo(ComponentSet that)
+        public int CompareTo(ComponentSet other)
         {
-            if (this._bits[3] != that._bits[3]) return this._bits[3].CompareTo(that._bits[3]);
-            if (this._bits[2] != that._bits[2]) return this._bits[2].CompareTo(that._bits[2]);
-            if (this._bits[1] != that._bits[1]) return this._bits[1].CompareTo(that._bits[1]);
-            return this._bits[0].CompareTo(that._bits[0]);
+            if (this._bits[3] != other._bits[3]) return this._bits[3].CompareTo(other._bits[3]);
+            if (this._bits[2] != other._bits[2]) return this._bits[2].CompareTo(other._bits[2]);
+            if (this._bits[1] != other._bits[1]) return this._bits[1].CompareTo(other._bits[1]);
+            return this._bits[0].CompareTo(other._bits[0]);
         }
+
 
         #region Add/Remove Component
         /// <summary>
-        /// adds a single component and returns the new Set
+        /// adds a single <see cref="IComponent"/> ID and returns the new <see cref="ComponentSet"/>.
         /// </summary>
         public ComponentSet Add(byte newComp)
         {
@@ -145,7 +146,7 @@ namespace ECS
             return new ComponentSet(newBits, newCompIDs);
         }
         /// <summary>
-        /// removes a single component and returns the new Set
+        /// removes a single <see cref="IComponent"/> ID and returns the new <see cref="ComponentSet"/>.
         /// </summary>
         public ComponentSet Remove(byte oldComp)
         {
@@ -160,7 +161,7 @@ namespace ECS
                     newCompIDs[i++] = compID;
 
             return new ComponentSet(newBits, newCompIDs);
-        }
+        }       
         #endregion
 
         #region Any/All/None Operations
@@ -170,10 +171,8 @@ namespace ECS
         public bool Overlaps(ComponentSet Mask)
         {
             // Must have atleast 1 bit from Mask
-            return ((Mask._bits[0] & _bits[0]) > 0) ||
-                   ((Mask._bits[1] & _bits[1]) > 0) ||
-                   ((Mask._bits[2] & _bits[2]) > 0) ||
-                   ((Mask._bits[3] & _bits[3]) > 0);
+            return ((Mask._bits[0] & _bits[0]) > 0) || ((Mask._bits[1] & _bits[1]) > 0) || 
+                   ((Mask._bits[2] & _bits[2]) > 0) || ((Mask._bits[3] & _bits[3]) > 0);
 
         }
         /// <summary>
@@ -181,27 +180,26 @@ namespace ECS
         /// </summary>
         public bool IsSubset(ComponentSet Mask)
         {
-            return ((Mask._bits[0] & _bits[0]) == _bits[0]) &&
-                   ((Mask._bits[1] & _bits[1]) == _bits[1]) &&
-                   ((Mask._bits[2] & _bits[2]) == _bits[2]) &&
-                   ((Mask._bits[3] & _bits[3]) == _bits[3]);
+            return ((Mask._bits[0] & _bits[0]) == _bits[0]) && ((Mask._bits[1] & _bits[1]) == _bits[1]) &&
+                   ((Mask._bits[2] & _bits[2]) == _bits[2]) && ((Mask._bits[3] & _bits[3]) == _bits[3]);
         }
         /// <summary>
-        /// Checks if this set contains <paramref name="CompID"/>.
+        /// Checks if this set contains <paramref name="Component_ID"/>.
         /// </summary>
-        public bool Contains(byte CompID)
+        public bool Contains(byte CompID) 
         {
             return (_bits[CompID / 64] & (1ul << (CompID % 64))) > 0;
         }
         #endregion
 
-
         public override string ToString()
         {
-            return $"{BitConverter.ToString(BitConverter.GetBytes(_bits[0]))}   " +
-                   $"{BitConverter.ToString(BitConverter.GetBytes(_bits[1]))}   " +
-                   $"{BitConverter.ToString(BitConverter.GetBytes(_bits[2]))}   " +
-                   $"{BitConverter.ToString(BitConverter.GetBytes(_bits[3]))}";
+            Array.Sort(_compIDs);
+            string str = $"{ComponentManager.GetType(_compIDs[0]).Name}";
+
+            for (int i = 1; i < _compIDs.Length; i++)
+                str += $", {ComponentManager.GetType(_compIDs[i]).Name}";
+            return str;
         }
 
         public IEnumerator<byte> GetEnumerator() => ((IEnumerable<byte>)_compIDs).GetEnumerator();
@@ -211,9 +209,17 @@ namespace ECS
 
 
 
-    public static class ListExtensions 
+    public static partial class ListExtensions
     {
-        internal static int Search(this List<Archetype> list, ComponentSet compSet)
+        /// <summary>
+        /// returns an index of an element which equals <paramref name="value"/>.
+        /// </summary>
+        /// <returns>
+        /// An index of the <paramref name="value"/> in the <paramref name="list"/>. 
+        /// If an index is not found, returns a bitwise complement index into which the value 
+        /// should be inserted.
+        /// </returns>
+        public static int BinarySearch<T>(this List<T> list, ComponentSet value) where T : IComparable<ComponentSet>
         {
             int index = 0;
             int lower = 0;
@@ -223,16 +229,25 @@ namespace ECS
             {
                 index = (upper + lower) / 2;
 
-                int diff = list[index].compSet.CompareTo(compSet);
+                int diff = list[index].CompareTo(value);
                 if (diff > 0) upper = index - 1;
                 else if (diff < 0) lower = index + 1;
                 else return index;
             }
             if (index == upper) index += 1;
-            return ~index; 
+            return ~index;
         }
-        internal static int Search(this List<Group> list, ComponentSet compSet)
+        /// <summary>
+        /// returns an the first index of an element which equals <paramref name="value"/>.
+        /// </summary>
+        /// <returns>
+        /// The first index of the <paramref name="value"/> in the <paramref name="list"/>. 
+        /// If an index is not found, returns a bitwise complement index into which the value 
+        /// should be inserted.
+        /// </returns>
+        public static int BinaryFirst<T>(this List<T> list, ComponentSet value) where T :  IComparable<ComponentSet>
         {
+            int result = -1;
             int index = 0;
             int lower = 0;
             int upper = list.Count - 1;
@@ -241,18 +256,58 @@ namespace ECS
             {
                 index = (upper + lower) / 2;
 
-                int diff = list[index]._allFilter.CompareTo(compSet);
+                int diff = list[index].CompareTo(value);
                 if (diff > 0) upper = index - 1;
                 else if (diff < 0) lower = index + 1;
-                else return index;
+                else
+                {
+                    result = index;
+                    upper = index - 1;
+                }
             }
-            if (index == list.Count - 1) index += 1;
-            return ~index;
-        }
+            if (result == -1)
+            {
+                if (index == upper) index += 1;
+                return ~index;
 
-        // TODO: First and Last Search
-        //      current only first search but if i can get first and last I can more easily find applicable
-        //      Archetypes for the groups
-    
+            }
+            return result;
+           
+        }
+        /// <summary>
+        /// returns an the last index of an element which equals <paramref name="value"/>.
+        /// </summary>
+        /// <returns>
+        /// The first index of the <paramref name="value"/> in the <paramref name="list"/>. 
+        /// If an index is not found, returns a bitwise complement index into which the value 
+        /// should be inserted.
+        /// </returns>
+        public static int BinaryLast<T>(this List<T> list, ComponentSet value) where T :  IComparable<ComponentSet>
+        {
+            int result = -1;
+            int index = 0;
+            int lower = 0;
+            int upper = list.Count - 1;
+
+            while (lower <= upper)
+            {
+                index = (upper + lower) / 2;
+
+                int diff = list[index].CompareTo(value);
+                if (diff > 0) upper = index - 1;
+                else if (diff < 0) lower = index + 1;
+                else
+                {
+                    result = index;
+                    lower = index + 1;
+                }
+            }
+            if (result == -1)
+            {
+                if (index == upper) index += 1;
+                return ~index;
+            }
+            return result;
+        }
     }
 }

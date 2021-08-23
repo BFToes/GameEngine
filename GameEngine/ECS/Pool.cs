@@ -9,7 +9,7 @@ namespace ECS
     /// </summary>
     public interface IPoolable { }
 
-    internal partial class Archetype
+    public partial class Archetype
     {
         /// <summary>
         /// A resizable contiguous collection used in <see cref="Archetype"/>. 

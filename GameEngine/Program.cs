@@ -100,8 +100,6 @@ namespace GameEngine
         
     }
 
-    public struct RenderComponent : IComponent { }
-
     public struct Component0 : IComponent { public long data { get; set; } }
     public struct Component1 : IComponent { public long data { get; set; } }
     public struct Component2 : IComponent { public long data { get; set; } }
@@ -118,6 +116,8 @@ namespace GameEngine
 
         public thing() : base(ComponentManager.ID<Component0, Component1, Component2>()) 
         {
+            AddComponent<Component3>();
+            RemoveComponent<Component2>();
         }
     }
 
@@ -125,6 +125,7 @@ namespace GameEngine
     {
         static public void Main(string[] args)
         {
+            Random rng = new Random();
             List<Entity> list = new List<Entity>();
             
             Console.WriteLine("begin");
