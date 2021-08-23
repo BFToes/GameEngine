@@ -100,24 +100,24 @@ namespace GameEngine
         
     }
 
-    public struct Component0 : IComponent { public long data { get; set; } }
-    public struct Component1 : IComponent { public long data { get; set; } }
-    public struct Component2 : IComponent { public long data { get; set; } }
-    public struct Component3 : IComponent { public long data { get; set; } }
-    public struct Component4 : IComponent { public long data { get; set; } }
-    public struct Component5 : IComponent { public long data { get; set; } }
-    public struct Component6 : IComponent { public long data { get; set; } }
-    public struct Component7 : IComponent { public long data { get; set; } }
-    public struct Component8 : IComponent { public long data { get; set; } }
+    public struct C0 : IComponent { public long data { get; set; } }
+    public struct C1 : IComponent { public long data { get; set; } }
+    public struct C2 : IComponent { public long data { get; set; } }
+    public struct C3 : IComponent { public long data { get; set; } }
+    public struct C4 : IComponent { public long data { get; set; } }
+    public struct C5 : IComponent { public long data { get; set; } }
+    public struct C6 : IComponent { public long data { get; set; } }
+    public struct C7 : IComponent { public long data { get; set; } }
+    public struct C8 : IComponent { public long data { get; set; } }
 
     public class thing : Entity
     {
-        public ref Component1 C1 => ref Get<Component1>();
+        public ref C1 C1 => ref GetComponent<C1>();
 
-        public thing() : base(ComponentManager.ID<Component0, Component1, Component2>()) 
+        public thing() : base(ComponentManager.ID<C0, C1, C2>()) 
         {
-            AddComponent<Component3>();
-            RemoveComponent<Component2>();
+            //AddComponent<C3>();
+            //RemoveComponent<C2>();
         }
     }
 
@@ -125,24 +125,43 @@ namespace GameEngine
     {
         static public void Main(string[] args)
         {
+            ComponentManager.ID<C0>();
+            ComponentManager.ID<C1>();
+            ComponentManager.ID<C2>();
+            ComponentManager.ID<C3>();
+            ComponentManager.ID<C4>();
+            ComponentManager.ID<C5>();
+            ComponentManager.ID<C6>();
+            ComponentManager.ID<C7>();
+            ComponentManager.ID<C8>();
+
+
+
             Random rng = new Random();
             List<Entity> list = new List<Entity>();
             
             Console.WriteLine("begin");
 
-            for (int i = 0; i < 2000000; i++)
+            for (int i = 0; i < 2000; i++)
                 list.Add(new thing());
 
-            
-            Console.WriteLine("Press Enter");
-            Console.ReadLine();
+            Console.WriteLine("1");
 
             foreach (thing thing in list)
-                if (!thing.Has<Component1>())
-                    thing.AddComponent<Component1>();
+                thing.ApplyComponents(new ComponentSet(new byte[] { (byte)rng.Next(0, 2), (byte)rng.Next(2, 4), (byte)rng.Next(4, 6), (byte)rng.Next(6, 8) }));
 
-            Console.WriteLine("Press Enter");
-            Console.ReadLine();
+            Console.WriteLine("2");
+
+            var search = Archetype.SearchAll(new Archetype.Query(new byte[] {1, 3}, new byte[] {}, new byte[] {4}));
+
+
+            Console.WriteLine("3");
+
+            foreach (thing thing in list)
+                if (!thing.HasComponent<C1>())
+                    thing.AddComponent<C1>();
+
+            
         }
     }
 }

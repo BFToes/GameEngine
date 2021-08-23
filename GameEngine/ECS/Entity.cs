@@ -56,22 +56,27 @@ namespace ECS
         }
 
 
+
+        public void ApplyComponents(ComponentSet Set)
+        {
+            archetype.MoveEntity(this, Archetype.FindOrCreate(Set));
+        }
+
+
         /// <summary>
         /// returns true if <see cref="Entity"/> contains <typeparamref name="TComponent"/>.
         /// </summary>
         /// <typeparam name="TComponent"></typeparam>
         /// <returns></returns>
-        public bool Has<TComponent>() where TComponent : IComponent, new()
+        public bool HasComponent<TComponent>() where TComponent : IComponent, new()
         {
             return archetype.compSet.Contains(ComponentManager.ID<TComponent>());
         }
 
-
-
         /// <summary>
         /// return <typeparamref name="TComponent"/> by reference. Use in property.
         /// </summary>
-        public ref TComponent Get<TComponent>() where TComponent : IComponent, new()
+        public ref TComponent GetComponent<TComponent>() where TComponent : IComponent, new()
         {
             return ref (archetype.components[ComponentManager.ID<TComponent>()] as Archetype.Pool<TComponent>)[poolIndex];
         }

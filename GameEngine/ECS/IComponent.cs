@@ -21,8 +21,7 @@ namespace ECS
         
         private static byte RegisterID<TComponent>() where TComponent : IComponent, new()
         {
-            if (_count == byte.MaxValue)
-                throw new MaxComponentLimitExceeded();
+            if (_count == byte.MaxValue) throw new MaxComponentLimitExceeded();
 
             _types[_count] = typeof(TComponent);
             _initiators[_count] = new Initiator<TComponent>();
@@ -102,7 +101,7 @@ namespace ECS
 
         public int Count => _compIDs.Length;
 
-
+        #region Constructors
         /// <summary>
         /// constructs from byte IDs. Use <see cref="ComponentManager.ID{T1, T2, T3, T4}"/>.
         /// </summary>
@@ -112,23 +111,34 @@ namespace ECS
             _compIDs = IDs;
             _bits = new ulong[4]; // doesnt need to be sorted
             for (byte j = 0; j < IDs.Length; j++)
-                _bits[IDs[j] / 64] = _bits[IDs[j] / 64] | (1ul << (IDs[j] % 64));
+                _bits[IDs[j] / 64] |= (1ul << (IDs[j] % 64));
         }
+        // private constructor for Adding and removing
         private ComponentSet(ulong[] _bits, byte[] compIDs)
         {
             this._bits = _bits;
             this._compIDs = compIDs;
         }
+        #endregion
 
         public int CompareTo(ComponentSet other)
         {
+            // long is little endian
             if (this._bits[3] != other._bits[3]) return this._bits[3].CompareTo(other._bits[3]);
             if (this._bits[2] != other._bits[2]) return this._bits[2].CompareTo(other._bits[2]);
             if (this._bits[1] != other._bits[1]) return this._bits[1].CompareTo(other._bits[1]);
-            return this._bits[0].CompareTo(other._bits[0]);
+            return this._bits[0].CompareTo(other._bits[0]); // lowest 
         }
 
+        /// <summary>
+        /// Checks if this set contains <paramref name="Component_ID"/>.
+        /// </summary>
+        public bool Contains(byte CompID) 
+        {
+            return (_bits[CompID / 64] & (1ul << (CompID % 64))) > 0;
+        }
 
+        
         #region Add/Remove Component
         /// <summary>
         /// adds a single <see cref="IComponent"/> ID and returns the new <see cref="ComponentSet"/>.
@@ -137,7 +147,7 @@ namespace ECS
         {
             ulong[] newBits = new ulong[4];
             _bits.CopyTo(newBits, 0);
-            newBits[newComp / 64] = (newBits[newComp / 64]) | (1ul << (newComp % 64));
+            (newBits[newComp / 64]) |= (1ul << (newComp % 64));
 
             byte[] newCompIDs = new byte[_compIDs.Length + 1];
             _compIDs.CopyTo(newCompIDs, 0);
@@ -145,6 +155,8 @@ namespace ECS
 
             return new ComponentSet(newBits, newCompIDs);
         }
+
+
         /// <summary>
         /// removes a single <see cref="IComponent"/> ID and returns the new <see cref="ComponentSet"/>.
         /// </summary>
@@ -152,7 +164,7 @@ namespace ECS
         {
             ulong[] newBits = new ulong[4];
             _bits.CopyTo(newBits, 0);
-            newBits[oldComp / 64] = (newBits[oldComp / 64]) & ~(1ul << (oldComp % 64));
+            (newBits[oldComp / 64]) &= ~(1ul << (oldComp % 64));
 
             int i = 0;
             byte[] newCompIDs = new byte[_compIDs.Length - 1];
@@ -163,56 +175,54 @@ namespace ECS
             return new ComponentSet(newBits, newCompIDs);
         }       
         #endregion
+        
+        public IEnumerator<byte> GetEnumerator() => ((IEnumerable<byte>)_compIDs).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => _compIDs.GetEnumerator();
 
-        #region Any/All/None Operations
-        /// <summary>
-        /// Checks if this sets overlaps with <paramref name="Mask"/>.
-        /// </summary>
-        public bool Overlaps(ComponentSet Mask)
+        public string ToHexString()
         {
-            // Must have atleast 1 bit from Mask
-            return ((Mask._bits[0] & _bits[0]) > 0) || ((Mask._bits[1] & _bits[1]) > 0) || 
-                   ((Mask._bits[2] & _bits[2]) > 0) || ((Mask._bits[3] & _bits[3]) > 0);
+            string str = _bits[0].ToString().PadRight(3, ' ') + " : ";
 
-        }
-        /// <summary>
-        /// Checks if this set is a sub-set of the <paramref name="Mask"/>.
-        /// </summary>
-        public bool IsSubset(ComponentSet Mask)
-        {
-            return ((Mask._bits[0] & _bits[0]) == _bits[0]) && ((Mask._bits[1] & _bits[1]) == _bits[1]) &&
-                   ((Mask._bits[2] & _bits[2]) == _bits[2]) && ((Mask._bits[3] & _bits[3]) == _bits[3]);
-        }
-        /// <summary>
-        /// Checks if this set contains <paramref name="Component_ID"/>.
-        /// </summary>
-        public bool Contains(byte CompID) 
-        {
-            return (_bits[CompID / 64] & (1ul << (CompID % 64))) > 0;
-        }
-        #endregion
+            for (int i = 3; i >= 0; i--)
+            {
+                byte[] bytes = BitConverter.GetBytes(_bits[i]); // little end is stored first
+                for (int j = 7; j >= 0; j--)
+                    str += Convert.ToString(bytes[j], 16).PadLeft(2, '0');
+                
 
-        public override string ToString()
-        {
-            Array.Sort(_compIDs);
-            string str = $"{ComponentManager.GetType(_compIDs[0]).Name}";
-
-            for (int i = 1; i < _compIDs.Length; i++)
-                str += $", {ComponentManager.GetType(_compIDs[i]).Name}";
+            }
             return str;
         }
 
-        public IEnumerator<byte> GetEnumerator() => ((IEnumerable<byte>)_compIDs).GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => _compIDs.GetEnumerator();
+        public string ToBinString()
+        {
+            /* 
+            // Whole binary string not very useful
+            string str = _bits[0].ToString().PadRight(3, ' ') + " : ";
+
+            for (int i = 3; i >= 0; i--)
+            {
+                byte[] bytes = BitConverter.GetBytes(_bits[i]); // little end is stored first
+                for (int j = 7; j >= 0; j--)
+                    str += Convert.ToString(bytes[j], 2).PadLeft(8, '0');
+                
+
+            }
+            return str;
+            */
+            // makes big endian??? I want little endian
+            string str = _bits[0].ToString().PadRight(3, ' ') + " : ";
+            str += Convert.ToString(BitConverter.GetBytes(_bits[0])[0], 2).PadLeft(8, '0');
+
+            return str;
+        }
     }
-
-
 
 
     public static partial class ListExtensions
     {
         /// <summary>
-        /// returns an index of an element which equals <paramref name="value"/>.
+        /// Binary search to find an index which equals <paramref name="value"/>.
         /// </summary>
         /// <returns>
         /// An index of the <paramref name="value"/> in the <paramref name="list"/>. 
@@ -237,8 +247,9 @@ namespace ECS
             if (index == upper) index += 1;
             return ~index;
         }
+        
         /// <summary>
-        /// returns an the first index of an element which equals <paramref name="value"/>.
+        /// Binary search to find the first index which equals <paramref name="value"/>.
         /// </summary>
         /// <returns>
         /// The first index of the <paramref name="value"/> in the <paramref name="list"/>. 
@@ -274,8 +285,9 @@ namespace ECS
             return result;
            
         }
+        
         /// <summary>
-        /// returns an the last index of an element which equals <paramref name="value"/>.
+        /// Binary search to find the last index which equals <paramref name="value"/>.
         /// </summary>
         /// <returns>
         /// The first index of the <paramref name="value"/> in the <paramref name="list"/>. 
@@ -306,6 +318,37 @@ namespace ECS
             {
                 if (index == upper) index += 1;
                 return ~index;
+            }
+            return result;
+        }
+    
+    
+        /// <summary>
+        /// Assuming the list is sorted for the bit, 
+        /// finds the first index the value with an <paramref name="n"/>th bit. 
+        /// If no bit is found returns -1.
+        /// </summary>
+        internal static int FindFirstWithBit(this List<Archetype> list, byte n, int start, int count)
+        {
+            int result = -1;
+            int index = 0;
+            int lower = start;
+            int upper = start + count - 1;
+
+            while (lower <= upper)
+            {
+                index = (upper + lower) / 2;
+               
+                if (list[index].compSet.Contains(n))
+                {
+                    result = index;
+                    upper = index - 1;
+                }
+                else
+                {
+                    lower = index + 1;
+                }
+
             }
             return result;
         }

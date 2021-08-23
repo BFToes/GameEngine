@@ -110,7 +110,7 @@ namespace ECS
         public void MoveEntity(Entity entity, Archetype newArchetype)
         {
             if (entities[entity.poolIndex] != entity) throw new EntityNotFound();
-
+            if (entity.archetype == newArchetype) throw new EntityAlreadyExist();
 
             // increase size of new archetype if necessary
             if (newArchetype.Length == newArchetype._arraySize)
@@ -167,7 +167,7 @@ namespace ECS
         /// </summary>
         public static Archetype FindOrCreate(ComponentSet compSet)
         {
-            int index = All.BinaryFirst(compSet);
+            int index = All.BinarySearch(compSet);
             if (index >= 0) return All[index];
 
             Archetype newArchetype = new Archetype(compSet);
@@ -206,6 +206,6 @@ namespace ECS
         #endregion
 
         public int CompareTo(ComponentSet other) => compSet.CompareTo(other);
-        public override string ToString() => compSet.ToString();
+        public override string ToString() => compSet.ToHexString();
     }
 }
