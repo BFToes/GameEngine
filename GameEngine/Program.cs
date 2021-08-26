@@ -121,6 +121,28 @@ namespace GameEngine
         }
     }
 
+    public class system :  Behaviour
+    {
+        public system() : base(new byte[] { 1, 4 }, new byte[] { }, new byte[] { })
+        { }
+
+        public void Count()
+        {
+            int count = 0;
+            foreach (Archetype A in archetypes)
+            {
+                Archetype.Pool<Entity> E = (Archetype.Pool<Entity>)A.entities;
+                Archetype.Pool<C1> C1s = (Archetype.Pool<C1>)A.components[1];
+                Archetype.Pool<C4> C4s = (Archetype.Pool<C4>)A.components[4];
+
+                for (int i = 0; i < A.Length; i++)
+                {
+                    Console.WriteLine($"{count += 1}  {E[i]}   {C1s[i].data}   {C4s[i].data}");
+                }
+            }
+        }
+    }
+
     class Program
     {
         static public void Main(string[] args)
@@ -142,6 +164,8 @@ namespace GameEngine
             
             Console.WriteLine("begin");
 
+            var test = new system();
+            
             for (int i = 0; i < 2000; i++)
                 list.Add(new thing());
 
@@ -152,16 +176,22 @@ namespace GameEngine
 
             Console.WriteLine("2");
 
-            var search = Archetype.SearchAll(new Archetype.Query(new byte[] {1, 3}, new byte[] {}, new byte[] {4}));
-
-
-            Console.WriteLine("3");
-
             foreach (thing thing in list)
                 if (!thing.HasComponent<C1>())
                     thing.AddComponent<C1>();
 
-            
+
+            Console.WriteLine("3");
+
+            var search = Archetype.FindApplicable(new Query(new byte[] { 1, 4 }, new byte[] { }, new byte[] { })).ToList();
+
+            Console.WriteLine("4");
+
+            test.Count();
+        
+            Console.WriteLine("5");
+
+            Console.ReadLine();
         }
     }
 }

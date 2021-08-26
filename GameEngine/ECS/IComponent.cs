@@ -92,101 +92,99 @@ namespace ECS
     }
 
     /// <summary>
-    /// a 256 bit number that represents a unique of set of <see cref="IComponent"/>s. 
+    /// A 256 bit number that represents a unique of set of <see cref="IComponent"/>s. 
     /// </summary>
-    public struct ComponentSet : IEnumerable<byte>, IComparable<ComponentSet>
+    /// <remarks>
+    /// ComponentSet also stores an array of bytes which have been added to this Set.
+    /// This Array is not regulated, so repeat values may exist and affect performance.
+    ///<remarks/>
+    public struct ComponentSet : IEnumerable<byte>
     {
         
-        private readonly ulong[] _bits; // 256 bits = 32 bytes
-        private readonly byte[] _compIDs; // 8 * 255 bits = 255bytes
+        internal readonly ulong[] bits; // 256 bits = 32 bytes
+        internal readonly byte[] compIDs; // 8 * 255 bits = 255bytes
 
-        public int Count => _compIDs.Length;
+        public int Count => compIDs.Length;
 
-        #region Constructors
         /// <summary>
         /// constructs from byte IDs. Use <see cref="ComponentManager.ID{T1, T2, T3, T4}"/>.
         /// </summary>
         /// <param name="IDs"></param>
-        public ComponentSet(byte[] IDs)
+        internal ComponentSet(byte[] IDs)
         {
-            _compIDs = IDs;
-            _bits = new ulong[4]; // doesnt need to be sorted
+            compIDs = IDs;
+            bits = new ulong[4]; // doesnt need to be sorted
             for (byte j = 0; j < IDs.Length; j++)
-                _bits[IDs[j] / 64] |= (1ul << (IDs[j] % 64));
+                bits[IDs[j] / 64] |= (1ul << (IDs[j] % 64)); // ORs each bit
         }
         // private constructor for Adding and removing
-        private ComponentSet(ulong[] _bits, byte[] compIDs)
+        private ComponentSet(ulong[] bits, byte[] compIDs)
         {
-            this._bits = _bits;
-            this._compIDs = compIDs;
+            this.bits = bits;
+            this.compIDs = compIDs;
         }
-        #endregion
 
         public int CompareTo(ComponentSet other)
         {
             // long is little endian
-            if (this._bits[3] != other._bits[3]) return this._bits[3].CompareTo(other._bits[3]);
-            if (this._bits[2] != other._bits[2]) return this._bits[2].CompareTo(other._bits[2]);
-            if (this._bits[1] != other._bits[1]) return this._bits[1].CompareTo(other._bits[1]);
-            return this._bits[0].CompareTo(other._bits[0]); // lowest 
+            if (this.bits[3] != other.bits[3]) return this.bits[3].CompareTo(other.bits[3]);
+            if (this.bits[2] != other.bits[2]) return this.bits[2].CompareTo(other.bits[2]);
+            if (this.bits[1] != other.bits[1]) return this.bits[1].CompareTo(other.bits[1]);
+            return this.bits[0].CompareTo(other.bits[0]); // lowest 
         }
-
+        
         /// <summary>
         /// Checks if this set contains <paramref name="Component_ID"/>.
         /// </summary>
         public bool Contains(byte CompID) 
         {
-            return (_bits[CompID / 64] & (1ul << (CompID % 64))) > 0;
+            return (bits[CompID / 64] & (1ul << (CompID % 64))) > 0;
         }
-
         
-        #region Add/Remove Component
         /// <summary>
         /// adds a single <see cref="IComponent"/> ID and returns the new <see cref="ComponentSet"/>.
         /// </summary>
-        public ComponentSet Add(byte newComp)
+        internal ComponentSet Add(byte newComp)
         {
             ulong[] newBits = new ulong[4];
-            _bits.CopyTo(newBits, 0);
+            bits.CopyTo(newBits, 0);
             (newBits[newComp / 64]) |= (1ul << (newComp % 64));
 
-            byte[] newCompIDs = new byte[_compIDs.Length + 1];
-            _compIDs.CopyTo(newCompIDs, 0);
-            newCompIDs[_compIDs.Length] = newComp;
+            byte[] newCompIDs = new byte[compIDs.Length + 1];
+            compIDs.CopyTo(newCompIDs, 0);
+            newCompIDs[compIDs.Length] = newComp;
 
             return new ComponentSet(newBits, newCompIDs);
         }
 
-
         /// <summary>
         /// removes a single <see cref="IComponent"/> ID and returns the new <see cref="ComponentSet"/>.
         /// </summary>
-        public ComponentSet Remove(byte oldComp)
+        internal ComponentSet Remove(byte oldComp)
         {
             ulong[] newBits = new ulong[4];
-            _bits.CopyTo(newBits, 0);
+            bits.CopyTo(newBits, 0);
             (newBits[oldComp / 64]) &= ~(1ul << (oldComp % 64));
 
             int i = 0;
-            byte[] newCompIDs = new byte[_compIDs.Length - 1];
-            foreach (byte compID in _compIDs)
+            byte[] newCompIDs = new byte[compIDs.Length - 1];
+            foreach (byte compID in compIDs)
                 if (compID != oldComp)
                     newCompIDs[i++] = compID;
 
             return new ComponentSet(newBits, newCompIDs);
         }       
-        #endregion
         
-        public IEnumerator<byte> GetEnumerator() => ((IEnumerable<byte>)_compIDs).GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => _compIDs.GetEnumerator();
+        public IEnumerator<byte> GetEnumerator() => ((IEnumerable<byte>)compIDs).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => compIDs.GetEnumerator();
 
         public string ToHexString()
         {
-            string str = _bits[0].ToString().PadRight(3, ' ') + " : ";
+            string str = bits[0].ToString().PadRight(3, ' ') + " : ";
 
             for (int i = 3; i >= 0; i--)
             {
-                byte[] bytes = BitConverter.GetBytes(_bits[i]); // little end is stored first
+                byte[] bytes = BitConverter.GetBytes(bits[i]); // little end is stored first
                 for (int j = 7; j >= 0; j--)
                     str += Convert.ToString(bytes[j], 16).PadLeft(2, '0');
                 
@@ -197,23 +195,8 @@ namespace ECS
 
         public string ToBinString()
         {
-            /* 
-            // Whole binary string not very useful
-            string str = _bits[0].ToString().PadRight(3, ' ') + " : ";
-
-            for (int i = 3; i >= 0; i--)
-            {
-                byte[] bytes = BitConverter.GetBytes(_bits[i]); // little end is stored first
-                for (int j = 7; j >= 0; j--)
-                    str += Convert.ToString(bytes[j], 2).PadLeft(8, '0');
-                
-
-            }
-            return str;
-            */
-            // makes big endian??? I want little endian
-            string str = _bits[0].ToString().PadRight(3, ' ') + " : ";
-            str += Convert.ToString(BitConverter.GetBytes(_bits[0])[0], 2).PadLeft(8, '0');
+            string str = bits[0].ToString().PadRight(3, ' ') + " : ";
+            str += Convert.ToString(BitConverter.GetBytes(bits[0])[0], 2).PadLeft(8, '0');
 
             return str;
         }

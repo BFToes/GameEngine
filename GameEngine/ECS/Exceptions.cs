@@ -10,6 +10,4 @@ namespace ECS
     public class MaxComponentLimitExceeded : Exception { }
     
     public class EntityNotFound : Exception { }
-    public class EntityAlreadyExist : Exception { }
-
 }

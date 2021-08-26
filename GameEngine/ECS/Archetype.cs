@@ -7,7 +7,7 @@ namespace ECS
 {
     // TODO: Removing holes needs optimising
     //      could do it like a system with a dirtyFlag
-
+    
 
 
 
@@ -50,8 +50,8 @@ namespace ECS
                 components[CompID] = ComponentManager.InitPool(CompID); // init component pools
             entities = new Pool<Entity>();                              // init entity pool
 
-
-            // TODO: System Search
+            foreach (Behaviour B in Behaviour.FindApplicable(compSet))
+                B.archetypes.Add(this);
         }
 
         #region Moving Entity
@@ -174,6 +174,14 @@ namespace ECS
 
             return newArchetype;
         }
+
+        public static IEnumerable<Archetype> FindApplicable(Query query)
+        {
+            for (int i = 0; i < All.Count; i++)
+                if (query.Check(All[i].compSet))
+                    yield return All[i];
+            //return Archetype.All.Search(query);
+        }
         
         /// <summary>
         /// Finds the <see cref="Archetype"/> for this <see cref="Archetype"/>'s <see cref="ComponentSet"/>
@@ -184,7 +192,7 @@ namespace ECS
             ComponentSet newCompSet = compSet.Add(compID);
             
             // look up
-            if (_next[compID] == null) 
+            if (_next[compID] == null)
                 _next[compID] = FindOrCreate(newCompSet);
             return _next[compID];
         }
