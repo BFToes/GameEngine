@@ -19,4 +19,10 @@
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="ECS">
+      <HintPath>..\..\..\ECS\ECS\obj\Release\ECS.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
