@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using OpenTK.Graphics.OpenGL4;
 
-namespace GameEngine
+namespace GameEngine.Resources
 {
     public class UniformBlock
     {

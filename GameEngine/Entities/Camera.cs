@@ -5,6 +5,7 @@ using GameEngine.Components;
 using ECS;
 using OpenTK.Mathematics;
 using System.Runtime.InteropServices;
+using GameEngine.Resources;
 
 namespace GameEngine
 {
@@ -16,7 +17,7 @@ namespace GameEngine
         private UniformBlock Block = UniformBlock.For<Camera.UniformBlockData>((int)UniformBlockIndex.Camera);
         private readonly float FOV, nearZ, farZ;
         private readonly Vector2i Size;
-        public Camera(Context context, int width, int height, float fov = 0.9f, float depthNear = 0.125f, float depthFar = 512f) : base(context, ComponentManager.ID<Transform, CullObserver, Hierachy>())
+        public Camera(Context context, int width, int height, float fov = 0.9f, float depthNear = 0.125f, float depthFar = 512f) : base(context, ComponentManager.ID<Transform, CullObserver, Hierarchy>())
         {
             this.FOV = fov;
             this.nearZ = depthNear;
@@ -39,7 +40,7 @@ namespace GameEngine
             Block.Bind();
         }
 
-            [StructLayout(LayoutKind.Explicit)]
+        [StructLayout(LayoutKind.Explicit)]
         private struct UniformBlockData
         {
             [FieldOffset(0)]
